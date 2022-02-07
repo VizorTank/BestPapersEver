@@ -1,2 +1,2 @@
 # BestPapersEver
-Praca inżynierska
+Praca inżynierska.
