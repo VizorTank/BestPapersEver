@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: Default
   m_EditorClassIdentifier: 
   biomeName: Default
-  solidGroundHeight: 64
-  terrainHeight: 48
+  solidGroundHeight: 16
+  terrainHeight: 16
   terrainSize: 0.25
   lodes:
   - name: Dirt
@@ -35,6 +35,6 @@ MonoBehaviour:
     blockID: 0
     minHeight: 10
     maxHeight: 60
-    scale: 0.05
+    scale: 0.001
     threshold: 0.55
     noiseOffset: 1456

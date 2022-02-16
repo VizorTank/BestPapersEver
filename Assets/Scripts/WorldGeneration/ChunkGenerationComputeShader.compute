@@ -1,0 +1,116 @@
+
+
+
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMain
+
+#include "noiseSimplex.cginc"
+
+// Create a RenderTexture with enableRandomWrite flag and set it
+// with cs.SetTexture
+/*
+struct Lode {
+    string name;
+    int blockID;
+    int minHeight;
+    int maxHeight;
+    float scale;
+    float threshold;
+    float noiseOffset;
+};
+
+struct Biome {
+    string biomeName;
+    int solidGroundHeight;
+    int terrainHeight;
+    float terrainSize;
+};
+
+Lode Lodes[10];
+int numLodes;
+//*/
+
+RWTexture2D<float4> Result;
+RWStructuredBuffer<int> VoxelData;
+
+int3 ChunkPosition;
+int3 ChunkSize;
+float3 WorldSizeInVoxels;
+float NoiseOffset;
+float TerrainSize;
+int TerrainHeight;
+int SolidGroundHeight;
+
+float Get2DPerlin(float2 position, float offset, float scale)
+{
+    float noise = snoise(float2(position.x * scale + offset, position.y * scale + offset));
+    return (noise + 1.0f) / 2;
+}
+
+bool isVoxelInWorld(float3 position)
+{
+    if (position.x < 0 || position.x >= WorldSizeInVoxels.x ||
+            position.y < 0 || position.y >= WorldSizeInVoxels.y ||
+            position.z < 0 || position.z >= WorldSizeInVoxels.z)
+        return false;
+    return true;
+}
+
+float GetTerrainNoise(int3 position)
+{
+    return Get2DPerlin(float2(position.x, position.z), NoiseOffset, TerrainSize);
+}
+
+float Test(int3 position)
+{
+    return float(position.x + position.z) / (ChunkSize.x * 2); 
+}
+
+int GetVoxel(int3 position)
+{
+    int yPos = floor(position.y);
+    if (!isVoxelInWorld(position))
+        return 0;
+    if (yPos == 0)
+        return 1;
+
+    int terrainHeight = floor(GetTerrainNoise(position) * TerrainHeight) + SolidGroundHeight;
+    int voxelValue = 0;
+
+    if (yPos > terrainHeight)
+        return 0;
+
+    if (yPos == terrainHeight)
+        voxelValue = 3;
+    else if (yPos > terrainHeight - 4)
+        voxelValue = 4;
+    else if (yPos < terrainHeight)
+        voxelValue = 2;
+
+    return voxelValue;
+}
+/*
+int3 index(int id)
+{
+    int z = 0;//floor(id / (ChunkSize.z * ChunkSize.z));
+    int y = 0;//floor((id - z * (ChunkSize.z * ChunkSize.z)) / ChunkSize.y);
+    int x = id % ChunkSize.x;
+    return int3(x, y, z);
+}
+*/
+int index(uint3 id)
+{
+    return id.x + (id.y + id.z * ChunkSize.y) * ChunkSize.z;
+}
+
+[numthreads(8,8,8)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    //float n = snoise(float2(id.x + 0.1f, id.y + 0.1f) / 100);
+    //float n = Get2DPerlin(id.xy, 0.1f, 1.0f / 100);
+    //Result[id.xy] = float4(n, n, n, 0.0);
+    //VoxelData[index(id)] = GetVoxel(int3(id.z + ChunkPosition.x, id.y + ChunkPosition.y, id.x + ChunkPosition.z));
+    uint3 realId = uint3(id.z, id.y, id.x);
+    VoxelData[index(realId)] = GetVoxel(id + ChunkPosition);
+    //VoxelData[index(id)] = 2;
+}
