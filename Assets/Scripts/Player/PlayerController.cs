@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class PlayerController : MonoBehaviour
 {
-    public World world;
+    public WorldClass world;
     public CharacterController CharacterController;
     public Transform Camera;
 

@@ -1,27 +1,31 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Entities;
+using Unity.Mathematics;
 using UnityEngine;
 
-public class World : MonoBehaviour
+public class WorldClass : MonoBehaviour
 {
     public int seed;
 
-    public ComputeShader shader;
-    public ComputeShader shader2;
+    public ComputeShader generateWorldShader;
+    public ComputeShader createMeshShader;
+    public GameObject blockEntityPrefab;
 
     public Transform player;
     public BiomeAttributes biome;
     public Vector3 spawnChunk;
     public BlockType[] blockTypes;
+    public int ChunkType = 1;
 
-    public static readonly Vector3Int WorldSizeInChunks = new Vector3Int(8, 8, 8);
+    [SerializeField] public static readonly Vector3Int WorldSizeInChunks = new Vector3Int(2, 1, 2);
     public int ViewDistanceInChunks = 10;
     public static Vector3Int WorldSizeInVoxels
     {
-        get { return Vector3Int.Scale(WorldSizeInChunks, Chunk.Size); }
+        get { return Vector3Int.Scale(WorldSizeInChunks, ChunkCore.Size); }
     }
 
-    Chunk[,,] chunks = new Chunk[WorldSizeInChunks.x, WorldSizeInChunks.y, WorldSizeInChunks.z];
+    ChunkCore[,,] chunks = new ChunkCore[WorldSizeInChunks.x, WorldSizeInChunks.y, WorldSizeInChunks.z];
     List<Vector3Int> activeChunks = new List<Vector3Int>();
     Vector3Int playerLastChunkCoord;
 
@@ -30,11 +34,12 @@ public class World : MonoBehaviour
     private void Start()
     {
 
-        Random.InitState(seed);
-        NoiseOffset = Random.Range(1000.0f, 1000.0f);
+        UnityEngine.Random.InitState(seed);
+        NoiseOffset = UnityEngine.Random.Range(1000.0f, 1000.0f);
         spawnChunk = new Vector3(WorldSizeInChunks.x / 2f, 0, WorldSizeInChunks.z / 2f);
-        player.position = spawnChunk * Chunk.Size.x + new Vector3(0, Chunk.Size.y * WorldSizeInChunks.y, 0);
+        player.position = spawnChunk * ChunkCore.Size.x + new Vector3(0, ChunkCore.Size.y * WorldSizeInChunks.y, 0);
         GenerateWorld();
+        //CreateNewChunk3(new Vector3Int(0, 0 ,0));
     }
 
     private void Update()
@@ -42,8 +47,17 @@ public class World : MonoBehaviour
         Vector3Int playerPos = GetPositionInChunks(player.position);
         if (playerLastChunkCoord != playerPos)
         {
-            //GenerateWorld();
+            DrawWorld();
             playerLastChunkCoord = playerPos;
+        }
+    }
+
+    void DrawWorld()
+    {
+        foreach (Vector3Int chunk in activeChunks)
+        {
+            chunks[chunk.x, chunk.y, chunk.z].DrawChunk();
+            //chunks[chunk.x, chunk.y, chunk.z].CreateMeshFromEntities();
         }
     }
 
@@ -64,7 +78,15 @@ public class World : MonoBehaviour
                         continue;
                     if (chunks[x, y, z] == null)
                     {
-                        CreateNewChunk(coord);
+                        if (ChunkType == 1)
+                            CreateNewChunk(coord);
+                        if (ChunkType == 2)
+                            CreateNewChunk2(coord);
+                        if (ChunkType == 3)
+                        {
+                            CreateNewChunk3(coord);
+                            //activeChunks.Add(coord);
+                        }
                     }
                     else if (!chunks[x, y, z].IsActive)
                     {
@@ -88,15 +110,11 @@ public class World : MonoBehaviour
             activeChunks.Remove(chunk);
         }
         //*/
-        foreach (Vector3Int chunk in activeChunks)
-        {
-            chunks[chunk.x, chunk.y, chunk.z].DrawChunk();
-        }
     }
 
     Vector3Int GetPositionInChunks(Vector3 position)
     {
-        return new Vector3Int(Mathf.FloorToInt(position.x / Chunk.Size.x), Mathf.FloorToInt(position.y / Chunk.Size.y), Mathf.FloorToInt(position.z / Chunk.Size.z));
+        return new Vector3Int(Mathf.FloorToInt(position.x / ChunkCore.Size.x), Mathf.FloorToInt(position.y / ChunkCore.Size.y), Mathf.FloorToInt(position.z / ChunkCore.Size.z));
     }
 
     public byte GetVoxel(Vector3 position)
@@ -107,7 +125,10 @@ public class World : MonoBehaviour
         if (yPos == 0)
             return 1;
 
-        int terrainHeight = Mathf.FloorToInt(Noise.Get2DPerlin(new Vector2(position.x, position.z), NoiseOffset, biome.terrainSize) * biome.terrainHeight) + biome.solidGroundHeight;
+        int terrainHeight = Mathf.FloorToInt(
+            Noise.Get2DPerlin(
+                new Vector2(position.x, position.z), NoiseOffset, biome.terrainSize)
+            * biome.terrainHeight) + biome.solidGroundHeight;
         byte voxelValue = 0;
 
         if (yPos > terrainHeight)
@@ -133,12 +154,44 @@ public class World : MonoBehaviour
         return voxelValue;
     }
 
+    public byte GetVoxel(float3 position)
+    {
+        int yPos = (int)math.floor(position.y);
+
+        int terrainHeight = 8;
+        byte voxelValue = 0;
+
+        if (yPos > terrainHeight)
+            return 0;
+
+        if (yPos == terrainHeight)
+            voxelValue = 3;
+        else if (yPos > terrainHeight - 4)
+            voxelValue = 4;
+        else if (yPos < terrainHeight)
+            voxelValue = 2;
+
+        return voxelValue;
+    }
+
+    public Entity GetVoxelEntity(float3 position)
+    {
+        float3 localPos = position % new float3(ChunkCore.Size.x, ChunkCore.Size.y, ChunkCore.Size.z);
+        Vector3Int tmp = GetPositionInChunks(position);
+        int3 chunkPos = new int3(tmp.x, tmp.y, tmp.z);
+
+        if (CheckIfChunkIsNull(tmp))
+            return Entity.Null;
+
+        return chunks[chunkPos.x, chunkPos.y, chunkPos.z].GetVoxel(new int3(localPos));
+    }
+
     public bool CheckForVoxel(Vector3 position)
     {
         Vector3Int localPos = new Vector3Int(
-            Mathf.FloorToInt(position.x) % Chunk.Size.x,
-            Mathf.FloorToInt(position.y) % Chunk.Size.y,
-            Mathf.FloorToInt(position.z) % Chunk.Size.z);
+            Mathf.FloorToInt(position.x) % ChunkCore.Size.x,
+            Mathf.FloorToInt(position.y) % ChunkCore.Size.y,
+            Mathf.FloorToInt(position.z) % ChunkCore.Size.z);
 
         Vector3Int chunkPos = GetPositionInChunks(position);
 
@@ -160,7 +213,21 @@ public class World : MonoBehaviour
     void CreateNewChunk(Vector3Int coordinates)
     {
         // TODO: Center of World in (0, 0)
-        chunks[coordinates.x, coordinates.y, coordinates.z] = new Chunk(coordinates, this);
+        chunks[coordinates.x, coordinates.y, coordinates.z] = new ChunkV1(coordinates, this);
+        activeChunks.Add(coordinates);
+    }
+
+    void CreateNewChunk2(Vector3Int coordinates)
+    {
+        // TODO: Center of World in (0, 0)
+        chunks[coordinates.x, coordinates.y, coordinates.z] = new ChunkV2(coordinates, this);
+        activeChunks.Add(coordinates);
+    }
+
+    void CreateNewChunk3(Vector3Int coordinates)
+    {
+        // TODO: Center of World in (0, 0)
+        chunks[coordinates.x, coordinates.y, coordinates.z] = new ChunkEntities(coordinates, this);
         activeChunks.Add(coordinates);
     }
 

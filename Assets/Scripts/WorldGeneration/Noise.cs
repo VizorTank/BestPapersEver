@@ -6,8 +6,8 @@ public static class Noise
 {
     public static float Get2DPerlin(Vector2 position, float offset, float scale)
     {
-        return Mathf.PerlinNoise((position.x + 0.1f) / Chunk.Size.x * scale + offset,
-                                    (position.y + 0.1f) / Chunk.Size.y * scale + offset);
+        return Mathf.PerlinNoise((position.x + 0.1f) / ChunkV1.Size.x * scale + offset,
+                                    (position.y + 0.1f) / ChunkV1.Size.y * scale + offset);
     }
 
     public static bool Get3DPerlin(Vector3 position, float offset, float scale, float threshold)
