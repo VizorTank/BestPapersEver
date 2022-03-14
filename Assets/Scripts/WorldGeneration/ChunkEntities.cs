@@ -66,12 +66,13 @@ public class ChunkEntities : ChunkCore
             typeof(Translation),
             typeof(Rotation),
             typeof(MeshFilter),
-            typeof(MeshRenderer));
+            typeof(MeshRenderer),
+            typeof(ChunkRequirePopulateTag));
 
         chunkEntity = InstatiateEntity(ChunkPosition, chunkArchetype);
 
-        GenerateMap();
-        LinkBlocks();
+        //GenerateMap();
+        //LinkBlocks();
         List<BlockParentChunkData> g = new List<BlockParentChunkData>();
         entityManager.GetAllUniqueSharedComponentData<BlockParentChunkData>(g);
         //Debug.Log(g.Count + g[g.Count - 1].Value.ToString());
@@ -82,8 +83,8 @@ public class ChunkEntities : ChunkCore
     {
         EntityQueryDesc entityQueryDesc = new EntityQueryDesc
         {
-            All = new ComponentType[] { 
-                typeof(BlockVisibleSidesData), 
+            All = new ComponentType[] {
+                ComponentType.ReadOnly<BlockVisibleSidesData>(), 
                 ComponentType.ReadOnly<BlockParentChunkData>(), 
                 ComponentType.ReadOnly<BlockIsSolidData>(),
                 ComponentType.ReadOnly<BlockIdData>(),
@@ -142,16 +143,7 @@ public class ChunkEntities : ChunkCore
         // Back Front Top Bottom Left Right
         BlockVisibleSidesData blockVisibleSides = blockVisibleSidesArray[index];
 
-        switch (i)
-        {
-            case 0: return blockVisibleSides.Back;
-            case 1: return blockVisibleSides.Front;
-            case 2: return blockVisibleSides.Top;
-            case 3: return blockVisibleSides.Bottom;
-            case 4: return blockVisibleSides.Left;
-            case 5: return blockVisibleSides.Right;
-            default: return true;
-        }
+        return blockVisibleSides[i];
     }
 
     protected override int GetVoxelId(int x, int y, int z)
@@ -176,22 +168,24 @@ public class ChunkEntities : ChunkCore
     public void LinkBlock(int3 position)
     {
         // Back Front Top Bottom Left Right
-        Entity[] neighbours = new Entity[6];
+        BlockNeighboursData neighbours = new BlockNeighboursData();
 
         for (int i = 0; i < 6; i++)
         {
             neighbours[i] = GetVoxel(position + Neighbours[i]);
         }
+        
+        entityManager.SetComponentData(voxels[position.x, position.y, position.z], neighbours);
+        
+        /*
+        DynamicBuffer<BlockNeighbourBufferElement> blockNeighbourBufferElements = entityManager.GetBuffer<BlockNeighbourBufferElement>(
+                voxels[position.x, position.y, position.z]);
 
-        entityManager.SetComponentData<BlockNeighboursData>(voxels[position.x, position.y, position.z], new BlockNeighboursData
+        for (int i = 0; i < 6; i++)
         {
-            Back = neighbours[0],
-            Front = neighbours[1],
-            Top = neighbours[2],
-            Bottom = neighbours[3],
-            Left = neighbours[4],
-            Right = neighbours[5]
-        });
+            blockNeighbourBufferElements.Add(new BlockNeighbourBufferElement { Value = neighbours[i] });
+        }
+        */
     }
 
     public override Entity GetVoxel(int3 position)
