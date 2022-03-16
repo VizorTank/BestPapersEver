@@ -4,6 +4,7 @@ using Unity.Entities;
 using Unity.Jobs;
 using Unity.Mathematics;
 using Unity.Transforms;
+using UnityEngine;
 
 public class ChunkInitializationSystem : SystemBase
 {
@@ -50,7 +51,7 @@ public class ChunkInitializationSystem : SystemBase
         translations.Dispose();
     }
 
-    private struct CreateLingingListJob : IJobParallelFor
+    private struct CreateLinkingListJob : IJobParallelFor
     {
         [ReadOnly] public NativeArray<int3> neighbours;
         [ReadOnly] public int3 chunkSize;
@@ -59,15 +60,34 @@ public class ChunkInitializationSystem : SystemBase
         public NativeArray<BlockNeighboursData> blockNeighbours;
         public void Execute(int index)
         {
+            int idx = index;
+            //index = chunkSize.x * chunkSize.y * chunkSize.z - index;
+            int x = index % chunkSize.x;
+            int y = ((index - x) / chunkSize.x) % chunkSize.y;
+            int z = (((index - x) / chunkSize.x) - y) / chunkSize.y;
+            int3 pos = new int3(x, y, z);
             BlockNeighboursData neighboursData = new BlockNeighboursData();
             for (int i = 0; i < 6; i++)
             {
-                int idx = index + neighbours[i].x + (neighbours[i].y + neighbours[i].z * chunkSize.y) * chunkSize.x;
-                if (idx < 0 || idx >= blocks.Length)
+                int3 nPos = pos + neighbours[i];
+                if (nPos.x < 0 || nPos.x >= chunkSize.x ||
+                     nPos.y < 0 || nPos.y >= chunkSize.y ||
+                     nPos.z < 0 || nPos.z >= chunkSize.z)
                     continue;
-                neighboursData[i] = blocks[idx];
+                neighboursData[i] = blocks[nPos.x + (nPos.y + nPos.z * chunkSize.y) * chunkSize.x];
             }
-            blockNeighbours[index] = neighboursData;
+            blockNeighbours[idx] = neighboursData;
+        }
+    }
+
+    private struct MoveTranslationsJob : IJobParallelFor
+    {
+        [ReadOnly] public NativeArray<Translation> localTranslations;
+        public NativeArray<Translation> globalTranslations;
+        public float3 chunkPosition;
+        public void Execute(int index)
+        {
+            globalTranslations[index] = new Translation { Value = chunkPosition + localTranslations[index].Value };
         }
     }
 
@@ -104,6 +124,10 @@ public class ChunkInitializationSystem : SystemBase
 
     protected override void OnUpdate()
     {
+        EntityQuery chunksRequirePopulateQuerry = EntityManager.CreateEntityQuery(ComponentType.ReadOnly<ChunkRequirePopulateTag>());
+        if (chunksRequirePopulateQuerry.CalculateEntityCount() <= 0)
+            return;
+
         var beginCommandBuffer = BeginEntityCommandBufferSystem.CreateCommandBuffer().AsParallelWriter();
         var endCommandBuffer = EndEntityCommandBufferSystem.CreateCommandBuffer().AsParallelWriter();
         int3 chunkSize = ChunkSize;
@@ -122,7 +146,15 @@ public class ChunkInitializationSystem : SystemBase
             typeof(BlockRequireUpdateTag)
             );
 
-        EntityQuery chunksRequirePopulateQuerry = EntityManager.CreateEntityQuery(ComponentType.ReadOnly<ChunkRequirePopulateTag>());
+        var entityQueryDesc = new EntityQueryDesc
+        {
+            All = new ComponentType[]
+            {
+                ComponentType.ReadOnly<BlockRequirePopulateTag>()
+            }
+        };
+
+        
         NativeArray<Entity> chunksRequirePopulate = chunksRequirePopulateQuerry.ToEntityArray(Allocator.Temp);
 
         foreach (Entity chunk in chunksRequirePopulate)
@@ -130,43 +162,42 @@ public class ChunkInitializationSystem : SystemBase
             NativeArray<Entity> blocks = EntityManager.CreateEntity(blockArchetype, chunkBitSize, Allocator.TempJob);
             EntityManager.AddComponent(blocks, ComponentType.ReadOnly<BlockRequirePopulateTag>());
 
-            for (int i = 0; i < blocks.Length; i++)
-            {
-                EntityManager.SetComponentData(blocks[i], new BlockIdData { Value = i });
-            }
-
-            EntityQuery entityQuery = EntityManager.CreateEntityQuery(new ComponentType[] { ComponentType.ReadOnly<BlockRequirePopulateTag>() });
+            EntityQuery entityQuery = EntityManager.CreateEntityQuery(entityQueryDesc);
             EntityManager.AddSharedComponentData(entityQuery, new BlockParentChunkData { Value = chunk });
 
             NativeArray<BlockNeighboursData> blockNeighboursDatas = new NativeArray<BlockNeighboursData>(chunkBitSize, Allocator.TempJob);
 
-            CreateLingingListJob job = new CreateLingingListJob
+            NativeArray<Entity> entities = entityQuery.ToEntityArray(Allocator.TempJob);
+
+            CreateLinkingListJob job = new CreateLinkingListJob
             {
-                blocks = blocks,
+                blocks = entities,
                 chunkSize = chunkSize,
                 neighbours = neighbours,
                 blockNeighbours = blockNeighboursDatas
             };
-
-            /*
-            LinkBlocksJob job = new LinkBlocksJob
-            {
-                blocks = blocks,
-                chunkSize = chunkSize,
-                commandBuffer = beginCommandBuffer,
-                neighbours = neighbours
-            };
-            */
             JobHandle jobHandle = job.Schedule(chunkBitSize, 64);
 
-            //BeginEntityCommandBufferSystem.AddJobHandleForProducer(jobHandle);
-            jobHandle.Complete();
+            NativeArray<Translation> chunkTranslations = new NativeArray<Translation>(chunkBitSize, Allocator.TempJob);
+            MoveTranslationsJob moveTranslationsJob = new MoveTranslationsJob
+            {
+                chunkPosition = EntityManager.GetComponentData<Translation>(chunk).Value,
+                globalTranslations = chunkTranslations,
+                localTranslations = translations
+            };
+            JobHandle moveTranslationJobHandle = moveTranslationsJob.Schedule(chunkBitSize, 64);
 
-            EntityManager.AddComponentData(entityQuery, translations);
+            jobHandle.Complete();
             EntityManager.AddComponentData(entityQuery, blockNeighboursDatas);
+
+            moveTranslationJobHandle.Complete();
+            EntityManager.AddComponentData(entityQuery, chunkTranslations);
+            
             EntityManager.RemoveComponent<BlockRequirePopulateTag>(entityQuery);
             blockNeighboursDatas.Dispose(jobHandle);
+            chunkTranslations.Dispose();
             blocks.Dispose();
+            entities.Dispose();
         }
 
         EntityManager.RemoveComponent<ChunkRequirePopulateTag>(chunksRequirePopulateQuerry);

@@ -21,7 +21,7 @@ public class ChunkCore// : MonoBehaviour
     protected List<List<int>> triangles;
     protected List<Vector2> uvs;
 
-    public static int cubeSize = 4;
+    public static int cubeSize = 16;
     public static Vector3Int Size = new Vector3Int(cubeSize, cubeSize, cubeSize);
     public WorldClass world;
 
@@ -48,7 +48,7 @@ public class ChunkCore// : MonoBehaviour
     protected virtual void DrawChunkAfter()
     {
         CreateMesh();
-        CreateMeshCollider();
+        //CreateMeshCollider();
     }
 
     public ChunkCore(Vector3Int _position, WorldClass _world)

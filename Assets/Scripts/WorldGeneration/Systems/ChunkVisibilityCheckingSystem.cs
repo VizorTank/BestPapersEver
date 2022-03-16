@@ -17,7 +17,7 @@ public class ChunkVisibilityCheckingSystem : SystemBase
 
         List<BlockParentChunkData> chunks = new List<BlockParentChunkData>();
         EntityManager.GetAllUniqueSharedComponentData(chunks);
-        NativeHashMap<Entity, bool> chunkHashMap = new NativeHashMap<Entity, bool>(chunks.Count, Allocator.TempJob);
+        NativeHashMap<Entity, bool> chunkHashMap = new NativeHashMap<Entity, bool>(chunks.Count + 1, Allocator.TempJob);
         var chunkHashMapWriter = chunkHashMap.AsParallelWriter();
 
         JobHandle lastJobHandle = Dependency;

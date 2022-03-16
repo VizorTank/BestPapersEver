@@ -119,9 +119,10 @@ public class ChunkEntities : ChunkCore
             {
                 for (int j = 0; j < 6; j++)
                 {
-                    if (CheckNeighbourVoxel(0, 0, i, j))
+                    if (CheckNeighbourVoxel(i, 0, 0, j))
                     {
                         AddVoxelFaceToMesh(blockTranslation[i].Value - new float3(ChunkPosition), blockIdDataArray[i].Value, j);
+                        //AddVoxelFaceToMesh(blockTranslation[i].Value - new float3(ChunkPosition), blockIdDataArray[i].Value, j);
                     }
                 }
             }
@@ -130,7 +131,7 @@ public class ChunkEntities : ChunkCore
 
     protected override bool IsVoxelSolid(int x, int y, int z)
     {
-        int index = z + (y + x * 32) * 32;
+        int index = z + (y + x * Size.y) * Size.z;
         return blockIsSolidDataArray[index].Value;
     }
 
@@ -139,7 +140,7 @@ public class ChunkEntities : ChunkCore
         // Back Front Top Bottom Left Right
         //BlockVisibleSidesData blockVisibleSides = entityManager.GetComponentData<BlockVisibleSidesData>(voxels[x, y, z]);
 
-        int index = z + (y + x * 32) * 32;
+        int index = x + (y + z * Size.y) * Size.x;
         // Back Front Top Bottom Left Right
         BlockVisibleSidesData blockVisibleSides = blockVisibleSidesArray[index];
 
