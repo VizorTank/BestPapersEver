@@ -25,24 +25,42 @@ public class ChunkInitializationSystem : SystemBase
         new int3(1, 0, 0),
     };
 
+    private struct GenerateTranslationList : IJobParallelFor
+    {
+        [ReadOnly] public int3 chunkSize;
+        public NativeArray<Translation> translations;
+        public void Execute(int index)
+        {
+            int x = index % chunkSize.x;
+            int y = ((index - x) / chunkSize.x) % chunkSize.y;
+            int z = (((index - x) / chunkSize.x) - y) / chunkSize.y;
+
+            translations[index] = new Translation { Value = new float3(x, y, z) };
+        }
+    }
+
     protected override void OnCreate()
     {
         ChunkSize = new int3(ChunkCore.Size.x, ChunkCore.Size.y, ChunkCore.Size.z);
         BeginEntityCommandBufferSystem = World.GetOrCreateSystem<BeginInitializationEntityCommandBufferSystem>();
         EndEntityCommandBufferSystem = World.GetOrCreateSystem<EndInitializationEntityCommandBufferSystem>();
 
+        //TODO: Create chunk entities prefab in new world and then copy it
+
+        CreateTranslationListOnJobs();
+    }
+
+    private void CreateTranslationListOnJobs()
+    {
         translations = new NativeArray<Translation>(ChunkSize.x * ChunkSize.y * ChunkSize.z, Allocator.Persistent);
 
-        for (int x = 0; x < ChunkSize.x; x++)
+        GenerateTranslationList generateTranslationList = new GenerateTranslationList
         {
-            for (int y = 0; y < ChunkSize.y; y++)
-            {
-                for (int z = 0; z < ChunkSize.z; z++)
-                {
-                    translations[x + (y + z * ChunkSize.y) * ChunkSize.x] = new Translation() { Value = new float3(x, y, z) };
-                }
-            }
-        }
+            chunkSize = ChunkSize,
+            translations = translations
+        };
+
+        generateTranslationList.Schedule(translations.Length, 64).Complete();
     }
 
     protected override void OnDestroy()
@@ -99,6 +117,7 @@ public class ChunkInitializationSystem : SystemBase
         public EntityCommandBuffer.ParallelWriter commandBuffer;
         public void Execute()
         {
+            // TODO: Export result as array and SetComponent in batches
             for (int x = 0; x < chunkSize.x; x++)
             {
                 for (int y = 0; y < chunkSize.y; y++)

@@ -184,5 +184,8 @@ public class ChunkCore// : MonoBehaviour
         return true;
     }
 
-
+    public virtual void GenerateMeshWithJobs()
+    {
+        DrawChunk();
+    }
 }
