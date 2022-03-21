@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Jobs;
@@ -29,6 +30,13 @@ public class ChunkEntities : ChunkCore
     private NativeArray<Translation> blockTranslation;
     private NativeArray<BlockIsSolidData> blockIsSolidDataArray;
 
+    private GenerateMeshJob generateMeshJob;
+    private JobHandle generateMeshRaw;
+    private List<GenerateMeshListJob> generateMeshListJobs;
+    private JobHandle generateMeshListDepedency;
+    private bool requireUpdate;
+    private bool requireMeshLists;
+
     // Back Front Top Bottom Left Right
     public static int3[] Neighbours = new int3[]
     {
@@ -38,6 +46,14 @@ public class ChunkEntities : ChunkCore
         new int3(0, -1, 0),
         new int3(-1, 0, 0),
         new int3(1, 0, 0),
+    };
+
+    public static EntityQueryDesc chunkRequireUpdate = new EntityQueryDesc()
+    {
+        All = new ComponentType[]
+        {
+            ComponentType.ReadOnly<ChunkRequireUpdateTag>()
+        }
     };
 
     public static EntityQueryDesc visibleBlocksQueryDesc = new EntityQueryDesc()
@@ -93,6 +109,7 @@ public class ChunkEntities : ChunkCore
         CreateMeshFromEntities();
     }
 
+    //[BurstCompile]
     public struct GenerateMeshJob : IJob
     {
         [ReadOnly] public NativeArray<BlockVisibleSidesData> blockVisibleSidesDatas;
@@ -101,13 +118,18 @@ public class ChunkEntities : ChunkCore
         [ReadOnly] public NativeArray<Translation> translations;
 
         public int vertexIndex;
-        public NativeArray<int> trianglesIndexes;
         public NativeArray<float3> vertices;
-        public NativeArray<int> triangles;
         public NativeArray<float2> uvs;
 
+        public NativeArray<int> blockIdCounts;
+
+        public int triangleBlockIdIndex;
+        public NativeArray<int> triangleBlockIds;
+        public int triangleIndex;
+        public NativeArray<int> triangles;
+
         public static int3[] neighbours = ChunkEntities.Neighbours;
-        [ReadOnly] public int3 chunkPos;
+        [ReadOnly] public float3 chunkPos;
         [ReadOnly] public int blockCount;
 
         public void Execute()
@@ -118,7 +140,7 @@ public class ChunkEntities : ChunkCore
                 {
                     for (int j = 0; j < 6; j++)
                     {
-                        if (blockIsSolidDatas[i].Value)
+                        if (blockVisibleSidesDatas[i][j])
                         {
                             int blockID = blockIdDatas[i].Value;
                             float3 position = translations[i].Value - chunkPos;
@@ -127,13 +149,16 @@ public class ChunkEntities : ChunkCore
                                 vertices[vertexIndex + k] = position + new float3(VoxelData.voxelVerts[VoxelData.voxelTris[j, k]]);
                                 uvs[vertexIndex + k] = VoxelData.voxelUvs[k];
                             }
-                            
-                            triangles[blockID + trianglesIndexes[blockID]++ * blockCount] = vertexIndex + 0;
-                            triangles[blockID + trianglesIndexes[blockID]++ * blockCount] = vertexIndex + 1;
-                            triangles[blockID + trianglesIndexes[blockID]++ * blockCount] = vertexIndex + 2;
-                            triangles[blockID + trianglesIndexes[blockID]++ * blockCount] = vertexIndex + 2;
-                            triangles[blockID + trianglesIndexes[blockID]++ * blockCount] = vertexIndex + 1;
-                            triangles[blockID + trianglesIndexes[blockID]++ * blockCount] = vertexIndex + 3;
+                            blockIdCounts[blockID]++;
+                            triangleBlockIds[triangleBlockIdIndex++] = blockID;
+                            triangles[triangleIndex++] = vertexIndex + 0;
+                            triangles[triangleIndex++] = vertexIndex + 1;
+                            triangles[triangleIndex++] = vertexIndex + 2;
+                            blockIdCounts[blockID]++;
+                            triangleBlockIds[triangleBlockIdIndex++] = blockID;
+                            triangles[triangleIndex++] = vertexIndex + 2;
+                            triangles[triangleIndex++] = vertexIndex + 1;
+                            triangles[triangleIndex++] = vertexIndex + 3;
                             //triangles[blockID].Add(vertexIndex + 0);
                             //triangles[blockID].Add(vertexIndex + 1);
                             //triangles[blockID].Add(vertexIndex + 2);
@@ -148,16 +173,66 @@ public class ChunkEntities : ChunkCore
         }
     }
 
-    public override void GenerateMeshWithJobs()
+    [BurstCompile]
+    public struct GenerateMeshListJob : IJob
     {
-        EntityQuery entityQuery = entityManager.CreateEntityQuery(visibleBlocksQueryDesc);
-        entityQuery.SetSharedComponentFilter(new BlockParentChunkData { Value = chunkEntity });
+        [ReadOnly] public NativeArray<int> triangles;
+        [ReadOnly] public NativeArray<int> triangleBlockIds;
 
-        if (entityQuery.CalculateEntityCount() > 0)
-            GenerateMeshWithJobsGetData(entityQuery);
+        [ReadOnly] public int blockId;
+        [ReadOnly] public int blockMaxCount;
+
+        private int filteredTrianglesIndex;
+        public NativeArray<int> filteredTriangles;
+        public void Execute()
+        {
+            if (blockId == 0)
+                return;
+            for (int i = 0; i < triangleBlockIds.Length; i++)
+            {
+                if (triangleBlockIds[i] == blockId)
+                {
+                    for (int j = 0; j < 3; j++)
+                    {
+                        //if (filteredTrianglesIndex >= blockMaxCount)
+                        //{
+                        //    Debug.LogError("Too many blocks in blockID: " + blockId + " Count: " + filteredTrianglesIndex + " Max: " + blockMaxCount);
+                        //    continue;
+                        //}
+
+                        filteredTriangles[filteredTrianglesIndex++] = triangles[i * 3 + j];
+                    }
+                }
+            }
+        }
     }
 
-    private void GenerateMeshWithJobsGetData(EntityQuery entityQuery)
+    public override void GenerateMeshWithJobs()
+    {
+        if (requireUpdate)
+            return;
+
+        EntityQuery chunkUpdates = entityManager.CreateEntityQuery(chunkRequireUpdate);
+        NativeArray<Entity> chunks = chunkUpdates.ToEntityArray(Allocator.Temp);
+
+        if (chunks.BinarySearch(chunkEntity) > 0)
+        {
+            chunks.Dispose();
+            EntityQuery entityQuery = entityManager.CreateEntityQuery(visibleBlocksQueryDesc);
+            entityQuery.SetSharedComponentFilter(new BlockParentChunkData { Value = chunkEntity });
+
+            if (entityQuery.CalculateEntityCount() > 0)
+            {
+                requireUpdate = true;
+                requireMeshLists = true;
+                PrepareMeshWithJobsGetData(entityQuery);
+            }
+
+            entityManager.RemoveComponent<ChunkRequireUpdateTag>(chunkEntity);
+        }
+    }
+
+    private void PrepareMeshWithJobsGetData(EntityQuery entityQuery)
     {
         NativeArray<BlockVisibleSidesData> blockVisibleSidesDatas = entityQuery.ToComponentDataArray<BlockVisibleSidesData>(Allocator.TempJob);
         NativeArray<BlockIsSolidData> blockIsSolidDatas = entityQuery.ToComponentDataArray<BlockIsSolidData>(Allocator.TempJob);
@@ -166,51 +241,104 @@ public class ChunkEntities : ChunkCore
 
         int blockExpectedCount = entityQuery.CalculateEntityCount() * 6;
 
-        NativeArray<int> triangles = new NativeArray<int>(world.blockTypes.Length * blockExpectedCount * 6, Allocator.TempJob);
-        NativeArray<int> trianglesIndexes = new NativeArray<int>(world.blockTypes.Length, Allocator.TempJob);
+        NativeArray<int> blockIdCount = new NativeArray<int>(world.blockTypes.Length, Allocator.TempJob);
+
+        NativeArray<int> triangles = new NativeArray<int>(blockExpectedCount * 6, Allocator.TempJob);
+        NativeArray<int> triangleBlockIds = new NativeArray<int>(blockExpectedCount * 2, Allocator.TempJob);
+        //NativeArray<int> trianglesIndexes = new NativeArray<int>(world.blockTypes.Length, Allocator.TempJob);
 
         NativeArray<float3> vertices = new NativeArray<float3>(blockExpectedCount * 4, Allocator.TempJob);
         NativeArray<float2> uvs = new NativeArray<float2>(blockExpectedCount * 4, Allocator.TempJob);
 
-        GenerateMeshJob generateMeshJob = new GenerateMeshJob
+        generateMeshJob = new GenerateMeshJob
         {
-            chunkPos = new int3(ChunkPosition),
+            chunkPos = new float3(ChunkPosition),
             blockCount = world.blockTypes.Length,
+
             blockIdDatas = blockIdDatas,
             blockVisibleSidesDatas = blockVisibleSidesDatas,
             blockIsSolidDatas = blockIsSolidDatas,
             translations = translations,
+
+            blockIdCounts = blockIdCount,
+
             triangles = triangles,
-            trianglesIndexes = trianglesIndexes,
+            triangleBlockIds = triangleBlockIds,
+
             uvs = uvs,
             vertices = vertices
         };
 
-        JobHandle jobHandle = generateMeshJob.Schedule();
-        jobHandle.Complete();
+        generateMeshRaw = generateMeshJob.Schedule();
+    }
 
-        blockVisibleSidesDatas.Dispose();
-        blockIsSolidDatas.Dispose();
-        blockIdDatas.Dispose();
-        translations.Dispose();
-
-        List<List<int>> tri = new List<List<int>>();
+    public void PlanGeneratingMeshLists()
+    {
+        generateMeshRaw.Complete();
+        generateMeshListJobs = new List<GenerateMeshListJob>(world.blockTypes.Length);
+        NativeArray<JobHandle> generateMeshListJobHandles = new NativeArray<JobHandle>(world.blockTypes.Length, Allocator.TempJob);
 
         for (int i = 0; i < world.blockTypes.Length; i++)
         {
-            tri.Add(new List<int>());
-            for (int j = 0; j < trianglesIndexes[i]; j++)
+            generateMeshListJobs.Add(new GenerateMeshListJob
             {
-                tri[i].Add(triangles[i + j * world.blockTypes.Length]);
-            }
+                triangles = generateMeshJob.triangles,
+                triangleBlockIds = generateMeshJob.triangleBlockIds,
+                blockMaxCount = generateMeshJob.blockIdCounts[i] * 3,
+
+                blockId = i,
+                filteredTriangles = new NativeArray<int>(generateMeshJob.blockIdCounts[i] * 3, Allocator.TempJob)
+            });
+
+            generateMeshListJobHandles[i] = generateMeshListJobs[i].Schedule(generateMeshRaw);
         }
 
-        triangles.Dispose();
-        trianglesIndexes.Dispose();
-
-        CreateMesh(tri, vertices, uvs);
+        generateMeshListDepedency = JobHandle.CombineDependencies(generateMeshListJobHandles);
+        generateMeshListJobHandles.Dispose(generateMeshListDepedency);
     }
-    protected void CreateMesh(List<List<int>> triangles, NativeArray<float3> vertices, NativeArray<float2> uvs)
+
+    public override void GenerateMeshWithJobsGetData()
+    {
+        if (!requireUpdate || !generateMeshRaw.IsCompleted)
+            return;
+
+        generateMeshRaw.Complete();
+
+        if (requireMeshLists)
+        {
+            PlanGeneratingMeshLists();
+            requireMeshLists = false;
+        }
+
+        if (!generateMeshListDepedency.IsCompleted)
+            return;
+
+        generateMeshListDepedency.Complete();
+
+
+        List<int[]> tri = new List<int[]>(world.blockTypes.Length);
+
+        for (int i = 0; i < world.blockTypes.Length; i++)
+        {
+            tri.Add(generateMeshListJobs[i].filteredTriangles.ToArray());
+            generateMeshListJobs[i].filteredTriangles.Dispose(generateMeshListDepedency);
+        }
+
+        generateMeshJob.blockVisibleSidesDatas.Dispose(generateMeshRaw);
+        generateMeshJob.blockIsSolidDatas.Dispose(generateMeshRaw);
+        generateMeshJob.blockIdDatas.Dispose(generateMeshRaw);
+        generateMeshJob.translations.Dispose(generateMeshRaw);
+
+        generateMeshJob.blockIdCounts.Dispose(generateMeshRaw);
+
+        generateMeshJob.triangleBlockIds.Dispose(generateMeshRaw);
+        generateMeshJob.triangles.Dispose(generateMeshRaw);
+
+        CreateMesh(tri, generateMeshJob.vertices, generateMeshJob.uvs);
+        requireUpdate = false;
+    }
+
+    protected void CreateMesh(List<int[]> triangles, NativeArray<float3> vertices, NativeArray<float2> uvs)
     {
         Mesh mesh = new Mesh
         {
@@ -221,7 +349,8 @@ public class ChunkEntities : ChunkCore
 
         for (int i = 0; i < world.blockTypes.Length; i++)
         {
-            mesh.SetTriangles(triangles[i].ToArray(), i, true, 0);
+            mesh.SetTriangles(triangles[i], i, true, 0);
+            //triangles[i].Dispose(generateMeshListDepedency);
         }
 
         mesh.RecalculateNormals();
@@ -234,8 +363,9 @@ public class ChunkEntities : ChunkCore
         }
         meshRenderer.materials = materials.ToArray();
 
-        vertices.Dispose();
-        uvs.Dispose();
+        //triangles.Dispose(generateMeshListDepedency);
+        vertices.Dispose(generateMeshListDepedency);
+        uvs.Dispose(generateMeshListDepedency);
     }
 
     private void PrepareData()

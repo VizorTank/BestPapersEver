@@ -18,7 +18,7 @@ public class WorldClass : MonoBehaviour
     public BlockType[] blockTypes;
     public int ChunkType = 1;
 
-    [SerializeField] public static readonly Vector3Int WorldSizeInChunks = new Vector3Int(3, 3, 3);
+    [SerializeField] public static readonly Vector3Int WorldSizeInChunks = new Vector3Int(8, 3, 8);
     public int ViewDistanceInChunks = 10;
     public static Vector3Int WorldSizeInVoxels
     {
@@ -44,7 +44,7 @@ public class WorldClass : MonoBehaviour
 
     private void Update()
     {
-        Vector3Int playerPos = GetPositionInChunks(player.position);
+        //Vector3Int playerPos = GetPositionInChunks(player.position);
         DrawWorldWithEntities();
         //if (playerLastChunkCoord != playerPos)
         //{
@@ -69,7 +69,12 @@ public class WorldClass : MonoBehaviour
             chunks[chunk.x, chunk.y, chunk.z].GenerateMeshWithJobs();
             //chunks[chunk.x, chunk.y, chunk.z].CreateMeshFromEntities();
         }
-        
+
+        foreach (Vector3Int chunk in activeChunks)
+        {
+            chunks[chunk.x, chunk.y, chunk.z].GenerateMeshWithJobsGetData();
+            //chunks[chunk.x, chunk.y, chunk.z].CreateMeshFromEntities();
+        }    
     }
 
     void GenerateWorld()

@@ -188,4 +188,9 @@ public class ChunkCore// : MonoBehaviour
     {
         DrawChunk();
     }
+
+    public virtual void GenerateMeshWithJobsGetData()
+    {
+
+    }
 }
