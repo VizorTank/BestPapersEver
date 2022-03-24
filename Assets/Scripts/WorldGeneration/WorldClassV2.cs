@@ -4,13 +4,13 @@ using UnityEngine;
 
 public class WorldClassV2 : MonoBehaviour
 {
-    public static int WorldCubeSize = 16;
+    public static int WorldCubeSize = 8;
     public static readonly Vector3Int WorldSizeInChunks = new Vector3Int(WorldCubeSize, 4, WorldCubeSize);
     public BlockType[] blockTypes;
     public List<Material> materials;
 
-    ChunkV4[,,] chunks = new ChunkV4[WorldSizeInChunks.x, WorldSizeInChunks.y, WorldSizeInChunks.z];
-    List<Vector3Int> activeChunks = new List<Vector3Int>();
+    private ChunkV4[,,] chunks = new ChunkV4[WorldSizeInChunks.x, WorldSizeInChunks.y, WorldSizeInChunks.z];
+    private List<Vector3Int> activeChunks = new List<Vector3Int>();
 
     // Start is called before the first frame update
     void Start()

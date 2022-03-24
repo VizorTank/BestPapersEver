@@ -10,7 +10,7 @@ public class ChunkInitializationSystem : SystemBase
 {
     private BeginInitializationEntityCommandBufferSystem BeginEntityCommandBufferSystem;
     private EndInitializationEntityCommandBufferSystem EndEntityCommandBufferSystem;
-    private int3 ChunkSize;// = new int3(4, 4, 4);
+    private int3 ChunkSize = ChunkV4.Size;
 
     private NativeArray<Translation> translations;
 
@@ -41,7 +41,6 @@ public class ChunkInitializationSystem : SystemBase
 
     protected override void OnCreate()
     {
-        ChunkSize = new int3(ChunkCore.Size.x, ChunkCore.Size.y, ChunkCore.Size.z);
         BeginEntityCommandBufferSystem = World.GetOrCreateSystem<BeginInitializationEntityCommandBufferSystem>();
         EndEntityCommandBufferSystem = World.GetOrCreateSystem<EndInitializationEntityCommandBufferSystem>();
 

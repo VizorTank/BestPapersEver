@@ -22,7 +22,7 @@ public class ChunkV4
     private Entity chunkEntity;
     private EntityManager entityManager;
 
-    public static int cubeSize = 32;
+    public static int cubeSize = 16;
     public static int3 Size = new int3(cubeSize, cubeSize, cubeSize);
 
     private static EntityQueryDesc chunkRequireUpdate = new EntityQueryDesc()

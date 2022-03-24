@@ -7,6 +7,7 @@ using Unity.Transforms;
 public class ChunkGeneratingWorldSystem : SystemBase
 {
     private EndInitializationEntityCommandBufferSystem EntityCommandBufferSystem;
+    private int3 ChunkSize = ChunkV4.Size;
 
     protected override void OnCreate()
     {
@@ -17,7 +18,7 @@ public class ChunkGeneratingWorldSystem : SystemBase
     {
         var commandBuffer = EntityCommandBufferSystem.CreateCommandBuffer().AsParallelWriter();
 
-        int3 chunkSize = new int3(ChunkEntities.Size.x, ChunkEntities.Size.y, ChunkEntities.Size.z);
+        int3 chunkSize = ChunkSize;
         float scale = 0.2f;
         float offset = 0;
         int terrainHeightDifference = 48;
