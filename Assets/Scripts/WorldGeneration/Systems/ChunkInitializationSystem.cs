@@ -109,37 +109,37 @@ public class ChunkInitializationSystem : SystemBase
         }
     }
 
-    private struct LinkBlocksJob : IJob
-    {
-        [ReadOnly] public NativeArray<int3> neighbours;
-        [ReadOnly] public NativeArray<Entity> blocks;
-        [ReadOnly] public int3 chunkSize;
-        public EntityCommandBuffer.ParallelWriter commandBuffer;
-        public void Execute()
-        {
-            // TODO: Export result as array and SetComponent in batches
-            for (int x = 0; x < chunkSize.x; x++)
-            {
-                for (int y = 0; y < chunkSize.y; y++)
-                {
-                    for (int z = 0; z < chunkSize.z; z++)
-                    {
-                        BlockNeighboursData blockNeighboursData = new BlockNeighboursData();
-                        for (int i = 0; i < 6; i++)
-                        {
-                            int3 neighbourPos = new int3(x, y, z) + neighbours[i];
-                            if (!(neighbourPos.x < 0 || neighbourPos.x >= chunkSize.x ||
-                                    neighbourPos.y < 0 || neighbourPos.y >= chunkSize.y ||
-                                    neighbourPos.z < 0 || neighbourPos.z >= chunkSize.z))
-                                blockNeighboursData[i] = blocks[neighbourPos.x + (neighbourPos.y + neighbourPos.z * chunkSize.y) * chunkSize.x];
-                        }
-                        commandBuffer.SetComponent(0, blocks[x + (y + z * chunkSize.y) * chunkSize.x], blockNeighboursData);
-                        //commandBuffer.SetComponent(0, blocks[x + (y + z * chunkSize.y) * chunkSize.x], new Translation { Value = new float3(x, y, z) });
-                    }
-                }
-            }
-        }
-    }
+    //private struct LinkBlocksJob : IJob
+    //{
+    //    [ReadOnly] public NativeArray<int3> neighbours;
+    //    [ReadOnly] public NativeArray<Entity> blocks;
+    //    [ReadOnly] public int3 chunkSize;
+    //    public EntityCommandBuffer.ParallelWriter commandBuffer;
+    //    public void Execute()
+    //    {
+    //        // TODO: Export result as array and SetComponent in batches
+    //        for (int x = 0; x < chunkSize.x; x++)
+    //        {
+    //            for (int y = 0; y < chunkSize.y; y++)
+    //            {
+    //                for (int z = 0; z < chunkSize.z; z++)
+    //                {
+    //                    BlockNeighboursData blockNeighboursData = new BlockNeighboursData();
+    //                    for (int i = 0; i < 6; i++)
+    //                    {
+    //                        int3 neighbourPos = new int3(x, y, z) + neighbours[i];
+    //                        if (!(neighbourPos.x < 0 || neighbourPos.x >= chunkSize.x ||
+    //                                neighbourPos.y < 0 || neighbourPos.y >= chunkSize.y ||
+    //                                neighbourPos.z < 0 || neighbourPos.z >= chunkSize.z))
+    //                            blockNeighboursData[i] = blocks[neighbourPos.x + (neighbourPos.y + neighbourPos.z * chunkSize.y) * chunkSize.x];
+    //                    }
+    //                    commandBuffer.SetComponent(0, blocks[x + (y + z * chunkSize.y) * chunkSize.x], blockNeighboursData);
+    //                    //commandBuffer.SetComponent(0, blocks[x + (y + z * chunkSize.y) * chunkSize.x], new Translation { Value = new float3(x, y, z) });
+    //                }
+    //            }
+    //        }
+    //    }
+    //}
 
     protected override void OnUpdate()
     {

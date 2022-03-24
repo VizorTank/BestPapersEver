@@ -18,9 +18,9 @@ public class ChunkGeneratingWorldSystem : SystemBase
         var commandBuffer = EntityCommandBufferSystem.CreateCommandBuffer().AsParallelWriter();
 
         int3 chunkSize = new int3(ChunkEntities.Size.x, ChunkEntities.Size.y, ChunkEntities.Size.z);
-        float scale = 0.5f;
+        float scale = 0.2f;
         float offset = 0;
-        int terrainHeightDifference = 16;
+        int terrainHeightDifference = 48;
         int terrainSolidGround = 16;
 
         JobHandle jobHandle = Entities

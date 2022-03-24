@@ -1,4 +1,5 @@
 using Unity.Mathematics;
+using UnityEngine.Rendering;
 
 public static class VoxelDataV2
 {
@@ -43,4 +44,12 @@ public static class VoxelDataV2
         new float2(1.0f, 0.0f),
         new float2(1.0f, 1.0f)
     };
+
+    public static VertexAttributeDescriptor[] layoutVertex = new VertexAttributeDescriptor[]
+    {
+        new VertexAttributeDescriptor(VertexAttribute.Position, VertexAttributeFormat.Float32, 3),
+        new VertexAttributeDescriptor(VertexAttribute.TexCoord0, VertexAttributeFormat.Float32, 2)
+    };
+
+    public static int[] triangleOrder = new[] { 0, 1, 2, 2, 1, 3 };
 }

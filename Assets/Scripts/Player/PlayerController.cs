@@ -14,7 +14,7 @@ public class PlayerController : MonoBehaviour
 
     Vector3 input;
     Vector2 mouseInput;
-    Vector3 velocity;
+    Vector3 velocity = Vector3.zero;
     Vector3 move;
 
     void Update()

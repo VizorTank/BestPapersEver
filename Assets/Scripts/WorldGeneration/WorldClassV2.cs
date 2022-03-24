@@ -4,8 +4,8 @@ using UnityEngine;
 
 public class WorldClassV2 : MonoBehaviour
 {
-    public static int WorldCubeSize = 3;
-    public static readonly Vector3Int WorldSizeInChunks = new Vector3Int(WorldCubeSize, 3, WorldCubeSize);
+    public static int WorldCubeSize = 16;
+    public static readonly Vector3Int WorldSizeInChunks = new Vector3Int(WorldCubeSize, 4, WorldCubeSize);
     public BlockType[] blockTypes;
     public List<Material> materials;
 
@@ -39,10 +39,25 @@ public class WorldClassV2 : MonoBehaviour
 
         foreach (Vector3Int chunk in activeChunks)
         {
-            chunks[chunk.x, chunk.y, chunk.z].GenerateMeshWithJobsGetData();
+            chunks[chunk.x, chunk.y, chunk.z].GenerateMeshWithJobsGetData2();
             //chunks[chunk.x, chunk.y, chunk.z].CreateMeshFromEntities();
         }
     }
+
+    void OnDestroy()
+    {
+        for (int x = 0; x < WorldSizeInChunks.x; x++)
+        {
+            for (int y = 0; y < WorldSizeInChunks.y; y++)
+            {
+                for (int z = 0; z < WorldSizeInChunks.z; z++)
+                {
+                    chunks[x, y, z].Destroy();
+                }
+            }
+        }
+    }
+
 
     private void GenerateWorld()
     {
