@@ -4,9 +4,10 @@ using UnityEngine;
 
 public class WorldClassV2 : MonoBehaviour
 {
-    public static int WorldCubeSize = 8;
+    public static int WorldCubeSize = 3;
     public static readonly Vector3Int WorldSizeInChunks = new Vector3Int(WorldCubeSize, 3, WorldCubeSize);
     public BlockType[] blockTypes;
+    public List<Material> materials;
 
     ChunkV4[,,] chunks = new ChunkV4[WorldSizeInChunks.x, WorldSizeInChunks.y, WorldSizeInChunks.z];
     List<Vector3Int> activeChunks = new List<Vector3Int>();
@@ -14,6 +15,11 @@ public class WorldClassV2 : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        materials = new List<Material>();
+        foreach (var item in blockTypes)
+        {
+            materials.Add(item.material);
+        }
         GenerateWorld();
     }
 

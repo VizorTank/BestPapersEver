@@ -7,6 +7,7 @@ using Unity.Jobs;
 using Unity.Mathematics;
 using Unity.Transforms;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 public class ChunkV4
 {
@@ -23,17 +24,6 @@ public class ChunkV4
 
     public static int cubeSize = 16;
     public static int3 Size = new int3(cubeSize, cubeSize, cubeSize);
-
-    // Back Front Top Bottom Left Right
-    private static int3[] Neighbours = new int3[]
-    {
-        new int3(0, 0, -1),
-        new int3(0, 0, 1),
-        new int3(0, 1, 0),
-        new int3(0, -1, 0),
-        new int3(-1, 0, 0),
-        new int3(1, 0, 0),
-    };
 
     private static EntityQueryDesc chunkRequireUpdate = new EntityQueryDesc()
     {
@@ -56,6 +46,13 @@ public class ChunkV4
         }
     };
 
+    // Back Front Top Bottom Left Right
+    private NativeArray<int3> voxelNeighbours;
+    private NativeArray<float3> voxelVerts;
+    private int voxelTrisSize;
+    private NativeArray<int> voxelTris;
+    private NativeArray<float2> voxelUvs;
+
     // Maybe Delete this
     private bool requireUpdate;
     private bool requireMeshLists;
@@ -63,6 +60,10 @@ public class ChunkV4
     private JobHandle generateMeshRaw;
     private List<GenerateMeshListJob> generateMeshListJobs;
     private JobHandle generateMeshListDepedency;
+
+    // Version 2
+    private CreateMeshJob createMeshJob;
+    private JobHandle createHeshJobHandle;
 
     public float3 ChunkPosition
     {
@@ -91,8 +92,23 @@ public class ChunkV4
                     typeof(MeshRenderer),
                     typeof(ChunkRequirePopulateTag));
         chunkEntity = InstatiateEntity(ChunkPosition, chunkArchetype);
+
+        voxelNeighbours = new NativeArray<int3>(VoxelDataV2.voxelNeighbours, Allocator.Persistent);
+        voxelVerts = new NativeArray<float3>(VoxelDataV2.voxelVerts, Allocator.Persistent);
+        voxelUvs = new NativeArray<float2>(VoxelDataV2.voxelUvs, Allocator.Persistent);
+        voxelTris = new NativeArray<int>(VoxelDataV2.voxelTris, Allocator.Persistent);
+        voxelTrisSize = VoxelDataV2.voxelTrisSize;
     }
 
+    ~ChunkV4()
+    {
+        voxelNeighbours.Dispose();
+        voxelVerts.Dispose();
+        voxelUvs.Dispose();
+        voxelTris.Dispose();
+    }
+
+    //[BurstCompile]
     public struct GenerateMeshJob : IJob
     {
         [ReadOnly] public NativeArray<BlockVisibleSidesData> blockVisibleSidesDatas;
@@ -111,7 +127,11 @@ public class ChunkV4
         public int triangleIndex;
         public NativeArray<int> triangles;
 
-        public static int3[] neighbours = Neighbours;
+        [ReadOnly] public NativeArray<int3> neighbours;
+        [ReadOnly] public NativeArray<float3> voxelVerts;
+        [ReadOnly] public NativeArray<int> voxelTris;
+        [ReadOnly] public int voxelTrisSize;
+        [ReadOnly] public NativeArray<float2> voxelUvs;
         [ReadOnly] public float3 chunkPos;
         [ReadOnly] public int blockCount;
 
@@ -130,8 +150,8 @@ public class ChunkV4
                             for (int k = 0; k < 4; k++)
                             {
                                 // TODO: Remove VoxelData
-                                vertices[vertexIndex + k] = position + new float3(VoxelData.voxelVerts[VoxelData.voxelTris[j, k]]);
-                                uvs[vertexIndex + k] = VoxelData.voxelUvs[k];
+                                vertices[vertexIndex + k] = position + new float3(voxelVerts[voxelTris[j * voxelTrisSize + k]]);
+                                uvs[vertexIndex + k] = voxelUvs[k];
                             }
                             blockIdCounts[blockID]++;
                             triangleBlockIds[triangleBlockIdIndex++] = blockID;
@@ -233,6 +253,12 @@ public class ChunkV4
             chunkPos = new float3(ChunkPosition),
             blockCount = world.blockTypes.Length,
 
+            neighbours = voxelNeighbours,
+            voxelTris = voxelTris,
+            voxelTrisSize = voxelTrisSize,
+            voxelUvs = voxelUvs,
+            voxelVerts = voxelVerts,
+
             blockIdDatas = blockIdDatas,
             blockVisibleSidesDatas = blockVisibleSidesDatas,
             blockIsSolidDatas = blockIsSolidDatas,
@@ -248,6 +274,152 @@ public class ChunkV4
         };
 
         generateMeshRaw = generateMeshJob.Schedule();
+    }
+
+    private void PrepareMeshWithJobsGetData2(EntityQuery entityQuery)
+    {
+        NativeArray<BlockVisibleSidesData> blockVisibleSidesDatas = entityQuery.ToComponentDataArray<BlockVisibleSidesData>(Allocator.TempJob);
+        NativeArray<BlockIsSolidData> blockIsSolidDatas = entityQuery.ToComponentDataArray<BlockIsSolidData>(Allocator.TempJob);
+        NativeArray<BlockIdData> blockIdDatas = entityQuery.ToComponentDataArray<BlockIdData>(Allocator.TempJob);
+        NativeArray<Translation> translations = entityQuery.ToComponentDataArray<Translation>(Allocator.TempJob);
+
+        createMeshJob = new CreateMeshJob
+        {
+            chunkPos = new float3(ChunkPosition),
+            blockTypesCount = world.blockTypes.Length,
+
+            neighbours = voxelNeighbours,
+            voxelTris = voxelTris,
+            voxelTrisSize = voxelTrisSize,
+            voxelUvs = voxelUvs,
+            voxelVerts = voxelVerts,
+
+            blockIdDatas = blockIdDatas,
+            blockVisibleSidesDatas = blockVisibleSidesDatas,
+            blockIsSolidDatas = blockIsSolidDatas,
+            translations = translations
+        };
+
+        createHeshJobHandle = createMeshJob.Schedule();
+    }
+
+    public struct CreateMeshJob : IJob
+    {
+        // Input data
+        [ReadOnly] public NativeArray<BlockVisibleSidesData> blockVisibleSidesDatas;
+        [ReadOnly] public NativeArray<BlockIsSolidData> blockIsSolidDatas;
+        [ReadOnly] public NativeArray<BlockIdData> blockIdDatas;
+        [ReadOnly] public NativeArray<Translation> translations;
+
+        //public int vertexIndex;
+        //public NativeArray<float3> vertices;
+        //public NativeArray<float2> uvs;
+
+        //public NativeArray<int> blockIdCounts;
+
+        //public int triangleBlockIdIndex;
+        //public NativeArray<int> triangleBlockIds;
+        //public int triangleIndex;
+        //public NativeArray<int> triangles;
+
+        // Static values
+        // Block attributes
+        [ReadOnly] public NativeArray<int3> neighbours;
+        [ReadOnly] public NativeArray<float3> voxelVerts;
+        [ReadOnly] public NativeArray<int> voxelTris;
+        [ReadOnly] public int voxelTrisSize;
+        [ReadOnly] public NativeArray<float2> voxelUvs;
+
+        // Block type count
+        [ReadOnly] public int blockTypesCount;
+
+        // Chunk position
+        [ReadOnly] public float3 chunkPos;
+
+        // Output mesh
+        public Mesh.MeshData data;
+
+        public void Execute()
+        {
+            NativeArray<int> blockCountPerType = new NativeArray<int>(blockTypesCount, Allocator.Temp);
+            int sidesCount = 0;
+            for (int i = 0; i < blockIdDatas.Length; i++)
+            {
+                if (blockIsSolidDatas[i].Value)
+                {
+                    for (int j = 0; j < 6; j++)
+                    {
+                        if (blockVisibleSidesDatas[i][j])
+                        {
+                            sidesCount++;
+                            blockCountPerType[blockIdDatas[i].Value]++;
+                        }
+                    }
+                }
+            }
+
+            NativeArray<int> blockCountPerTypeSum = new NativeArray<int>(blockTypesCount, Allocator.Temp);
+
+            int sumOfPreviousBlocksTypes = 0;
+            for (int i = 0; i < blockTypesCount; i++)
+            {
+                blockCountPerTypeSum[i] = sumOfPreviousBlocksTypes;
+                sumOfPreviousBlocksTypes += blockCountPerType[i];
+            }
+
+            var layout = new[]
+            {
+                new VertexAttributeDescriptor(VertexAttribute.Position, VertexAttributeFormat.Float32, 3),
+                new VertexAttributeDescriptor(VertexAttribute.TexCoord0, VertexAttributeFormat.Float32, 2)
+            };
+
+            data.SetVertexBufferParams(sidesCount * 4, layout);
+            NativeArray<VertexPositionUvStruct> vertex = data.GetVertexData<VertexPositionUvStruct>();
+
+            data.SetIndexBufferParams(sidesCount * 6, IndexFormat.UInt32);
+            NativeArray<int> indexes = data.GetIndexData<int>();
+
+            NativeArray<int> triangleIndexes = new NativeArray<int>(blockTypesCount, Allocator.Temp);
+            int vertexIndex = 0;
+            for (int i = 0; i < blockIdDatas.Length; i++)
+            {
+                if (blockIsSolidDatas[i].Value)
+                {
+                    for (int j = 0; j < 6; j++)
+                    {
+                        if (blockVisibleSidesDatas[i][j])
+                        {
+                            int blockID = blockIdDatas[i].Value;
+                            float3 position = translations[i].Value - chunkPos;
+                            for (int k = 0; k < 4; k++)
+                            {
+                                vertex[vertexIndex + k] = new VertexPositionUvStruct
+                                {
+                                    pos = position + voxelVerts[voxelTris[j * voxelTrisSize + k]],
+                                    uv = voxelUvs[k]
+                                };
+                            }
+                            int[] triangleOrder = new int[] { 0, 1, 2, 2, 1, 3 };
+                            for (int k = 0; k < 6; k++)
+                            {
+                                indexes[blockCountPerTypeSum[blockID] + triangleIndexes[blockID]++] = vertexIndex + triangleOrder[k];
+                            }
+                            vertexIndex += 4;
+                        }
+                    }
+                }
+            }
+
+            data.subMeshCount = blockTypesCount;
+            for (int i = 0; i < blockTypesCount; i++)
+            {
+                data.SetSubMesh(i, new SubMeshDescriptor(blockCountPerTypeSum[i], triangleIndexes[i]));
+            }
+
+            blockCountPerTypeSum.Dispose();
+            triangleIndexes.Dispose();
+            blockCountPerType.Dispose();
+        }
     }
 
     public void PlanGeneratingMeshLists()
@@ -312,7 +484,7 @@ public class ChunkV4
         generateMeshJob.triangleBlockIds.Dispose(generateMeshRaw);
         generateMeshJob.triangles.Dispose(generateMeshRaw);
 
-        CreateMesh(tri, generateMeshJob.vertices, generateMeshJob.uvs);
+        CreateMesh2(tri, generateMeshJob.vertices, generateMeshJob.uvs);
         requireUpdate = false;
     }
 
@@ -340,6 +512,87 @@ public class ChunkV4
             materials.Add(item.material);
         }
         meshRenderer.materials = materials.ToArray();
+
+        //triangles.Dispose(generateMeshListDepedency);
+        vertices.Dispose(generateMeshListDepedency);
+        uvs.Dispose(generateMeshListDepedency);
+    }
+
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+    private struct VertexPositionUvStruct
+    {
+        public float3 pos;
+        public float2 uv;
+    }
+
+    protected void CreateMesh2(List<int[]> triangles, NativeArray<float3> vertices, NativeArray<float2> uvs)
+    {
+        Mesh.MeshDataArray dataArray = Mesh.AllocateWritableMeshData(1);
+        Mesh.MeshData data = dataArray[0];
+
+        var layout = new[]
+        {
+            new VertexAttributeDescriptor(VertexAttribute.Position, VertexAttributeFormat.Float32, 3),
+            new VertexAttributeDescriptor(VertexAttribute.TexCoord0, VertexAttributeFormat.Float32, 2)
+        };
+
+        data.SetVertexBufferParams(vertices.Length, layout);
+        NativeArray<VertexPositionUvStruct> pos = data.GetVertexData<VertexPositionUvStruct>();
+
+        for (int i = 0; i < vertices.Length; i++)
+        {
+            pos[i] = new VertexPositionUvStruct
+            {
+                pos = vertices[i],
+                uv = uvs[i]
+            };
+        }
+
+        int triangleCount = 0;
+        List<int> tri = new List<int>();
+        List<int> meshStartIndex = new List<int>();
+        for (int i = 0; i < triangles.Count; i++)
+        {
+            meshStartIndex.Add(triangleCount);
+            triangleCount += triangles[i].Length;
+            for (int j = 0; j < triangles[i].Length; j++)
+            {
+                tri.Add(triangles[i][j]);
+            }
+        }
+
+        data.SetIndexBufferParams(triangleCount, IndexFormat.UInt32);
+
+        var indexes = data.GetIndexData<int>();
+        for (int i = 0; i < triangleCount; i++)
+        {
+            indexes[i] = tri[i];
+        }
+
+        data.subMeshCount = meshStartIndex.Count;
+        for (int i = 0; i < meshStartIndex.Count; i++)
+        {
+            data.SetSubMesh(i, new SubMeshDescriptor(meshStartIndex[i], triangles[i].Length));
+        }
+
+        Mesh mesh = new Mesh();
+
+        Mesh.ApplyAndDisposeWritableMeshData(dataArray, mesh);
+
+        //mesh.uv = uvs.Reinterpret<Vector2>().ToArray();
+
+        //for (int i = 0; i < world.blockTypes.Length; i++)
+        //{
+        //    mesh.SetTriangles(triangles[i], i, true, 0);
+        //    //triangles[i].Dispose(generateMeshListDepedency);
+        //}
+
+        mesh.RecalculateNormals();
+        mesh.RecalculateBounds();
+
+        meshFilter.mesh = mesh;
+        
+        meshRenderer.materials = world.materials.ToArray();
 
         //triangles.Dispose(generateMeshListDepedency);
         vertices.Dispose(generateMeshListDepedency);
