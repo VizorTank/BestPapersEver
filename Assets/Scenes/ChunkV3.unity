@@ -249,7 +249,7 @@ MonoBehaviour:
   generateWorldShader: {fileID: 0}
   createMeshShader: {fileID: 0}
   blockEntityPrefab: {fileID: 7581761257826313151, guid: 96d3e58dc30dd4f4092e4a1afee3708c, type: 3}
-  player: {fileID: 2093534121}
+  player: {fileID: 0}
   biome: {fileID: 11400000, guid: 2afc7e5beb537324e9211a7524d0dd0c, type: 2}
   spawnChunk: {x: 0, y: 0, z: 0}
   blockTypes:
@@ -286,13 +286,8 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 2
+  m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!4 &2093534121 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 7894782443280209345, guid: 66a480f8c6f040f458fb5749266c35c8, type: 3}
-  m_PrefabInstance: {fileID: 7894782443075264104}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &7894782443075264104
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -306,7 +301,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7894782443280209345, guid: 66a480f8c6f040f458fb5749266c35c8, type: 3}
       propertyPath: m_RootOrder
-      value: 1
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 7894782443280209345, guid: 66a480f8c6f040f458fb5749266c35c8, type: 3}
       propertyPath: m_LocalPosition.x

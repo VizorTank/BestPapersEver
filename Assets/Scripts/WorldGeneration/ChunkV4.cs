@@ -11,6 +11,8 @@ using UnityEngine.Rendering;
 
 public class ChunkV4
 {
+    private float timeJobTook;
+
     private Vector3Int coordinates;
     private WorldClassV2 world;
 
@@ -109,11 +111,63 @@ public class ChunkV4
         triangleOrder.Dispose();
     }
 
-    public void GenerateMeshWithJobs()
+    private Entity[,,] blocks;
+
+    public int SetBlock(int3 position, int blockID)
+    {
+        if (blocks == null && entityManager.GetComponentCount(chunkEntity) < 5)
+        {
+            EntityQueryDesc entityQueryDesc = new EntityQueryDesc
+            {
+                All = new ComponentType[]
+                {
+                    ComponentType.ReadOnly<Translation>(),
+                    ComponentType.ReadOnly<BlockParentChunkData>()
+                }
+            };
+            EntityQuery entityQuery = entityManager.CreateEntityQuery(entityQueryDesc);
+            entityQuery.SetSharedComponentFilter(new BlockParentChunkData { Value = chunkEntity });
+            NativeArray<Translation> translations = entityQuery.ToComponentDataArray<Translation>(Allocator.Temp);
+            NativeArray<Entity> entities = entityQuery.ToEntityArray(Allocator.Temp);
+            blocks = new Entity[Size.x, Size.y, Size.z];
+            for (int i = 0; i < translations.Length; i++)
+            {
+                int3 pos = new int3(
+                    (int)math.floor(translations[i].Value.x),
+                    (int)math.floor(translations[i].Value.y),
+                    (int)math.floor(translations[i].Value.z)
+                    ) - (int3)math.floor(ChunkPosition);
+                blocks[pos.x, pos.y, pos.z] = entities[i];
+            }
+
+            translations.Dispose();
+            entities.Dispose();
+        }
+        if (blocks[position.x, position.y, position.z] == Entity.Null) return int.MaxValue;
+
+        Debug.Log("Block Placed at:" + string.Format("{0}, {1}, {2}", position.x, position.y, position.z));
+
+        int oldBlockID = entityManager.GetComponentData<BlockIdData>(blocks[position.x, position.y, position.z]).Value;
+        entityManager.SetComponentData(blocks[position.x, position.y, position.z], new BlockIdData { Value = blockID });
+        entityManager.SetComponentData(blocks[position.x, position.y, position.z], 
+            new BlockIsSolidData { Value = world.blockTypes[blockID].isSolid });
+        entityManager.AddComponent<BlockRequireUpdateTag>(blocks[position.x, position.y, position.z]);
+
+        if (position.x < Size.x - 1) entityManager.AddComponent<BlockRequireUpdateTag>(blocks[position.x + 1, position.y, position.z]);
+        if (position.x > 0) entityManager.AddComponent<BlockRequireUpdateTag>(blocks[position.x - 1, position.y, position.z]);
+        if (position.y > 0) entityManager.AddComponent<BlockRequireUpdateTag>(blocks[position.x, position.y - 1, position.z]);
+        if (position.y < Size.y - 1) entityManager.AddComponent<BlockRequireUpdateTag>(blocks[position.x, position.y + 1, position.z]);
+        if (position.z < Size.z - 1) entityManager.AddComponent<BlockRequireUpdateTag>(blocks[position.x, position.y, position.z + 1]);
+        if (position.z > 0) entityManager.AddComponent<BlockRequireUpdateTag>(blocks[position.x, position.y, position.z - 1]);
+
+        return oldBlockID;
+    }
+
+    public int GenerateMeshWithJobs()
     {
         if (requireUpdate)
-            return;
-
+            return 0;
+        int ret = 0;
         EntityQuery chunkUpdates = entityManager.CreateEntityQuery(chunkRequireUpdate);
         NativeArray<Entity> chunks = chunkUpdates.ToEntityArray(Allocator.Temp);
 
@@ -127,10 +181,12 @@ public class ChunkV4
             {
                 requireUpdate = true;
                 PrepareMeshWithJobsGetData2(entityQuery);
+                ret = 1;
             }
 
             entityManager.RemoveComponent<ChunkRequireUpdateTag>(chunkEntity);
         }
+        return ret;
     }
 
     private void PrepareMeshWithJobsGetData2(EntityQuery entityQuery)
@@ -176,6 +232,7 @@ public class ChunkV4
 
         // Schedule job
         createMeshJobHandle = createMeshJob.Schedule();
+        timeJobTook = Time.realtimeSinceStartup;
     }
 
     [BurstCompile]
@@ -292,13 +349,14 @@ public class ChunkV4
         }
     }
 
-    public void GenerateMeshWithJobsGetData2()
+    public float GenerateMeshWithJobsGetData2()
     {
         if (!requireUpdate || !createMeshJobHandle.IsCompleted)
-            return;
+            return 0f;
 
         requireUpdate = false;
-
+        float t = Time.realtimeSinceStartup - timeJobTook;
+        Debug.Log("Competed Job: " + t);
         createMeshJobHandle.Complete();
 
         Mesh mesh = new Mesh();
@@ -316,6 +374,7 @@ public class ChunkV4
         createMeshJob.blockIsSolidDatas.Dispose();
         createMeshJob.blockIdDatas.Dispose();
         createMeshJob.translations.Dispose();
+        return t;
     }
 
     private Entity InstatiateEntity(float3 position, EntityArchetype entityArchetype)

@@ -18,7 +18,7 @@ public class WorldClass : MonoBehaviour
     public BlockType[] blockTypes;
     public int ChunkType = 1;
 
-    [SerializeField] public static readonly Vector3Int WorldSizeInChunks = new Vector3Int(8, 3, 8);
+    [SerializeField] public static readonly Vector3Int WorldSizeInChunks = new Vector3Int(8, 1, 8);
     public int ViewDistanceInChunks = 10;
     public static Vector3Int WorldSizeInVoxels
     {

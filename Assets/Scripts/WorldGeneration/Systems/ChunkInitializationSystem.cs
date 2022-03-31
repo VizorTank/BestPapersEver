@@ -160,8 +160,8 @@ public class ChunkInitializationSystem : SystemBase
             typeof(BlockNeighboursData),
             typeof(BlockVisibleSidesData),
             typeof(BlockIsVisibleTag),
-            typeof(BlockGenerateDataTag),
-            typeof(BlockRequireUpdateTag)
+            typeof(BlockGenerateDataTag)//,
+            //typeof(BlockRequireUpdateTag)
             );
 
         var entityQueryDesc = new EntityQueryDesc

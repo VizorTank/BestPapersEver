@@ -21,8 +21,8 @@ public class ChunkGeneratingWorldSystem : SystemBase
         int3 chunkSize = ChunkSize;
         float scale = 0.2f;
         float offset = 0;
-        int terrainHeightDifference = 48;
-        int terrainSolidGround = 16;
+        int terrainHeightDifference = 4;
+        int terrainSolidGround = 12;
 
         JobHandle jobHandle = Entities
             .WithAll<BlockGenerateDataTag>()
@@ -55,6 +55,7 @@ public class ChunkGeneratingWorldSystem : SystemBase
                 blockIsSolid.Value = true;
 
             commandBuffer.RemoveComponent<BlockGenerateDataTag>(entityInQueryIndex, entity);
+            commandBuffer.AddComponent<BlockRequireUpdateTag>(entityInQueryIndex, entity);
         }).ScheduleParallel(Dependency);
 
         EntityCommandBufferSystem.AddJobHandleForProducer(jobHandle);

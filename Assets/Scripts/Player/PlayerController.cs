@@ -5,8 +5,10 @@ using UnityEngine;
 public class PlayerController : MonoBehaviour
 {
     public WorldClass world;
+    public WorldClassV2 WorldClassV2;
     public CharacterController CharacterController;
     public Transform Camera;
+    public Transform blockPlacement;
 
     public float mouseSensitivity = 100f;
     public float speed = 10;
@@ -35,6 +37,13 @@ public class PlayerController : MonoBehaviour
 
         mouseInput.x = Input.GetAxis("Mouse X");
         mouseInput.y = Input.GetAxis("Mouse Y");
+
+        if (WorldClassV2 != null && Input.GetAxis("Fire1") != 0)
+        {
+            int blockID = WorldClassV2.SetBlock(blockPlacement.position, 1);
+            Debug.Log("Replaced " + blockID);
+        }
+
     }
 
     void SetRotation()
