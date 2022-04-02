@@ -57,6 +57,7 @@ public class ChunkV4
     private NativeArray<int> voxelTris;
     private NativeArray<float2> voxelUvs;
     private NativeArray<VertexAttributeDescriptor> layout;
+    private 
 
     private bool requireUpdate;
 
@@ -319,6 +320,124 @@ public class ChunkV4
                         {
                             int blockID = blockIdDatas[i].Value;
                             float3 position = translations[i].Value - chunkPos;
+                            for (int k = 0; k < 4; k++)
+                            {
+                                vertex[vertexIndex + k] = new VertexPositionUvStruct
+                                {
+                                    pos = position + voxelVerts[voxelTris[j * voxelTrisSize + k]],
+                                    uv = voxelUvs[k]
+                                };
+                            }
+                            for (int k = 0; k < 6; k++)
+                            {
+                                indexes[trianglesCountPerTypeSum[blockID] + triangleIndexes[blockID]++] = vertexIndex + triangleOrder[k];
+                            }
+                            vertexIndex += 4;
+                        }
+                    }
+                }
+            }
+
+            data.subMeshCount = blockTypesCount;
+            for (int i = 0; i < blockTypesCount; i++)
+            {
+                data.SetSubMesh(i, new SubMeshDescriptor(trianglesCountPerTypeSum[i], triangleIndexes[i]));
+            }
+
+            trianglesCountPerTypeSum.Dispose();
+            triangleIndexes.Dispose();
+            sidesCountPerType.Dispose();
+        }
+    }
+
+    public struct CreateMeshJob2 : IJob
+    {
+        // Input data
+        //[ReadOnly] public NativeArray<BlockVisibleSidesData> blockVisibleSidesDatas;
+        //[ReadOnly] public NativeArray<BlockIsSolidData> blockIsSolidDatas;
+        [ReadOnly] public NativeArray<int> blockIdDatas;
+        //[ReadOnly] public NativeArray<Translation> translations;
+
+        // Static values
+        // Block attributes
+        [ReadOnly] public NativeArray<int3> neighbours;
+        [ReadOnly] public NativeArray<float3> voxelVerts;
+        [ReadOnly] public NativeArray<int> voxelTris;
+        [ReadOnly] public int voxelTrisSize;
+        [ReadOnly] public NativeArray<float2> voxelUvs;
+
+        // Order of vertices of triangles on side
+        [ReadOnly] public NativeArray<int> triangleOrder;
+
+        // Block type count
+        [ReadOnly] public int blockTypesCount;
+        [ReadOnly] public NativeArray<bool> blockTypesIsSold;
+
+        // Chunk position
+        [ReadOnly] public float3 chunkPos;
+        [ReadOnly] public int3 chunkSize;
+
+        // How data is inserted to MeshData
+        [ReadOnly] public NativeArray<VertexAttributeDescriptor> layout;
+
+        // Output mesh
+        public Mesh.MeshData data;
+
+        public void Execute()
+        {
+            // Count sides and sides per block type
+            NativeArray<int> sidesCountPerType = new NativeArray<int>(blockTypesCount, Allocator.Temp);
+            int sidesCount = 0;
+            for (int i = 0; i < blockIdDatas.Length; i++)
+            {
+                if (blockTypesIsSold[i])
+                {
+                    for (int j = 0; j < 6; j++)
+                    {
+                        if (blockVisibleSidesDatas[i][j])
+                        {
+                            sidesCount++;
+                            sidesCountPerType[blockIdDatas[i]]++;
+                        }
+                    }
+                }
+            }
+
+            // Table of sums of previous triangles
+            NativeArray<int> trianglesCountPerTypeSum = new NativeArray<int>(blockTypesCount, Allocator.Temp);
+            int sumOfPreviousTriangles = 0;
+            for (int i = 0; i < blockTypesCount; i++)
+            {
+                trianglesCountPerTypeSum[i] = sumOfPreviousTriangles;
+                sumOfPreviousTriangles += sidesCountPerType[i] * 6;
+            }
+
+            // Set data type and size for MeshData
+            data.SetVertexBufferParams(sidesCount * 4, layout);
+            NativeArray<VertexPositionUvStruct> vertex = data.GetVertexData<VertexPositionUvStruct>();
+
+            // Set index type and size for MeshData
+            data.SetIndexBufferParams(sidesCount * 6, IndexFormat.UInt32);
+            NativeArray<int> indexes = data.GetIndexData<int>();
+
+            // Indexes per Block Type
+            NativeArray<int> triangleIndexes = new NativeArray<int>(blockTypesCount, Allocator.Temp);
+            int vertexIndex = 0;
+
+            // Foreach block
+            for (int i = 0; i < blockIdDatas.Length; i++)
+            {
+                if (blockTypesIsSold[i])
+                {
+                    for (int j = 0; j < 6; j++)
+                    {
+                        if (blockVisibleSidesDatas[i][j])
+                        {
+                            int blockID = blockIdDatas[i];
+                            int x = i % chunkSize.x;
+                            int y = ((i - x) / chunkSize.x) % chunkSize.y;
+                            int z = (((i - x) / chunkSize.x) - y) / chunkSize.y;
+                            float3 position = new float3(x, y, z) - chunkPos;
                             for (int k = 0; k < 4; k++)
                             {
                                 vertex[vertexIndex + k] = new VertexPositionUvStruct

@@ -10,6 +10,8 @@ public class PlayerController : MonoBehaviour
     public Transform Camera;
     public Transform blockPlacement;
 
+    public int placingBlockID = 1;
+
     public float mouseSensitivity = 100f;
     public float speed = 10;
     public float gravity = -9.8f;
@@ -40,7 +42,7 @@ public class PlayerController : MonoBehaviour
 
         if (WorldClassV2 != null && Input.GetAxis("Fire1") != 0)
         {
-            int blockID = WorldClassV2.SetBlock(blockPlacement.position, 1);
+            int blockID = WorldClassV2.SetBlock(blockPlacement.position, placingBlockID);
             Debug.Log("Replaced " + blockID);
         }
 

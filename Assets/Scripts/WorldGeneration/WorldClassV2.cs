@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Collections;
 using UnityEngine;
 
 public class WorldClassV2 : MonoBehaviour
@@ -7,19 +8,27 @@ public class WorldClassV2 : MonoBehaviour
     public static int WorldCubeSize = 16;
     public static readonly Vector3Int WorldSizeInChunks = new Vector3Int(WorldCubeSize, 2, WorldCubeSize);
     public BlockType[] blockTypes;
-    public List<Material> materials;
+    public List<Material> materials
+    {
+        get => blockTypesDoP.materials;
+    }
 
     private ChunkV4[,,] chunks = new ChunkV4[WorldSizeInChunks.x, WorldSizeInChunks.y, WorldSizeInChunks.z];
     private List<Vector3Int> activeChunks = new List<Vector3Int>();
 
+    public BlockTypesDoP blockTypesDoP;
+
     // Start is called before the first frame update
     void Start()
     {
-        materials = new List<Material>();
-        foreach (var item in blockTypes)
-        {
-            materials.Add(item.material);
-        }
+        Cursor.lockState = CursorLockMode.Locked;
+        blockTypesDoP = new BlockTypesDoP(blockTypes);
+
+        //materials = new List<Material>();
+        //foreach (var item in blockTypes)
+        //{
+        //    materials.Add(item.material);
+        //}
         GenerateWorld();
     }
 
@@ -115,5 +124,29 @@ public class WorldClassV2 : MonoBehaviour
                 blockID);
         }
         return int.MaxValue;
+    }
+}
+
+public class BlockTypesDoP
+{
+    public List<string> names;
+    public NativeArray<bool> areSolid;
+    public List<Material> materials;
+
+    public BlockTypesDoP(BlockType[] blockTypes)
+    {
+        areSolid = new NativeArray<bool>(blockTypes.Length, Allocator.Persistent);
+        int i = 0;
+        foreach (BlockType blockType in blockTypes)
+        {
+            names.Add(blockType.name);
+            areSolid[i++] = blockType.isSolid;
+            materials.Add(blockType.material);
+        }
+    }
+
+    ~BlockTypesDoP()
+    {
+        areSolid.Dispose();
     }
 }
