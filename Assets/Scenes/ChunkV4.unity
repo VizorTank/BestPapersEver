@@ -355,6 +355,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7894782443280209346, guid: 66a480f8c6f040f458fb5749266c35c8, type: 3}
+      propertyPath: worldClass2
+      value: 
+      objectReference: {fileID: 1221451792}
+    - target: {fileID: 7894782443280209346, guid: 66a480f8c6f040f458fb5749266c35c8, type: 3}
       propertyPath: WorldClassV2
       value: 
       objectReference: {fileID: 1221451792}
@@ -419,4 +423,3 @@ MonoBehaviour:
   - name: Dirt
     material: {fileID: 2100000, guid: 3b05e92450f096f4fbb102ba7dad7592, type: 2}
     isSolid: 1
-  materials: []

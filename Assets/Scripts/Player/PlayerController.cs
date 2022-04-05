@@ -5,7 +5,8 @@ using UnityEngine;
 public class PlayerController : MonoBehaviour
 {
     public WorldClass world;
-    public WorldClassV2 WorldClassV2;
+    public WorldClassV2 worldClass2;
+    public WorldClassV3 worldClass3;
     public CharacterController CharacterController;
     public Transform Camera;
     public Transform blockPlacement;
@@ -40,9 +41,14 @@ public class PlayerController : MonoBehaviour
         mouseInput.x = Input.GetAxis("Mouse X");
         mouseInput.y = Input.GetAxis("Mouse Y");
 
-        if (WorldClassV2 != null && Input.GetAxis("Fire1") != 0)
+        if (worldClass2 != null && Input.GetAxis("Fire1") != 0)
         {
-            int blockID = WorldClassV2.SetBlock(blockPlacement.position, placingBlockID);
+            int blockID = worldClass2.SetBlock(blockPlacement.position, placingBlockID);
+            Debug.Log("Replaced " + blockID);
+        }
+        if (worldClass3 != null && Input.GetAxis("Fire1") != 0)
+        {
+            int blockID = worldClass3.SetBlock(blockPlacement.position, placingBlockID);
             Debug.Log("Replaced " + blockID);
         }
 
