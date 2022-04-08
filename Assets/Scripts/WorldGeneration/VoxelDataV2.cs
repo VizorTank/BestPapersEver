@@ -52,4 +52,11 @@ public static class VoxelDataV2
     };
 
     public static int[] triangleOrder = new[] { 0, 1, 2, 2, 1, 3 };
+
+    public static int3[] axisArray = new[]
+    {
+        new int3(0, 0, 1),
+        new int3(0, 1, 0),
+        new int3(1, 0, 0)
+    };
 }

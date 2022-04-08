@@ -1,19 +1,20 @@
 using System.Collections;
 using System.Collections.Generic;
 using Unity.Collections;
+using Unity.Mathematics;
 using UnityEngine;
 
 public class WorldClassV3 : MonoBehaviour
 {
-    public static int WorldCubeSize = 8;
-    public static readonly Vector3Int WorldSizeInChunks = new Vector3Int(WorldCubeSize, 2, WorldCubeSize);
+    public static int WorldCubeSize = 16;
+    public static readonly Vector3Int WorldSizeInChunks = new Vector3Int(WorldCubeSize, 16, WorldCubeSize);
     public BlockType[] blockTypes;
     public List<Material> materials
     {
         get => blockTypesDoP.materials;
     }
 
-    private ChunkV5[,,] chunks = new ChunkV5[WorldSizeInChunks.x, WorldSizeInChunks.y, WorldSizeInChunks.z];
+    private ChunkV6[,,] chunks = new ChunkV6[WorldSizeInChunks.x, WorldSizeInChunks.y, WorldSizeInChunks.z];
     private List<Vector3Int> activeChunks = new List<Vector3Int>();
 
     public BlockTypesDoP blockTypesDoP;
@@ -33,31 +34,24 @@ public class WorldClassV3 : MonoBehaviour
         DrawWorldWithEntities();
     }
 
-    float Total = 0;
-    int amount = 0;
-    bool started = false;
     private void DrawWorldWithEntities()
     {
-
-        foreach (ChunkV5 chunk in chunks)
+        foreach (ChunkV6 chunk in chunks)
         {
-            amount += chunk.GenerateMeshWithJobs();
+            chunk.GenerateClastersWithJobs();
         }
-        foreach (Vector3Int chunk in activeChunks)
+        foreach (ChunkV6 chunk in chunks)
         {
-            float a = chunks[chunk.x, chunk.y, chunk.z].GenerateMeshWithJobsGetData2();
-            Total += a;
-            if (a > 0)
-                amount -= 1;
+            chunk.CheckClusterVisibilityWithJobs();;
         }
-
-        if (amount == 0 && started)
+        foreach (ChunkV6 chunk in chunks)
         {
-            Debug.Log("Avg: " + (Total / (WorldSizeInChunks.x * WorldSizeInChunks.y * WorldSizeInChunks.z)));
-            amount--;
+            chunk.GenerateMeshWithJobs();
         }
-        if (amount > 0)
-            started = true;
+        foreach (ChunkV6 chunk in chunks)
+        {
+            chunk.LoadMesh();
+        }
     }
 
     void OnDestroy()
@@ -92,7 +86,7 @@ public class WorldClassV3 : MonoBehaviour
     void CreateNewChunk3(Vector3Int coordinates)
     {
         // TODO: Center of World in (0, 0)
-        chunks[coordinates.x, coordinates.y, coordinates.z] = new ChunkV5(coordinates, this);
+        chunks[coordinates.x, coordinates.y, coordinates.z] = new ChunkV6(coordinates, this);
         activeChunks.Add(coordinates);
     }
 
@@ -101,21 +95,43 @@ public class WorldClassV3 : MonoBehaviour
         Debug.Log("Block Placing");
         Vector3Int pos = new Vector3Int((int)position.x, (int)position.y, (int)position.z);
 
-        Vector3Int cPos = new Vector3Int(Mathf.FloorToInt((float)pos.x / ChunkV5.Size.x),
-            Mathf.FloorToInt((float)pos.y / ChunkV5.Size.y),
-            Mathf.FloorToInt((float)pos.z / ChunkV5.Size.z));
-        if (cPos.x < WorldSizeInChunks.x &&
-            cPos.y < WorldSizeInChunks.y &&
-            cPos.z < WorldSizeInChunks.z)
+        Vector3Int cPos = new Vector3Int(Mathf.FloorToInt((float)pos.x / ChunkV6.Size.x),
+            Mathf.FloorToInt((float)pos.y / ChunkV6.Size.y),
+            Mathf.FloorToInt((float)pos.z / ChunkV6.Size.z));
+        if (cPos.x >= 0 && cPos.x < WorldSizeInChunks.x &&
+            cPos.y >= 0 && cPos.y < WorldSizeInChunks.y &&
+            cPos.z >= 0 && cPos.z < WorldSizeInChunks.z)
         {
             return chunks[cPos.x, cPos.y, cPos.z].SetBlock(
                 new Unity.Mathematics.int3(
-                    pos.x % ChunkV5.Size.x,
-                    pos.y % ChunkV5.Size.y,
-                    pos.z % ChunkV5.Size.z),
+                    pos.x % ChunkV6.Size.x,
+                    pos.y % ChunkV6.Size.y,
+                    pos.z % ChunkV6.Size.z),
                 blockID);
         }
-        return int.MaxValue;
+        return 0;
+    }
+
+    public int GetBlock(Vector3 position)
+    {
+        Vector3Int pos = new Vector3Int((int)position.x, (int)position.y, (int)position.z);
+
+        int3 chunkSize = ChunkV6.Size;
+
+        Vector3Int cPos = new Vector3Int(Mathf.FloorToInt((float)pos.x / chunkSize.x),
+            Mathf.FloorToInt((float)pos.y / chunkSize.y),
+            Mathf.FloorToInt((float)pos.z / chunkSize.z));
+        if (cPos.x >= 0 && cPos.x < WorldSizeInChunks.x &&
+            cPos.y >= 0 && cPos.y < WorldSizeInChunks.y &&
+            cPos.z >= 0 && cPos.z < WorldSizeInChunks.z)
+        {
+            return chunks[cPos.x, cPos.y, cPos.z].GetBlock(
+                new int3(
+                    pos.x % chunkSize.x,
+                    pos.y % chunkSize.y,
+                    pos.z % chunkSize.z));
+        }
+        return 0;
     }
 }
 

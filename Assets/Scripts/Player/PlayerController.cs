@@ -11,6 +11,11 @@ public class PlayerController : MonoBehaviour
     public Transform Camera;
     public Transform blockPlacement;
 
+    public Transform HighlightBlock;
+    public Transform HighlightPlaceBlock;
+    public float checkIncrement = 0.1f;
+    public float reach = 8f;
+
     public int placingBlockID = 1;
 
     public float mouseSensitivity = 100f;
@@ -24,6 +29,7 @@ public class PlayerController : MonoBehaviour
 
     void Update()
     {
+        PlaceCursorBlock();
         GetInput();
         SetRotation();
         move = (transform.right * input.x + transform.forward * input.z + transform.up * input.y) * Time.deltaTime * speed;
@@ -41,17 +47,59 @@ public class PlayerController : MonoBehaviour
         mouseInput.x = Input.GetAxis("Mouse X");
         mouseInput.y = Input.GetAxis("Mouse Y");
 
-        if (worldClass2 != null && Input.GetAxis("Fire1") != 0)
+        //if (worldClass2 != null && Input.GetAxis("Fire1") != 0)
+        //{
+        //    int blockID = worldClass2.SetBlock(blockPlacement.position, placingBlockID);
+        //    Debug.Log("Replaced " + blockID);
+        //}
+        //if (worldClass3 != null && Input.GetAxis("Fire1") != 0)
+        //{
+        //    int blockID = worldClass3.SetBlock(blockPlacement.position, placingBlockID);
+        //    Debug.Log("Replaced " + blockID);
+        //}
+
+        float scroll = Input.GetAxis("Mouse ScrollWheel");
+        if (scroll != 0)
         {
-            int blockID = worldClass2.SetBlock(blockPlacement.position, placingBlockID);
-            Debug.Log("Replaced " + blockID);
-        }
-        if (worldClass3 != null && Input.GetAxis("Fire1") != 0)
-        {
-            int blockID = worldClass3.SetBlock(blockPlacement.position, placingBlockID);
-            Debug.Log("Replaced " + blockID);
+            placingBlockID += scroll > 0 ? 1 : -1;
+            if (placingBlockID >= worldClass3.materials.Count) placingBlockID = 1;
+            if (placingBlockID <= 0) placingBlockID = worldClass3.materials.Count - 1;
         }
 
+        if (HighlightBlock.gameObject.activeSelf)
+        {
+            if (Input.GetMouseButtonDown(0))
+                worldClass3.SetBlock(HighlightBlock.position, 0);
+            if (Input.GetMouseButtonDown(1))
+                worldClass3.SetBlock(HighlightPlaceBlock.position, placingBlockID);
+        }
+    }
+
+    private void PlaceCursorBlock()
+    {
+        float step = checkIncrement;
+
+        Vector3 lastPos = Camera.position;
+
+        while (step < reach)
+        {
+            Vector3 pos = Camera.position + Camera.forward * step;
+
+            if (worldClass3.GetBlock(pos) != 0)
+            {
+                HighlightBlock.position = new Vector3(Mathf.Floor(pos.x), Mathf.Floor(pos.y), Mathf.Floor(pos.z));
+                HighlightBlock.gameObject.SetActive(true);
+
+                HighlightPlaceBlock.position = new Vector3(Mathf.Floor(lastPos.x), Mathf.Floor(lastPos.y), Mathf.Floor(lastPos.z));
+                HighlightPlaceBlock.gameObject.SetActive(true);
+
+                return;
+            }
+            lastPos = pos;
+            step += checkIncrement;
+        }
+        HighlightBlock.gameObject.SetActive(false); 
+        HighlightPlaceBlock.gameObject.SetActive(false);
     }
 
     void SetRotation()
