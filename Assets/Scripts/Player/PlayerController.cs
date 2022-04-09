@@ -5,7 +5,7 @@ using UnityEngine.UI;
 
 public class PlayerController : MonoBehaviour
 {
-    public WorldClass worldClass3;
+    public WorldClass worldClass;
     public CharacterController CharacterController;
     public Transform Camera;
     public Transform blockPlacement;
@@ -51,18 +51,18 @@ public class PlayerController : MonoBehaviour
         if (scroll != 0)
         {
             placingBlockID += scroll > 0 ? 1 : -1;
-            if (placingBlockID >= worldClass3.materials.Count) placingBlockID = 1;
-            if (placingBlockID <= 0) placingBlockID = worldClass3.materials.Count - 1;
+            if (placingBlockID >= worldClass.materials.Count) placingBlockID = 1;
+            if (placingBlockID <= 0) placingBlockID = worldClass.materials.Count - 1;
 
-            BlockDisplay.text = "Selected: " + worldClass3.blockTypesDoP.names[placingBlockID];
+            BlockDisplay.text = "Selected: " + worldClass.blockTypesDoP.names[placingBlockID];
         }
 
         if (HighlightBlock.gameObject.activeSelf)
         {
             if (Input.GetMouseButtonDown(0))
-                worldClass3.SetBlock(HighlightBlock.position, 0);
+                worldClass.SetBlock(HighlightBlock.position, 0);
             if (Input.GetMouseButtonDown(1))
-                worldClass3.SetBlock(HighlightPlaceBlock.position, placingBlockID);
+                worldClass.SetBlock(HighlightPlaceBlock.position, placingBlockID);
         }
     }
 
@@ -76,7 +76,7 @@ public class PlayerController : MonoBehaviour
         {
             Vector3 pos = Camera.position + Camera.forward * step;
 
-            if (worldClass3.GetBlock(pos) != 0)
+            if (worldClass.GetBlock(pos) != 0)
             {
                 HighlightBlock.position = new Vector3(Mathf.Floor(pos.x), Mathf.Floor(pos.y), Mathf.Floor(pos.z));
                 HighlightBlock.gameObject.SetActive(true);

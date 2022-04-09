@@ -439,9 +439,13 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7894782443280209346, guid: 66a480f8c6f040f458fb5749266c35c8, type: 3}
+      propertyPath: reach
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 7894782443280209346, guid: 66a480f8c6f040f458fb5749266c35c8, type: 3}
       propertyPath: worldClass
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 531812168}
     - target: {fileID: 7894782443280209346, guid: 66a480f8c6f040f458fb5749266c35c8, type: 3}
       propertyPath: worldClass3
       value: 
