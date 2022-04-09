@@ -1,16 +1,16 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class PlayerController : MonoBehaviour
 {
-    public WorldClass world;
-    public WorldClassV2 worldClass2;
-    public WorldClassV3 worldClass3;
+    public WorldClass worldClass3;
     public CharacterController CharacterController;
     public Transform Camera;
     public Transform blockPlacement;
 
+    public Text BlockDisplay;
     public Transform HighlightBlock;
     public Transform HighlightPlaceBlock;
     public float checkIncrement = 0.1f;
@@ -47,23 +47,14 @@ public class PlayerController : MonoBehaviour
         mouseInput.x = Input.GetAxis("Mouse X");
         mouseInput.y = Input.GetAxis("Mouse Y");
 
-        //if (worldClass2 != null && Input.GetAxis("Fire1") != 0)
-        //{
-        //    int blockID = worldClass2.SetBlock(blockPlacement.position, placingBlockID);
-        //    Debug.Log("Replaced " + blockID);
-        //}
-        //if (worldClass3 != null && Input.GetAxis("Fire1") != 0)
-        //{
-        //    int blockID = worldClass3.SetBlock(blockPlacement.position, placingBlockID);
-        //    Debug.Log("Replaced " + blockID);
-        //}
-
         float scroll = Input.GetAxis("Mouse ScrollWheel");
         if (scroll != 0)
         {
             placingBlockID += scroll > 0 ? 1 : -1;
             if (placingBlockID >= worldClass3.materials.Count) placingBlockID = 1;
             if (placingBlockID <= 0) placingBlockID = worldClass3.materials.Count - 1;
+
+            BlockDisplay.text = "Selected: " + worldClass3.blockTypesDoP.names[placingBlockID];
         }
 
         if (HighlightBlock.gameObject.activeSelf)

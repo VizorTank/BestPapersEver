@@ -1,275 +1,137 @@
 using System.Collections;
 using System.Collections.Generic;
-using Unity.Entities;
+using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
 
 public class WorldClass : MonoBehaviour
 {
-    public int seed;
-
-    public ComputeShader generateWorldShader;
-    public ComputeShader createMeshShader;
-    public GameObject blockEntityPrefab;
-
-    public Transform player;
-    public BiomeAttributes biome;
-    public Vector3 spawnChunk;
+    public static int WorldCubeSize = 16;
+    public static readonly Vector3Int WorldSizeInChunks = new Vector3Int(WorldCubeSize, 16, WorldCubeSize);
     public BlockType[] blockTypes;
-    public int ChunkType = 1;
-
-    [SerializeField] public static readonly Vector3Int WorldSizeInChunks = new Vector3Int(8, 1, 8);
-    public int ViewDistanceInChunks = 10;
-    public static Vector3Int WorldSizeInVoxels
+    public List<Material> materials
     {
-        get { return Vector3Int.Scale(WorldSizeInChunks, ChunkCore.Size); }
+        get => blockTypesDoP.materials;
     }
 
-    ChunkCore[,,] chunks = new ChunkCore[WorldSizeInChunks.x, WorldSizeInChunks.y, WorldSizeInChunks.z];
-    List<Vector3Int> activeChunks = new List<Vector3Int>();
-    Vector3Int playerLastChunkCoord;
+    private Chunk[,,] chunks = new Chunk[WorldSizeInChunks.x, WorldSizeInChunks.y, WorldSizeInChunks.z];
+    private List<Vector3Int> activeChunks = new List<Vector3Int>();
 
-    public float NoiseOffset;
+    public BlockTypesDoP blockTypesDoP;
 
-    private void Start()
+    // Start is called before the first frame update
+    void Start()
     {
+        Cursor.lockState = CursorLockMode.Locked;
+        blockTypesDoP = new BlockTypesDoP(blockTypes);
 
-        UnityEngine.Random.InitState(seed);
-        NoiseOffset = UnityEngine.Random.Range(1000.0f, 1000.0f);
-        spawnChunk = new Vector3(WorldSizeInChunks.x / 2f, 0, WorldSizeInChunks.z / 2f);
-        player.position = spawnChunk * ChunkCore.Size.x + new Vector3(0, ChunkCore.Size.y * WorldSizeInChunks.y, 0);
         GenerateWorld();
-        //CreateNewChunk3(new Vector3Int(0, 0 ,0));
     }
 
-    private void Update()
+    // Update is called once per frame
+    void Update()
     {
-        //Vector3Int playerPos = GetPositionInChunks(player.position);
         DrawWorldWithEntities();
-        //if (playerLastChunkCoord != playerPos)
-        //{
-        //    DrawWorld();
-        //    playerLastChunkCoord = playerPos;
-        //}
-    }
-
-    void DrawWorld()
-    {
-        foreach (Vector3Int chunk in activeChunks)
-        {
-            chunks[chunk.x, chunk.y, chunk.z].DrawChunk();
-            //chunks[chunk.x, chunk.y, chunk.z].CreateMeshFromEntities();
-        }
     }
 
     private void DrawWorldWithEntities()
     {
-        foreach (Vector3Int chunk in activeChunks)
+        foreach (Chunk chunk in chunks)
         {
-            chunks[chunk.x, chunk.y, chunk.z].GenerateMeshWithJobs();
-            //chunks[chunk.x, chunk.y, chunk.z].CreateMeshFromEntities();
+            chunk.GenerateClastersWithJobs();
         }
-
-        foreach (Vector3Int chunk in activeChunks)
+        foreach (Chunk chunk in chunks)
         {
-            chunks[chunk.x, chunk.y, chunk.z].GenerateMeshWithJobsGetData();
-            //chunks[chunk.x, chunk.y, chunk.z].CreateMeshFromEntities();
-        }    
+            chunk.CheckClusterVisibilityWithJobs();;
+        }
+        foreach (Chunk chunk in chunks)
+        {
+            chunk.GenerateMeshWithJobs();
+        }
+        foreach (Chunk chunk in chunks)
+        {
+            chunk.LoadMesh();
+        }
     }
 
-    void GenerateWorld()
+    void OnDestroy()
     {
-        Vector3Int renderCenterPos = GetPositionInChunks(player.position);
-
-        //List<Vector3Int> previouslyActiveChunks = new List<Vector3Int>(activeChunks);
-
-        for (int x = renderCenterPos.x - ViewDistanceInChunks; x < renderCenterPos.x + ViewDistanceInChunks; x++)
+        for (int x = 0; x < WorldSizeInChunks.x; x++)
         {
             for (int y = 0; y < WorldSizeInChunks.y; y++)
             {
-                for (int z = renderCenterPos.z - ViewDistanceInChunks; z < renderCenterPos.z + ViewDistanceInChunks; z++)
+                for (int z = 0; z < WorldSizeInChunks.z; z++)
                 {
-                    Vector3Int coord = new Vector3Int(x, y, z);
-                    if (!isChunkInWorld(coord))
-                        continue;
-                    if (chunks[x, y, z] == null)
-                    {
-                        if (ChunkType == 1)
-                            CreateNewChunk(coord);
-                        if (ChunkType == 2)
-                            CreateNewChunk2(coord);
-                        if (ChunkType == 3)
-                        {
-                            CreateNewChunk3(coord);
-                            //activeChunks.Add(coord);
-                        }
-                    }
-                    else if (!chunks[x, y, z].IsActive)
-                    {
-                        chunks[x, y, z].IsActive = true;
-                        activeChunks.Add(coord);
-                    }
-                    /*
-                    for (int i = 0; i < previouslyActiveChunks.Count; i++)
-                    {
-                        if (previouslyActiveChunks[i] == coord)
-                            previouslyActiveChunks.RemoveAt(i);
-                    }
-                    //*/
+                    chunks[x, y, z].Destroy();
                 }
             }
         }
-        /*
-        foreach (Vector3Int chunk in previouslyActiveChunks)
-        {
-            chunks[chunk.x, chunk.y, chunk.z].IsActive = false;
-            activeChunks.Remove(chunk);
-        }
-        //*/
+        blockTypesDoP.Destroy();
     }
-
-    Vector3Int GetPositionInChunks(Vector3 position)
+    private void GenerateWorld()
     {
-        return new Vector3Int(Mathf.FloorToInt(position.x / ChunkCore.Size.x), Mathf.FloorToInt(position.y / ChunkCore.Size.y), Mathf.FloorToInt(position.z / ChunkCore.Size.z));
-    }
-
-    public byte GetVoxel(Vector3 position)
-    {
-        int yPos = Mathf.FloorToInt(position.y);
-        if (!isVoxelInWorld(position))
-            return 0;
-        if (yPos == 0)
-            return 1;
-
-        int terrainHeight = Mathf.FloorToInt(
-            Noise.Get2DPerlin(
-                new Vector2(position.x, position.z), NoiseOffset, biome.terrainSize)
-            * biome.terrainHeight) + biome.solidGroundHeight;
-        byte voxelValue = 0;
-
-        if (yPos > terrainHeight)
-            return 0;
-
-        if (yPos == terrainHeight)
-            voxelValue = 3;
-        else if (yPos > terrainHeight - 4)
-            voxelValue = 4;
-        else if (yPos < terrainHeight)
-            voxelValue = 2;
-
-        if (voxelValue == 2)
+        for (int x = 0; x < WorldSizeInChunks.x; x++)
         {
-            foreach (Lode lode in biome.lodes)
+            for (int y = 0; y < WorldSizeInChunks.y; y++)
             {
-                if (yPos > lode.minHeight && yPos < lode.maxHeight)
-                    if (Noise.Get3DPerlin(position, lode.noiseOffset + NoiseOffset, lode.scale, lode.threshold))
-                        voxelValue = lode.blockID;
+                for (int z = 0; z < WorldSizeInChunks.z; z++)
+                {
+                    Vector3Int coord = new Vector3Int(x, y, z);
+                    CreateNewChunk3(coord);
+                }
             }
         }
-
-        return voxelValue;
-    }
-
-    public byte GetVoxel(float3 position)
-    {
-        int yPos = (int)math.floor(position.y);
-
-        int terrainHeight = 8;
-        byte voxelValue = 0;
-
-        if (yPos > terrainHeight)
-            return 0;
-
-        if (yPos == terrainHeight)
-            voxelValue = 3;
-        else if (yPos > terrainHeight - 4)
-            voxelValue = 4;
-        else if (yPos < terrainHeight)
-            voxelValue = 2;
-
-        return voxelValue;
-    }
-
-    public Entity GetVoxelEntity(float3 position)
-    {
-        float3 localPos = position % new float3(ChunkCore.Size.x, ChunkCore.Size.y, ChunkCore.Size.z);
-        Vector3Int tmp = GetPositionInChunks(position);
-        int3 chunkPos = new int3(tmp.x, tmp.y, tmp.z);
-
-        if (CheckIfChunkIsNull(tmp))
-            return Entity.Null;
-
-        return chunks[chunkPos.x, chunkPos.y, chunkPos.z].GetVoxel(new int3(localPos));
-    }
-
-    public bool CheckForVoxel(Vector3 position)
-    {
-        Vector3Int localPos = new Vector3Int(
-            Mathf.FloorToInt(position.x) % ChunkCore.Size.x,
-            Mathf.FloorToInt(position.y) % ChunkCore.Size.y,
-            Mathf.FloorToInt(position.z) % ChunkCore.Size.z);
-
-        Vector3Int chunkPos = GetPositionInChunks(position);
-
-        if (CheckIfChunkIsNull(chunkPos))
-            return false;
-
-        return blockTypes[chunks[chunkPos.x, chunkPos.y, chunkPos.z].voxelMap[localPos.x, localPos.y, localPos.z]].isSolid;
-    }
-
-    bool CheckIfChunkIsNull(Vector3Int chunkPos)
-    {
-        if (!isChunkInWorld(chunkPos))
-            return true;
-        if (chunks[chunkPos.x, chunkPos.y, chunkPos.z] == null)
-            return true;
-        return false;
-    }
-
-    void CreateNewChunk(Vector3Int coordinates)
-    {
-        // TODO: Center of World in (0, 0)
-        chunks[coordinates.x, coordinates.y, coordinates.z] = new ChunkV1(coordinates, this);
-        activeChunks.Add(coordinates);
-    }
-
-    void CreateNewChunk2(Vector3Int coordinates)
-    {
-        // TODO: Center of World in (0, 0)
-        chunks[coordinates.x, coordinates.y, coordinates.z] = new ChunkV2(coordinates, this);
-        activeChunks.Add(coordinates);
     }
 
     void CreateNewChunk3(Vector3Int coordinates)
     {
         // TODO: Center of World in (0, 0)
-        chunks[coordinates.x, coordinates.y, coordinates.z] = new ChunkEntities(coordinates, this);
+        chunks[coordinates.x, coordinates.y, coordinates.z] = new Chunk(coordinates, this);
         activeChunks.Add(coordinates);
     }
 
-    bool isChunkInWorld(Vector3Int coord)
+    public int SetBlock(Vector3 position, int blockID)
     {
-        if (coord.x < 0 || coord.x >= WorldSizeInChunks.x ||
-            coord.y < 0 || coord.y >= WorldSizeInChunks.y ||
-            coord.z < 0 || coord.z >= WorldSizeInChunks.z)
-            return false;
-        return true;
+        Debug.Log("Block Placing");
+        Vector3Int pos = new Vector3Int((int)position.x, (int)position.y, (int)position.z);
+
+        Vector3Int cPos = new Vector3Int(Mathf.FloorToInt((float)pos.x / Chunk.Size.x),
+            Mathf.FloorToInt((float)pos.y / Chunk.Size.y),
+            Mathf.FloorToInt((float)pos.z / Chunk.Size.z));
+        if (cPos.x >= 0 && cPos.x < WorldSizeInChunks.x &&
+            cPos.y >= 0 && cPos.y < WorldSizeInChunks.y &&
+            cPos.z >= 0 && cPos.z < WorldSizeInChunks.z)
+        {
+            return chunks[cPos.x, cPos.y, cPos.z].SetBlock(
+                new Unity.Mathematics.int3(
+                    pos.x % Chunk.Size.x,
+                    pos.y % Chunk.Size.y,
+                    pos.z % Chunk.Size.z),
+                blockID);
+        }
+        return 0;
     }
 
-    bool isVoxelInWorld(Vector3 position)
+    public int GetBlock(Vector3 position)
     {
-        if (position.x < 0 || position.x >= WorldSizeInVoxels.x ||
-            position.y < 0 || position.y >= WorldSizeInVoxels.y ||
-            position.z < 0 || position.z >= WorldSizeInVoxels.z)
-            return false;
-        return true;
+        Vector3Int pos = new Vector3Int((int)position.x, (int)position.y, (int)position.z);
+
+        int3 chunkSize = Chunk.Size;
+
+        Vector3Int cPos = new Vector3Int(Mathf.FloorToInt((float)pos.x / chunkSize.x),
+            Mathf.FloorToInt((float)pos.y / chunkSize.y),
+            Mathf.FloorToInt((float)pos.z / chunkSize.z));
+        if (cPos.x >= 0 && cPos.x < WorldSizeInChunks.x &&
+            cPos.y >= 0 && cPos.y < WorldSizeInChunks.y &&
+            cPos.z >= 0 && cPos.z < WorldSizeInChunks.z)
+        {
+            return chunks[cPos.x, cPos.y, cPos.z].GetBlock(
+                new int3(
+                    pos.x % chunkSize.x,
+                    pos.y % chunkSize.y,
+                    pos.z % chunkSize.z));
+        }
+        return 0;
     }
 }
 
-[System.Serializable]
-public class BlockType
-{
-    public string name;
-    public Material material;
-    public bool isSolid;
-}
