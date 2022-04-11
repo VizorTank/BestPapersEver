@@ -7,25 +7,60 @@ using UnityEngine;
 public class WorldClass : MonoBehaviour
 {
     public static int WorldCubeSize = 16;
-    public static readonly Vector3Int WorldSizeInChunks = new Vector3Int(WorldCubeSize, 16, WorldCubeSize);
-    public BlockType[] blockTypes;
-    public List<Material> materials
+    public static readonly int3 WorldSizeInChunks = new int3(WorldCubeSize, 16, WorldCubeSize);
+    private static int3 ChunkSize { get => VoxelData.ChunkSize; }
+
+    public BlockTypesList blockTypesList;
+    public List<Material> Materials
     {
-        get => blockTypesDoP.materials;
+        get => blockTypesList.Materials;
     }
 
-    private Chunk[,,] chunks = new Chunk[WorldSizeInChunks.x, WorldSizeInChunks.y, WorldSizeInChunks.z];
-    private List<Vector3Int> activeChunks = new List<Vector3Int>();
+    public BiomeAttributes BiomeAttributes;
+    public BiomeAttributesStruct BiomeAttributesStruct;
 
-    public BlockTypesDoP blockTypesDoP;
+    private Chunk[,,] chunks = new Chunk[WorldSizeInChunks.x, WorldSizeInChunks.y, WorldSizeInChunks.z];
+    private List<int3> activeChunks = new List<int3>();
 
     // Start is called before the first frame update
     void Start()
     {
         Cursor.lockState = CursorLockMode.Locked;
-        blockTypesDoP = new BlockTypesDoP(blockTypes);
+
+        BiomeAttributesStruct = BiomeAttributes.GetBiomeStruct();
+        blockTypesList.ProcessData();
+
 
         GenerateWorld();
+        LinkChunks();
+    }
+
+    private void LinkChunks()
+    {
+        for (int x = 0; x < WorldSizeInChunks.x; x++)
+        {
+            for (int y = 0; y < WorldSizeInChunks.y; y++)
+            {
+                for (int z = 0; z < WorldSizeInChunks.z; z++)
+                {
+                    LinkChunk(new int3(x, y, z));
+                }
+            }
+        }
+    }
+
+    private void LinkChunk(int3 position)
+    {
+        ChunkNeighbours chunkNeighbours = new ChunkNeighbours();
+        for (int i = 0; i < 6; i++)
+        {
+            int3 neighbourPos = position + VoxelData.voxelNeighbours[i];
+            if (neighbourPos.x < 0 || neighbourPos.x >= WorldSizeInChunks.x ||
+                neighbourPos.y < 0 || neighbourPos.y >= WorldSizeInChunks.y ||
+                neighbourPos.z < 0 || neighbourPos.z >= WorldSizeInChunks.z) continue;
+            chunkNeighbours[i] = chunks[neighbourPos.x, neighbourPos.y, neighbourPos.z];
+        }
+        chunks[position.x, position.y, position.z].neighbours = chunkNeighbours;
     }
 
     // Update is called once per frame
@@ -38,16 +73,25 @@ public class WorldClass : MonoBehaviour
     {
         foreach (Chunk chunk in chunks)
         {
-            chunk.GenerateClastersWithJobs();
+            chunk.CreateBlockIdCopy();
         }
         foreach (Chunk chunk in chunks)
         {
-            chunk.CheckClusterVisibilityWithJobs();;
+            chunk.CreateClasters();
         }
         foreach (Chunk chunk in chunks)
         {
-            chunk.GenerateMeshWithJobs();
+            chunk.CheckClusterVisibility();
         }
+        foreach (Chunk chunk in chunks)
+        {
+            chunk.CreateMeshWithClasters();
+        }
+        //foreach (Chunk chunk in chunks)
+        //{
+        //    chunk.CreateMesh();
+        //}
+
         foreach (Chunk chunk in chunks)
         {
             chunk.LoadMesh();
@@ -66,7 +110,8 @@ public class WorldClass : MonoBehaviour
                 }
             }
         }
-        blockTypesDoP.Destroy();
+        blockTypesList.Destroy();
+        BiomeAttributesStruct.lodes.Dispose();
     }
     private void GenerateWorld()
     {
@@ -76,37 +121,34 @@ public class WorldClass : MonoBehaviour
             {
                 for (int z = 0; z < WorldSizeInChunks.z; z++)
                 {
-                    Vector3Int coord = new Vector3Int(x, y, z);
+                    int3 coord = new int3(x, y, z);
                     CreateNewChunk3(coord);
                 }
             }
         }
     }
 
-    void CreateNewChunk3(Vector3Int coordinates)
+    void CreateNewChunk3(int3 coordinates)
     {
         // TODO: Center of World in (0, 0)
-        chunks[coordinates.x, coordinates.y, coordinates.z] = new Chunk(coordinates, this);
+        chunks[coordinates.x, coordinates.y, coordinates.z] = new Chunk(coordinates, this, BiomeAttributesStruct);
         activeChunks.Add(coordinates);
     }
 
     public int SetBlock(Vector3 position, int blockID)
     {
         Debug.Log("Block Placing");
-        Vector3Int pos = new Vector3Int((int)position.x, (int)position.y, (int)position.z);
+        int3 pos = new int3((int)position.x, (int)position.y, (int)position.z);
 
-        Vector3Int cPos = new Vector3Int(Mathf.FloorToInt((float)pos.x / Chunk.Size.x),
-            Mathf.FloorToInt((float)pos.y / Chunk.Size.y),
-            Mathf.FloorToInt((float)pos.z / Chunk.Size.z));
+        int3 cPos = new int3(Mathf.FloorToInt((float)pos.x / ChunkSize.x),
+            Mathf.FloorToInt((float)pos.y / ChunkSize.y),
+            Mathf.FloorToInt((float)pos.z / ChunkSize.z));
         if (cPos.x >= 0 && cPos.x < WorldSizeInChunks.x &&
             cPos.y >= 0 && cPos.y < WorldSizeInChunks.y &&
             cPos.z >= 0 && cPos.z < WorldSizeInChunks.z)
         {
             return chunks[cPos.x, cPos.y, cPos.z].SetBlock(
-                new Unity.Mathematics.int3(
-                    pos.x % Chunk.Size.x,
-                    pos.y % Chunk.Size.y,
-                    pos.z % Chunk.Size.z),
+                pos % ChunkSize,
                 blockID);
         }
         return 0;
@@ -114,22 +156,17 @@ public class WorldClass : MonoBehaviour
 
     public int GetBlock(Vector3 position)
     {
-        Vector3Int pos = new Vector3Int((int)position.x, (int)position.y, (int)position.z);
+        int3 pos = new int3((int)position.x, (int)position.y, (int)position.z);
 
-        int3 chunkSize = Chunk.Size;
-
-        Vector3Int cPos = new Vector3Int(Mathf.FloorToInt((float)pos.x / chunkSize.x),
-            Mathf.FloorToInt((float)pos.y / chunkSize.y),
-            Mathf.FloorToInt((float)pos.z / chunkSize.z));
+        int3 cPos = new int3(Mathf.FloorToInt((float)pos.x / ChunkSize.x),
+            Mathf.FloorToInt((float)pos.y / ChunkSize.y),
+            Mathf.FloorToInt((float)pos.z / ChunkSize.z));
         if (cPos.x >= 0 && cPos.x < WorldSizeInChunks.x &&
             cPos.y >= 0 && cPos.y < WorldSizeInChunks.y &&
             cPos.z >= 0 && cPos.z < WorldSizeInChunks.z)
         {
             return chunks[cPos.x, cPos.y, cPos.z].GetBlock(
-                new int3(
-                    pos.x % chunkSize.x,
-                    pos.y % chunkSize.y,
-                    pos.z % chunkSize.z));
+                pos % ChunkSize);
         }
         return 0;
     }

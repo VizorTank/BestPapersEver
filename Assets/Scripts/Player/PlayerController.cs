@@ -51,10 +51,10 @@ public class PlayerController : MonoBehaviour
         if (scroll != 0)
         {
             placingBlockID += scroll > 0 ? 1 : -1;
-            if (placingBlockID >= worldClass.materials.Count) placingBlockID = 1;
-            if (placingBlockID <= 0) placingBlockID = worldClass.materials.Count - 1;
+            if (placingBlockID >= worldClass.Materials.Count) placingBlockID = 1;
+            if (placingBlockID <= 0) placingBlockID = worldClass.Materials.Count - 1;
 
-            BlockDisplay.text = "Selected: " + worldClass.blockTypesDoP.names[placingBlockID];
+            BlockDisplay.text = "Selected: " + worldClass.blockTypesList.Names[placingBlockID];
         }
 
         if (HighlightBlock.gameObject.activeSelf)

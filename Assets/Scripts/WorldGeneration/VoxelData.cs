@@ -3,6 +3,9 @@ using UnityEngine.Rendering;
 
 public static class VoxelData
 {
+    public static readonly int ChunkSideSize = 16;
+    public static readonly int3 ChunkSize = new int3(ChunkSideSize, ChunkSideSize, ChunkSideSize);
+
     public static readonly float3[] voxelVerts = new float3[]
     {
         new float3(0.0f, 0.0f, 0.0f),
@@ -58,5 +61,15 @@ public static class VoxelData
         new int3(0, 0, 1),
         new int3(0, 1, 0),
         new int3(1, 0, 0)
+    };
+
+    public static int3[] clusterSidesArray = new int3[]
+    {
+        new int3(1, 1, 0),
+        new int3(1, 1, 0),
+        new int3(1, 0, 1),
+        new int3(1, 0, 1),
+        new int3(0, 1, 1),
+        new int3(0, 1, 1)
     };
 }

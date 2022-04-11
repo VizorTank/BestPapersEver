@@ -27,7 +27,7 @@ public struct CreateMeshWithClustersJob : IJob
 
     // Block type count
     [ReadOnly] public int blockTypesCount;
-    [ReadOnly] public NativeArray<bool> blockTypesIsSold;
+    [ReadOnly] public NativeArray<bool> blockTypesIsInvisible;
 
     // Chunk position
     [ReadOnly] public float3 chunkPos;
@@ -47,25 +47,25 @@ public struct CreateMeshWithClustersJob : IJob
 
         for (int index = 0; index < clusterBlockIdDatas.Length; index++)
         {
-            if (blockTypesIsSold[clusterBlockIdDatas[index]])
+            if (!blockTypesIsInvisible[clusterBlockIdDatas[index]])
             {
                 for (int j = 0; j < 6; j++)
                 {
                     int3 actualSize = clusterSizeDatas[index];
-                    int perfectSize = 0;
+                    int maxSize = 0;
                     switch (j)
                     {
-                        case 0: perfectSize = actualSize.x * actualSize.y; break;
-                        case 1: perfectSize = actualSize.x * actualSize.y; break;
-                        case 2: perfectSize = actualSize.x * actualSize.z; break;
-                        case 3: perfectSize = actualSize.x * actualSize.z; break;
-                        case 4: perfectSize = actualSize.y * actualSize.z; break;
-                        case 5: perfectSize = actualSize.y * actualSize.z; break;
+                        case 0: maxSize = actualSize.x * actualSize.y; break;
+                        case 1: maxSize = actualSize.x * actualSize.y; break;
+                        case 2: maxSize = actualSize.x * actualSize.z; break;
+                        case 3: maxSize = actualSize.x * actualSize.z; break;
+                        case 4: maxSize = actualSize.y * actualSize.z; break;
+                        case 5: maxSize = actualSize.y * actualSize.z; break;
                         default:
                             break;
                     }
 
-                    if (clusterSidesVisibilityData[index][j] >= perfectSize) continue;
+                    if (clusterSidesVisibilityData[index][j] >= maxSize) continue;
                     sidesCount++;
                     sidesCountPerType[clusterBlockIdDatas[index]]++;
                 }
@@ -95,37 +95,36 @@ public struct CreateMeshWithClustersJob : IJob
         int vertexIndex = 0;
 
         // Foreach block
+        int2 perfectSize = new int2();
         for (int index = 0; index < clusterBlockIdDatas.Length; index++)
         {
-            if (blockTypesIsSold[clusterBlockIdDatas[index]])
+            if (!blockTypesIsInvisible[clusterBlockIdDatas[index]])
             {
                 for (int j = 0; j < 6; j++)
                 {
                     int3 actualSize = clusterSizeDatas[index];
-                    int perfectSize = 0;
                     switch (j)
                     {
-                        case 0: perfectSize = actualSize.x * actualSize.y; break;
-                        case 1: perfectSize = actualSize.x * actualSize.y; break;
-                        case 2: perfectSize = actualSize.x * actualSize.z; break;
-                        case 3: perfectSize = actualSize.x * actualSize.z; break;
-                        case 4: perfectSize = actualSize.y * actualSize.z; break;
-                        case 5: perfectSize = actualSize.y * actualSize.z; break;
-                        default:
-                            break;
+                        case 0: perfectSize.x = actualSize.x; perfectSize.y = actualSize.y; break;
+                        case 1: perfectSize.x = actualSize.x; perfectSize.y = actualSize.y; break;
+                        case 2: perfectSize.x = actualSize.x; perfectSize.y = actualSize.z; break;
+                        case 3: perfectSize.x = actualSize.x; perfectSize.y = actualSize.z; break;
+                        case 4: perfectSize.x = actualSize.z; perfectSize.y = actualSize.y; break;
+                        case 5: perfectSize.x = actualSize.z; perfectSize.y = actualSize.y; break;
+                        default: break;
                     }
 
-                    if (clusterSidesVisibilityData[index][j] >= perfectSize) continue;
+                    if (clusterSidesVisibilityData[index][j] >= perfectSize.x * perfectSize.y) continue;
 
                     int blockID = clusterBlockIdDatas[index];
-                    float3 position = clusterPositionDatas[index];// - chunkPos;
+                    float3 position = clusterPositionDatas[index];
 
                     for (int k = 0; k < 4; k++)
                     {
                         vertex[vertexIndex + k] = new VertexPositionUvStruct
                         {
                             pos = position + voxelVerts[voxelTris[j * voxelTrisSize + k]] * clusterSizeDatas[index],
-                            uv = voxelUvs[k]
+                            uv = voxelUvs[k] * perfectSize
                         };
                     }
                     for (int k = 0; k < 6; k++)
@@ -143,7 +142,6 @@ public struct CreateMeshWithClustersJob : IJob
             data.SetSubMesh(i, new SubMeshDescriptor(trianglesCountPerTypeSum[i], triangleIndexes[i]));
         }
 
-        //blockIdDatas.Dispose();
         trianglesCountPerTypeSum.Dispose();
         triangleIndexes.Dispose();
         sidesCountPerType.Dispose();

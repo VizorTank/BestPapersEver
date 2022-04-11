@@ -493,22 +493,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0077ec0bc53b41f40b58eff7de9fd8cb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  blockTypes:
-  - name: Air
-    material: {fileID: 0}
-    isSolid: 0
-  - name: Bedrock
-    material: {fileID: 2100000, guid: 47022958592486044b6b80cf783374f0, type: 2}
-    isSolid: 1
-  - name: Stone
-    material: {fileID: 2100000, guid: 438018ed24373a54ca612087d5bc1d62, type: 2}
-    isSolid: 1
-  - name: Grass
-    material: {fileID: 2100000, guid: d3b68a0fa52b2fb4d9752a268363c76e, type: 2}
-    isSolid: 1
-  - name: Dirt
-    material: {fileID: 2100000, guid: 3b05e92450f096f4fbb102ba7dad7592, type: 2}
-    isSolid: 1
+  blockTypesList: {fileID: 11400000, guid: 7d02ef2692f7d5a4c984e6f3f30b45a0, type: 2}
+  BiomeAttributes: {fileID: 11400000, guid: 2afc7e5beb537324e9211a7524d0dd0c, type: 2}
 --- !u!4 &531812169
 Transform:
   m_ObjectHideFlags: 0

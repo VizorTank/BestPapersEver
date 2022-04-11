@@ -10,10 +10,7 @@ using UnityEngine.Rendering;
 public class Chunk
 {
     private int3 coordinates;
-    public float3 ChunkPosition
-    {
-        get { return new float3(coordinates.x, coordinates.y, coordinates.z) * Size; }
-    }
+    public float3 ChunkPosition => new float3(coordinates.x, coordinates.y, coordinates.z) * Size;
 
     private WorldClass world;
 
@@ -21,10 +18,15 @@ public class Chunk
     private MeshRenderer meshRenderer;
     private MeshFilter meshFilter;
 
+    public ChunkNeighbours neighbours;
+    private ChunkNeighbourData ChunkNeighbourData;
+
+    private BiomeAttributesStruct biome;
+
     // Blocks
-    public static int cubeSize = 16;
-    public static int3 Size = new int3(cubeSize, cubeSize, cubeSize);
-    private NativeArray<int> blocks;
+    private static int3 Size { get => VoxelData.ChunkSize; }
+    private NativeArray<int> blocksId;
+    private NativeArray<int> blocksForMeshGeneration;
 
     // Clusters
     private NativeArray<int> blocksClusterIdDatas;
@@ -49,7 +51,11 @@ public class Chunk
 
 
     // Jobs
+    public int usedByOtherChunks = 0;
+
+    private bool updating;
     private bool requireUpdate;
+    private bool readyForUpdate;
     private bool generatingBlockIds;
     private bool generatingClusters;
     private bool checkingVisibility;
@@ -60,10 +66,11 @@ public class Chunk
     private JobHandle checkingVisibilityJobHandle;
     private JobHandle generatingMeshJobHandle;
 
-    public Chunk(Vector3Int _position, WorldClass _world)
+    public Chunk(int3 _position, WorldClass _world, BiomeAttributesStruct _biome)
     {
-        coordinates = new int3(_position.x, _position.y, _position.z);
+        coordinates = _position;
         world = _world;
+        biome = _biome;
 
         chunkObject = new GameObject();
         meshFilter = chunkObject.AddComponent<MeshFilter>();
@@ -92,18 +99,9 @@ public class Chunk
 
         layout = new NativeArray<VertexAttributeDescriptor>(VoxelData.layoutVertex, Allocator.Persistent);
 
+        clusterSides = new NativeArray<int3>(VoxelData.clusterSidesArray, Allocator.Persistent);
 
-        int3[] clusterSidesArray = new int3[]
-        {
-            new int3(1, 1, 0),
-            new int3(1, 1, 0),
-            new int3(1, 0, 1),
-            new int3(1, 0, 1),
-            new int3(0, 1, 1),
-            new int3(0, 1, 1)
-        };
-        clusterSides = new NativeArray<int3>(clusterSidesArray, Allocator.Persistent);
-
+        blocksForMeshGeneration = default;
     }
 
     public void Destroy()
@@ -120,56 +118,117 @@ public class Chunk
 
         clusterSides.Dispose();
 
-        blocks.Dispose();
+        blocksId.Dispose();
 
         blocksClusterIdDatas.Dispose();
         clusterBlockIdDatas.Dispose();
         clusterSizeDatas.Dispose();
         clusterPositionDatas.Dispose();
         clusterSidesVisibilityData.Dispose();
+
+        blocksForMeshGeneration.Dispose();
     }
 
-    public void GenerateClastersWithJobs()
+    public void CreateBlockIdCopy()
     {
-        if (generatingBlockIds && generatingBlockIdJobHandle.IsCompleted)
+        if (generatingBlockIds)
         {
             generatingBlockIdJobHandle.Complete();
             generatingBlockIds = false;
             requireUpdate = true;
         }
         if (!requireUpdate) return;
+        if (usedByOtherChunks > 0) return;
         requireUpdate = false;
-        generatingClusters = true;
-        CreateClustersWithJobs();
+        readyForUpdate = true;
+        updating = true;
+        blocksForMeshGeneration.Dispose();
+        blocksForMeshGeneration = default;
+        blocksForMeshGeneration = new NativeArray<int>(blocksId, Allocator.Persistent);
     }
 
-    public void GenerateMeshWithJobs()
+    public bool CanGetBlocks => !updating;
+    public NativeArray<int> GetBlocks()
     {
-        if (!checkingVisibility && checkingVisibilityJobHandle.IsCompleted) return;
-        checkingVisibilityJobHandle.Complete();
-        checkingVisibility = false;
-        generatingMesh = true;
-        PrepareMeshWithClustersWithJobsGetData();
+        if (updating) return new NativeArray<int>(0, Allocator.Persistent);
+        return blocksForMeshGeneration;
     }
 
-    private void GenerateBlockIdWithJobs()
+    public void GetNeighboursData()
     {
-        blocks = new NativeArray<int>(Size.x * Size.y * Size.z, Allocator.Persistent);
-
-        GenerateBlockIdJob generateBlockIdJob = new GenerateBlockIdJob
+        ChunkNeighbourData = new ChunkNeighbourData();
+        for (int i = 0; i < 6; i++)
         {
-            blockIdDatas = blocks,
+            if (neighbours[i] == null)
+            {
+                ChunkNeighbourData[i] = new NativeArray<int>(0, Allocator.Persistent);
+                continue;
+            }
+            neighbours[i].usedByOtherChunks++;
+            ChunkNeighbourData[i] = neighbours[i].GetBlocks();
+        }
+    }
 
+    public void FreeNeighboursData()
+    {
+        for (int i = 0; i < 6; i++)
+        {
+            if (neighbours[i] == null) continue;
+            neighbours[i].usedByOtherChunks--;
+        }
+    }
+
+    public void CreateMesh()
+    {
+        if (!readyForUpdate) return;
+        readyForUpdate = false;
+        generatingMesh = true;
+        meshDataArray = Mesh.AllocateWritableMeshData(1);
+        CreateMeshJob createMeshJob = new CreateMeshJob
+        {
+            blockIdDatas = blocksForMeshGeneration,
+
+            axis = axisArray,
+
+            neighbours = voxelNeighbours,
+            voxelTris = voxelTris,
+            voxelTrisSize = voxelTrisSize,
+            voxelUvs = voxelUvs,
+            voxelVerts = voxelVerts,
+
+            triangleOrder = triangleOrder,
+
+            // Block Types Count
+            blockTypesCount = world.blockTypesList.areSolid.Length,
+            blockTypesIsSold = world.blockTypesList.areSolid,
+
+            // How data is inserted to MeshData
+            layout = layout,
+
+            // Chunk position
             chunkSize = Size,
-            chunkPosition = ChunkPosition
+            clusterSides = clusterSides,
+            
+            data = meshDataArray[0]
         };
 
-        generatingBlockIdJobHandle = generateBlockIdJob.Schedule(Size.x * Size.y * Size.z, 32);
+        generatingMeshJobHandle = createMeshJob.Schedule();
     }
 
-    private void CreateClustersWithJobs()
+    public void CreateClasters()
     {
-        blocksClusterIdDatas = new NativeArray<int>(blocks.Length, Allocator.Persistent);
+        if (generatingBlockIds && generatingBlockIdJobHandle.IsCompleted)
+        {
+            generatingBlockIdJobHandle.Complete();
+            generatingBlockIds = false;
+            CreateBlockIdCopy();
+            requireUpdate = true;
+        }
+        if (!readyForUpdate) return;
+        readyForUpdate = false;
+        generatingClusters = true;
+
+        blocksClusterIdDatas = new NativeArray<int>(blocksId.Length, Allocator.Persistent);
         clusterBlockIdDatas = new NativeList<int>(Allocator.Persistent);
         clusterPositionDatas = new NativeList<int3>(Allocator.Persistent);
         clusterSizeDatas = new NativeList<int3>(Allocator.Persistent);
@@ -177,7 +236,7 @@ public class Chunk
 
         CreateClastersJob createClastersJob = new CreateClastersJob
         {
-            blockIdDatas = blocks,
+            blockIdDatas = blocksForMeshGeneration,
 
             blocksClusterIdDatas = blocksClusterIdDatas,
             clusterBlockIdDatas = clusterBlockIdDatas,
@@ -191,20 +250,27 @@ public class Chunk
         generatingClastersJobHandle = createClastersJob.Schedule();
     }
 
-    public void CheckClusterVisibilityWithJobs()
+    public void CheckClusterVisibility()
     {
         if (!generatingClusters && generatingClastersJobHandle.IsCompleted) return;
         generatingClastersJobHandle.Complete();
         generatingClusters = false;
         checkingVisibility = true;
+        GetNeighboursData();
 
         CheckClusterVisibilityJob checkClusterVisibilityJob = new CheckClusterVisibilityJob
         {
-            blockIdDatas = blocks,
+            blockIdDatas = blocksForMeshGeneration,
+
             clusterBlockIdDatas = clusterBlockIdDatas,
             clusterPositionDatas = clusterPositionDatas,
             clusterSidesVisibilityData = clusterSidesVisibilityData,
             clusterSizeDatas = clusterSizeDatas,
+
+            blockTypesIsTransparent = world.blockTypesList.areTransparent,
+
+            chunkNeighbourData = ChunkNeighbourData,
+
             neighbours = voxelNeighbours,
             clusterSides = clusterSides,
             chunkSize = Size
@@ -212,11 +278,16 @@ public class Chunk
         checkingVisibilityJobHandle = checkClusterVisibilityJob.Schedule(clusterPositionDatas.Length, 16);
     }
 
-    private void PrepareMeshWithClustersWithJobsGetData()
+    public void CreateMeshWithClasters()
     {
+        if (!checkingVisibility && checkingVisibilityJobHandle.IsCompleted) return;
+        checkingVisibilityJobHandle.Complete();
+        FreeNeighboursData();
+        checkingVisibility = false;
+        generatingMesh = true;
+
         // Allocate mesh to create
         meshDataArray = Mesh.AllocateWritableMeshData(1);
-        //NativeArray<int> blocksTmp = new NativeArray<int>(blocks, Allocator.TempJob);
 
         CreateMeshWithClustersJob createMeshWithClustersJob = new CreateMeshWithClustersJob
         {
@@ -236,8 +307,8 @@ public class Chunk
             triangleOrder = triangleOrder,
 
             // Block Types Count
-            blockTypesCount = world.blockTypes.Length,
-            blockTypesIsSold = world.blockTypesDoP.areSolid,
+            blockTypesCount = world.blockTypesList.BlockCount,
+            blockTypesIsInvisible = world.blockTypesList.areInvisible,
 
             // How data is inserted to MeshData
             layout = layout,
@@ -260,6 +331,7 @@ public class Chunk
             return 0f;
 
         generatingMesh = false;
+        updating = false;
         generatingMeshJobHandle.Complete();
 
         Mesh mesh = new Mesh();
@@ -270,9 +342,27 @@ public class Chunk
         mesh.RecalculateBounds();
 
         meshFilter.mesh = mesh;
+        //meshCollider.sharedMesh = mesh;
 
-        meshRenderer.materials = world.materials.ToArray();
+        meshRenderer.materials = world.Materials.ToArray();
         return 0;
+    }
+
+    private void GenerateBlockIdWithJobs()
+    {
+        blocksId = new NativeArray<int>(Size.x * Size.y * Size.z, Allocator.Persistent);
+
+        GenerateBlockIdJob generateBlockIdJob = new GenerateBlockIdJob
+        {
+            blockIdDatas = blocksId,
+
+            biome = biome,
+
+            chunkSize = Size,
+            chunkPosition = ChunkPosition
+        };
+
+        generatingBlockIdJobHandle = generateBlockIdJob.Schedule(Size.x * Size.y * Size.z, 32);
     }
 
     public int GetIndex(int3 position)
@@ -285,8 +375,8 @@ public class Chunk
     {
         if (generatingBlockIds || generatingClusters || generatingMesh) return 0;
         
-        int oldBlockID = blocks[GetIndex(position)];
-        blocks[GetIndex(position)] = blockID;
+        int oldBlockID = blocksId[GetIndex(position)];
+        blocksId[GetIndex(position)] = blockID;
         requireUpdate = true;
         Debug.Log(string.Format("Block Placed at: {0}, {1}, {2}", position.x, position.y, position.z));
 
@@ -297,8 +387,8 @@ public class Chunk
     {
         if (generatingBlockIds || generatingClusters || generatingMesh) return false;
 
-        if (blocks[GetIndex(position)] == 0) return false;
-        blocks[GetIndex(position)] = blockID;
+        if (blocksId[GetIndex(position)] == 0) return false;
+        blocksId[GetIndex(position)] = blockID;
         requireUpdate = true;
         Debug.Log(string.Format("Block Placed at: {0}, {1}, {2}", position.x, position.y, position.z));
 
@@ -308,6 +398,6 @@ public class Chunk
     public int GetBlock(int3 position)
     {
         if (generatingBlockIds || generatingClusters || generatingMesh) return 0;
-        return blocks[GetIndex(position)];
+        return blocksId[GetIndex(position)];
     }
 }

@@ -16,6 +16,9 @@ public struct CheckClusterVisibilityJob : IJobParallelFor
     [ReadOnly] public NativeArray<int3> clusterSides;
     [ReadOnly] public int3 chunkSize;
 
+    [ReadOnly] public NativeArray<bool> blockTypesIsTransparent;
+
+    [ReadOnly] public ChunkNeighbourData chunkNeighbourData;
 
     public NativeArray<ClusterSidesVisibility> clusterSidesVisibilityData;
 
@@ -44,20 +47,31 @@ public struct CheckClusterVisibilityJob : IJobParallelFor
         for (int i = 0; i < 6; i++)
         {
             int3 startPosition = clusterPositionDatas[index] + axis[i];
-            if (startPosition.x < 0 || startPosition.x >= chunkSize.x ||
-                startPosition.y < 0 || startPosition.y >= chunkSize.y ||
-                startPosition.z < 0 || startPosition.z >= chunkSize.z) continue;
-
             for (int x = 0; x < clusterSideSizes[i].x; x++)
             {
                 for (int y = 0; y < clusterSideSizes[i].y; y++)
                 {
                     for (int z = 0; z < clusterSideSizes[i].z; z++)
                     {
-                        int3 blockPos = startPosition + new int3(x, y, z);
-                        int idx = blockPos.x + (blockPos.y + blockPos.z * chunkSize.y) * chunkSize.x;
+                        if (startPosition.x < 0 || startPosition.x >= chunkSize.x ||
+                            startPosition.y < 0 || startPosition.y >= chunkSize.y ||
+                            startPosition.z < 0 || startPosition.z >= chunkSize.z)
+                        {
+                            if (chunkNeighbourData[i].Length <= 0) continue;
+                            int3 blockPos = (startPosition + chunkSize) % chunkSize + new int3(x, y, z);
+                            int idx = blockPos.x + (blockPos.y + blockPos.z * chunkSize.y) * chunkSize.x;
+                            
+                            if (!blockTypesIsTransparent[chunkNeighbourData[i][idx]]) 
+                                clusterSidesVisibility[i]++;
+                        }
+                        else
+                        {
+                            int3 blockPos = startPosition + new int3(x, y, z);
+                            int idx = blockPos.x + (blockPos.y + blockPos.z * chunkSize.y) * chunkSize.x;
+                            if (!blockTypesIsTransparent[blockIdDatas[idx]])
+                                clusterSidesVisibility[i]++;
+                        }
 
-                        if (blockIdDatas[idx] != 0) clusterSidesVisibility[i]++;
                     }
                 }
             }
