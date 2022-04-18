@@ -9,7 +9,7 @@ public class WorldClass : MonoBehaviour
 {
     public GameObject Player;
 
-    public int renderDistance = 8;
+    public int renderDistance = 16;
     public static int WorldCubeSize = 64;
     public static readonly int3 WorldSizeInChunks = new int3(WorldCubeSize, 8, WorldCubeSize);
     private static int3 ChunkSize { get => VoxelData.ChunkSize; }

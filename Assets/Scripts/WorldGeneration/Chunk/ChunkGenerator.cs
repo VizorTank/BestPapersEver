@@ -390,6 +390,9 @@ public class ChunkGenerator
         //meshCollider.sharedMesh = mesh;
 
         meshRenderer.materials = world.Materials.ToArray();
+
+        Debug.Log("Time enlapsed: " + Time.realtimeSinceStartup);
+
         return 0;
     }
 

@@ -13,6 +13,7 @@ public class BlockTypesList : ScriptableObject
     public NativeArray<bool> areTransparent;
     public NativeArray<bool> areInvisible;
     public NativeArray<bool> areReplacable;
+    public NativeArray<bool> areLiquid;
 
     public int BlockCount;
     public List<Material> Materials { get => materials; }
@@ -27,6 +28,7 @@ public class BlockTypesList : ScriptableObject
         areTransparent = new NativeArray<bool>(blockTypes.Count, Allocator.Persistent);
         areInvisible = new NativeArray<bool>(blockTypes.Count, Allocator.Persistent);
         areReplacable = new NativeArray<bool>(blockTypes.Count, Allocator.Persistent);
+        areLiquid = new NativeArray<bool>(blockTypes.Count, Allocator.Persistent);
 
         BlockCount = 0;
         foreach (BlockType blockType in blockTypes)
@@ -38,6 +40,7 @@ public class BlockTypesList : ScriptableObject
             areTransparent[BlockCount] = blockType.isTransparent;
             areInvisible[BlockCount] = blockType.isInvisible;
             areReplacable[BlockCount] = blockType.isReplaceable;
+            areLiquid[BlockCount] = blockType.isLiquid;
 
             BlockCount++;
         }
@@ -49,6 +52,7 @@ public class BlockTypesList : ScriptableObject
         areTransparent.Dispose();
         areInvisible.Dispose();
         areReplacable.Dispose();
+        areLiquid.Dispose();
     }
 
     ~BlockTypesList()
