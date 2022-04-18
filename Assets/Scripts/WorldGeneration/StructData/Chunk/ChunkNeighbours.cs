@@ -21,7 +21,8 @@ public class ChunkNeighbours
                 2 => Top,
                 3 => Bottom,
                 4 => Left,
-                5 => Right
+                5 => Right,
+                _ => throw new System.Exception("Index out of bounds")
             };
         }
         set

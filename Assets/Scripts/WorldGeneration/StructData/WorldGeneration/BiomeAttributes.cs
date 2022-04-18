@@ -77,13 +77,25 @@ public struct BiomeAttributesStruct
     {
         int voxelValue = 0;
 
+        int waterLevel = 64;
+
         int yPos = (int)math.floor(position.y);
         int terrainHeight = CalculateTerrainHeight(position);
 
         if (yPos > terrainHeight)
-            voxelValue = 0;
+        {
+            if (yPos > waterLevel)
+                voxelValue = 0;
+            else
+                voxelValue = 6;
+        }
         else if (yPos == terrainHeight)
-            voxelValue = 3;
+        {
+            if (yPos > waterLevel)
+                voxelValue = 3;
+            else
+                voxelValue = 4;
+        }
         else if (yPos > terrainHeight - 4)
             voxelValue = 4;
         else if (yPos < terrainHeight)

@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using Unity.Collections;
@@ -6,8 +7,11 @@ using UnityEngine;
 
 public class WorldClass : MonoBehaviour
 {
-    public static int WorldCubeSize = 16;
-    public static readonly int3 WorldSizeInChunks = new int3(WorldCubeSize, 16, WorldCubeSize);
+    public GameObject Player;
+
+    public int renderDistance = 8;
+    public static int WorldCubeSize = 64;
+    public static readonly int3 WorldSizeInChunks = new int3(WorldCubeSize, 8, WorldCubeSize);
     private static int3 ChunkSize { get => VoxelData.ChunkSize; }
 
     public BlockTypesList blockTypesList;
@@ -30,9 +34,15 @@ public class WorldClass : MonoBehaviour
         BiomeAttributesStruct = BiomeAttributes.GetBiomeStruct();
         blockTypesList.ProcessData();
 
+        if (Player != null)
+        {
+            Player.transform.position = new Vector3(VoxelData.ChunkSize.x * WorldSizeInChunks.x / 2, 
+                VoxelData.ChunkSize.y * WorldSizeInChunks.y, 
+                VoxelData.ChunkSize.z * WorldSizeInChunks.z / 2);
+        }
 
-        GenerateWorld();
-        LinkChunks();
+        //GenerateWorld();
+        //LinkChunks();
     }
 
     private void LinkChunks()
@@ -60,41 +70,69 @@ public class WorldClass : MonoBehaviour
                 neighbourPos.z < 0 || neighbourPos.z >= WorldSizeInChunks.z) continue;
             chunkNeighbours[i] = chunks[neighbourPos.x, neighbourPos.y, neighbourPos.z];
         }
-        chunks[position.x, position.y, position.z].neighbours = chunkNeighbours;
+        chunks[position.x, position.y, position.z].SetNeighbours(chunkNeighbours);
     }
 
     // Update is called once per frame
     void Update()
     {
-        DrawWorldWithEntities();
+        ShowWorld();
+        DrawChunks();
     }
 
-    private void DrawWorldWithEntities()
-    {
-        foreach (Chunk chunk in chunks)
-        {
-            chunk.CreateBlockIdCopy();
-        }
-        foreach (Chunk chunk in chunks)
-        {
-            chunk.CreateClasters();
-        }
-        foreach (Chunk chunk in chunks)
-        {
-            chunk.CheckClusterVisibility();
-        }
-        foreach (Chunk chunk in chunks)
-        {
-            chunk.CreateMeshWithClasters();
-        }
-        //foreach (Chunk chunk in chunks)
-        //{
-        //    chunk.CreateMesh();
-        //}
+    public int3 playerLastChunkPos = new int3();
 
-        foreach (Chunk chunk in chunks)
+    private void ShowWorld()
+    {
+        int3 playerPos = GetChunkCoords(Player.transform.position);
+        if (!playerLastChunkPos.Equals(playerPos))
         {
-            chunk.LoadMesh();
+            playerLastChunkPos = playerPos;
+            List<int3> removeChunks = new List<int3>(activeChunks);
+            activeChunks.Clear();
+            for (int x = -renderDistance; x < renderDistance; x++)
+            {
+                for (int z = -renderDistance; z < renderDistance; z++)
+                {
+                    for (int y = -renderDistance; y < WorldSizeInChunks.y; y++)
+                    {
+                        CreateNewChunk(new int3(x, y, z) + playerPos);
+                    }
+                }
+            }
+            foreach (int3 int3 in activeChunks)
+            {
+                removeChunks.Remove(int3);
+            }
+            foreach (int3 item in removeChunks)
+            {
+                chunks[item.x, item.y, item.z].Destroy();
+                chunks[item.x, item.y, item.z] = null;
+            }
+        }
+    }
+
+    private void DrawChunks()
+    {
+        foreach (int3 chunk in activeChunks)
+        {
+            chunks[chunk.x, chunk.y, chunk.z].ChunkGenerator.CreateBlockIdCopy();
+        }
+        foreach (int3 chunk in activeChunks)
+        {
+            chunks[chunk.x, chunk.y, chunk.z].ChunkGenerator.CreateClasters();
+        }
+        foreach (int3 chunk in activeChunks)
+        {
+            chunks[chunk.x, chunk.y, chunk.z].ChunkGenerator.CheckClusterVisibility();
+        }
+        foreach (int3 chunk in activeChunks)
+        {
+            chunks[chunk.x, chunk.y, chunk.z].ChunkGenerator.CreateMeshWithClasters();
+        }
+        foreach (int3 chunk in activeChunks)
+        {
+            chunks[chunk.x, chunk.y, chunk.z].ChunkGenerator.LoadMesh();
         }
     }
 
@@ -106,7 +144,8 @@ public class WorldClass : MonoBehaviour
             {
                 for (int z = 0; z < WorldSizeInChunks.z; z++)
                 {
-                    chunks[x, y, z].Destroy();
+                    if (chunks[x, y, z] != null)
+                        chunks[x, y, z].Destroy();
                 }
             }
         }
@@ -122,53 +161,76 @@ public class WorldClass : MonoBehaviour
                 for (int z = 0; z < WorldSizeInChunks.z; z++)
                 {
                     int3 coord = new int3(x, y, z);
-                    CreateNewChunk3(coord);
+                    CreateNewChunk(coord);
                 }
             }
         }
     }
 
-    void CreateNewChunk3(int3 coordinates)
+    private void CreateNewChunk(int x, int y, int z) => CreateNewChunk(new int3(x, y, z));
+
+    void CreateNewChunk(int3 coordinates)
     {
         // TODO: Center of World in (0, 0)
-        chunks[coordinates.x, coordinates.y, coordinates.z] = new Chunk(coordinates, this, BiomeAttributesStruct);
+        if (coordinates.x < 0 || coordinates.x >= WorldSizeInChunks.x ||
+            coordinates.y < 0 || coordinates.y >= WorldSizeInChunks.y ||
+            coordinates.z < 0 || coordinates.z >= WorldSizeInChunks.z) return;
+
+        if (chunks[coordinates.x, coordinates.y, coordinates.z] == null)
+            chunks[coordinates.x, coordinates.y, coordinates.z] = new Chunk(coordinates, this, BiomeAttributesStruct);
         activeChunks.Add(coordinates);
+    }
+
+    public bool TryPlaceBlock(Vector3 position, int blockID)
+    {
+        try
+        {
+            int3 chunkPos = GetChunkCoords(position);
+            return chunks[chunkPos.x, chunkPos.y, chunkPos.z].TryPlaceBlock(new int3(position) % ChunkSize, blockID);
+        }
+        catch (Exception e)
+        {
+            MyLogger.DisplayWarning(e.Message);
+            return false;
+        }
     }
 
     public int SetBlock(Vector3 position, int blockID)
     {
-        Debug.Log("Block Placing");
-        int3 pos = new int3((int)position.x, (int)position.y, (int)position.z);
-
-        int3 cPos = new int3(Mathf.FloorToInt((float)pos.x / ChunkSize.x),
-            Mathf.FloorToInt((float)pos.y / ChunkSize.y),
-            Mathf.FloorToInt((float)pos.z / ChunkSize.z));
-        if (cPos.x >= 0 && cPos.x < WorldSizeInChunks.x &&
-            cPos.y >= 0 && cPos.y < WorldSizeInChunks.y &&
-            cPos.z >= 0 && cPos.z < WorldSizeInChunks.z)
+        try
         {
-            return chunks[cPos.x, cPos.y, cPos.z].SetBlock(
-                pos % ChunkSize,
-                blockID);
+            int3 chunkPos = GetChunkCoords(position);
+            return chunks[chunkPos.x, chunkPos.y, chunkPos.z].SetBlock(new int3(position) % ChunkSize, blockID);
         }
-        return 0;
+        catch (Exception e)
+        {
+            MyLogger.DisplayWarning(e.Message);
+            return 0;
+        }
     }
 
     public int GetBlock(Vector3 position)
     {
-        int3 pos = new int3((int)position.x, (int)position.y, (int)position.z);
-
-        int3 cPos = new int3(Mathf.FloorToInt((float)pos.x / ChunkSize.x),
-            Mathf.FloorToInt((float)pos.y / ChunkSize.y),
-            Mathf.FloorToInt((float)pos.z / ChunkSize.z));
+        try
+        {
+            int3 chunkCoords = GetChunkCoords(position);
+            return chunks[chunkCoords.x, chunkCoords.y, chunkCoords.z].GetBlock(new int3(position) % ChunkSize);
+        }
+        catch (Exception e)
+        {
+            MyLogger.DisplayWarning(e.Message);
+            return 0;
+        }
+    }
+    public int3 GetChunkCoords(float3 position)
+    {
+        int3 cPos = new int3(Mathf.FloorToInt(position.x / ChunkSize.x),
+            Mathf.FloorToInt(position.y / ChunkSize.y),
+            Mathf.FloorToInt(position.z / ChunkSize.z));
         if (cPos.x >= 0 && cPos.x < WorldSizeInChunks.x &&
             cPos.y >= 0 && cPos.y < WorldSizeInChunks.y &&
-            cPos.z >= 0 && cPos.z < WorldSizeInChunks.z)
-        {
-            return chunks[cPos.x, cPos.y, cPos.z].GetBlock(
-                pos % ChunkSize);
-        }
-        return 0;
+            cPos.z >= 0 && cPos.z < WorldSizeInChunks.z) return cPos;
+        throw new Exception("Position outside of world.");
     }
 }
 

@@ -10,6 +10,8 @@ public class BlockType
     public bool isLiquid;
     public bool isInvisible;
 
+    public bool isReplaceable;
+
     public bool isFalling;
     public bool isGlowing;
 

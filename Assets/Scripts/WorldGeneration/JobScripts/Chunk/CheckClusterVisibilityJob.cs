@@ -25,6 +25,7 @@ public struct CheckClusterVisibilityJob : IJobParallelFor
     public void Execute(int index)
     {
         int3 clusterSize = clusterSizeDatas[index];
+        int blockId = clusterBlockIdDatas[index];
 
         NativeArray<int3> axis = new NativeArray<int3>(6, Allocator.Temp);
         axis[0] = neighbours[0];
@@ -61,14 +62,17 @@ public struct CheckClusterVisibilityJob : IJobParallelFor
                             int3 blockPos = (startPosition + chunkSize) % chunkSize + new int3(x, y, z);
                             int idx = blockPos.x + (blockPos.y + blockPos.z * chunkSize.y) * chunkSize.x;
                             
-                            if (!blockTypesIsTransparent[chunkNeighbourData[i][idx]]) 
+                            // Add when block hides side
+                            if (!blockTypesIsTransparent[chunkNeighbourData[i][idx]] || blockId == blockIdDatas[idx]) 
                                 clusterSidesVisibility[i]++;
                         }
                         else
                         {
                             int3 blockPos = startPosition + new int3(x, y, z);
                             int idx = blockPos.x + (blockPos.y + blockPos.z * chunkSize.y) * chunkSize.x;
-                            if (!blockTypesIsTransparent[blockIdDatas[idx]])
+
+                            // Add when block hides side
+                            if (!blockTypesIsTransparent[blockIdDatas[idx]] || blockId == blockIdDatas[idx])
                                 clusterSidesVisibility[i]++;
                         }
 

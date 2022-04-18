@@ -18,6 +18,8 @@ MonoBehaviour:
     isSolid: 0
     isTransparent: 1
     isLiquid: 0
+    isInvisible: 0
+    isReplaceable: 0
     isFalling: 0
     isGlowing: 0
     isGrowing: 0
@@ -27,6 +29,8 @@ MonoBehaviour:
     isSolid: 1
     isTransparent: 0
     isLiquid: 0
+    isInvisible: 0
+    isReplaceable: 0
     isFalling: 0
     isGlowing: 0
     isGrowing: 0
@@ -36,6 +40,8 @@ MonoBehaviour:
     isSolid: 1
     isTransparent: 0
     isLiquid: 0
+    isInvisible: 0
+    isReplaceable: 0
     isFalling: 0
     isGlowing: 0
     isGrowing: 0
@@ -45,6 +51,8 @@ MonoBehaviour:
     isSolid: 1
     isTransparent: 0
     isLiquid: 0
+    isInvisible: 0
+    isReplaceable: 0
     isFalling: 0
     isGlowing: 0
     isGrowing: 0
@@ -54,6 +62,8 @@ MonoBehaviour:
     isSolid: 1
     isTransparent: 0
     isLiquid: 0
+    isInvisible: 0
+    isReplaceable: 0
     isFalling: 0
     isGlowing: 0
     isGrowing: 0
@@ -63,16 +73,32 @@ MonoBehaviour:
     isSolid: 1
     isTransparent: 0
     isLiquid: 0
+    isInvisible: 0
+    isReplaceable: 0
     isFalling: 0
     isGlowing: 0
     isGrowing: 0
     DropTable: 
-  - name: Glass
-    material: {fileID: 2100000, guid: 7c3d63263be4d814aa656acfaad93cda, type: 2}
-    isSolid: 1
+  - name: Water
+    material: {fileID: 2100000, guid: 7da3ea35546623145929f6f890f0d7af, type: 2}
+    isSolid: 0
     isTransparent: 1
-    isLiquid: 0
+    isLiquid: 1
+    isInvisible: 0
+    isReplaceable: 1
     isFalling: 0
     isGlowing: 0
     isGrowing: 0
     DropTable: 
+  - name: Lava
+    material: {fileID: 2100000, guid: 129b6935ecc49dc40838db7bdba4075d, type: 2}
+    isSolid: 0
+    isTransparent: 1
+    isLiquid: 1
+    isInvisible: 0
+    isReplaceable: 1
+    isFalling: 0
+    isGlowing: 0
+    isGrowing: 0
+    DropTable: 
+  BlockCount: 8
