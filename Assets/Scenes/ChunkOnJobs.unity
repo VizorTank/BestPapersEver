@@ -364,13 +364,9 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 0}
     - target: {fileID: 7894782443280209346, guid: 66a480f8c6f040f458fb5749266c35c8, type: 3}
-      propertyPath: worldClass2
-      value: 
-      objectReference: {fileID: 531812168}
-    - target: {fileID: 7894782443280209346, guid: 66a480f8c6f040f458fb5749266c35c8, type: 3}
       propertyPath: worldClass3
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 531812168}
     - target: {fileID: 7894782443280209346, guid: 66a480f8c6f040f458fb5749266c35c8, type: 3}
       propertyPath: HighlightBlock
       value: 
@@ -407,26 +403,26 @@ MonoBehaviour:
   m_GameObject: {fileID: 531812167}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: dca2b85e2ced8534288e770692aa0c29, type: 3}
+  m_Script: {fileID: 11500000, guid: 9f34f4ec691ae2d4a8cc928a6f38fd29, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   blockTypes:
-  - name: 
+  - name: Air
     material: {fileID: 0}
     isSolid: 0
-  - name: 
+  - name: Bedrock
     material: {fileID: 2100000, guid: 47022958592486044b6b80cf783374f0, type: 2}
     isSolid: 1
-  - name: 
+  - name: Stone
     material: {fileID: 2100000, guid: 438018ed24373a54ca612087d5bc1d62, type: 2}
     isSolid: 1
-  - name: 
+  - name: Grass
     material: {fileID: 2100000, guid: d3b68a0fa52b2fb4d9752a268363c76e, type: 2}
     isSolid: 1
-  - name: 
+  - name: Dirt
     material: {fileID: 2100000, guid: 3b05e92450f096f4fbb102ba7dad7592, type: 2}
     isSolid: 1
-  - name: 
+  - name: Sand
     material: {fileID: 2100000, guid: c154909e339af2c439180600eeed66dc, type: 2}
     isSolid: 1
 --- !u!4 &531812169

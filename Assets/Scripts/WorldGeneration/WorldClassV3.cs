@@ -7,7 +7,7 @@ using UnityEngine;
 public class WorldClassV3 : MonoBehaviour
 {
     public static int WorldCubeSize = 16;
-    public static readonly Vector3Int WorldSizeInChunks = new Vector3Int(WorldCubeSize, 16, WorldCubeSize);
+    public static readonly Vector3Int WorldSizeInChunks = new Vector3Int(WorldCubeSize, 2, WorldCubeSize);
     public BlockType[] blockTypes;
     public List<Material> materials
     {

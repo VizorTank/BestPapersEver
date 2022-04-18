@@ -46,25 +46,22 @@ public class WorldClassV2 : MonoBehaviour
         
         foreach (ChunkV4 chunk in chunks)
         {
-            amount += chunk.GenerateMeshWithJobs();
+            chunk.GenerateMeshWithJobs();
             //chunks[chunk.x, chunk.y, chunk.z].CreateMeshFromEntities();
         }
 
         foreach (Vector3Int chunk in activeChunks)
         {
             float a = chunks[chunk.x, chunk.y, chunk.z].GenerateMeshWithJobsGetData2();
-            Total += a;
+            
             if (a > 0)
-                amount -= 1;
+            {
+                Total += a;
+                amount += 1;
+                Debug.Log("Avg: " + Total / amount);
+            }
             //chunks[chunk.x, chunk.y, chunk.z].CreateMeshFromEntities();
         }
-        if (amount == 0 && started)
-        {
-            Debug.Log("Avg: " + (Total / (WorldSizeInChunks.x * WorldSizeInChunks.y * WorldSizeInChunks.z)));
-            amount--;
-        }
-        if (amount > 0)
-            started = true;
     }
 
     void OnDestroy()

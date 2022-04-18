@@ -47,6 +47,7 @@ public class ChunkV6
 
     private NativeArray<int3> clusterSides;
 
+    private float time;
 
     // Jobs
     private bool requireUpdate;
