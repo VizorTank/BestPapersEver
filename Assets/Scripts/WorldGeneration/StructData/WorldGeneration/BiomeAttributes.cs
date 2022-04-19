@@ -12,6 +12,8 @@ public class BiomeAttributes : ScriptableObject
     public int terrainHeightDifference;
     public float terrainSize;
 
+    public int WaterLevel = 64;
+
     public Lode[] lodes;
 
     public BiomeAttributesStruct GetBiomeStruct(float seed = 0)
@@ -23,7 +25,8 @@ public class BiomeAttributes : ScriptableObject
             terrainSize = terrainSize,
             chunkSize = VoxelData.ChunkSize,
             offset = seed,
-            lodes = new NativeArray<LodeStruct>(lodes.Length, Allocator.Persistent)
+            lodes = new NativeArray<LodeStruct>(lodes.Length, Allocator.Persistent),
+            waterLevel = WaterLevel
         };
 
         for (int i = 0; i < lodes.Length; i++)
@@ -41,6 +44,8 @@ public struct BiomeAttributesStruct
     public float terrainSize;
     public int3 chunkSize;
     public float offset;
+
+    public int waterLevel;
 
     public NativeArray<LodeStruct> lodes;
 
@@ -76,8 +81,6 @@ public struct BiomeAttributesStruct
     public int FirstPass(float3 position)
     {
         int voxelValue = 0;
-
-        int waterLevel = 64;
 
         int yPos = (int)math.floor(position.y);
         int terrainHeight = CalculateTerrainHeight(position);

@@ -11,7 +11,7 @@ public class WorldClass : MonoBehaviour
 
     public int renderDistance = 16;
     public static int WorldCubeSize = 64;
-    public static readonly int3 WorldSizeInChunks = new int3(WorldCubeSize, 8, WorldCubeSize);
+    public int3 WorldSizeInChunks = new int3(WorldCubeSize, 2, WorldCubeSize);
     private static int3 ChunkSize { get => VoxelData.ChunkSize; }
 
     public BlockTypesList blockTypesList;
@@ -23,7 +23,7 @@ public class WorldClass : MonoBehaviour
     public BiomeAttributes BiomeAttributes;
     public BiomeAttributesStruct BiomeAttributesStruct;
 
-    private Chunk[,,] chunks = new Chunk[WorldSizeInChunks.x, WorldSizeInChunks.y, WorldSizeInChunks.z];
+    private Chunk[,,] chunks;
     private List<int3> activeChunks = new List<int3>();
 
     // Start is called before the first frame update
@@ -33,6 +33,8 @@ public class WorldClass : MonoBehaviour
 
         BiomeAttributesStruct = BiomeAttributes.GetBiomeStruct();
         blockTypesList.ProcessData();
+
+        chunks = new Chunk[WorldSizeInChunks.x, WorldSizeInChunks.y, WorldSizeInChunks.z];
 
         if (Player != null)
         {

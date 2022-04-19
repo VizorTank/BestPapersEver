@@ -12,15 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 837194a7ab9fa0c48bc4a799218673cb, type: 3}
   m_Name: Default 1
   m_EditorClassIdentifier: 
-  biomeName: Default
-  solidGroundHeight: 32
-  terrainHeightDifference: 32
+  biomeName: DefaultTest
+  solidGroundHeight: 28
+  terrainHeightDifference: 4
   terrainSize: 0.2
-  lodes:
-  - name: Dirt
-    blockID: 4
-    minHeight: 1
-    maxHeight: 255
-    scale: 0.1
-    threshold: 0.5
-    noiseOffset: 0
+  WaterLevel: 0
+  lodes: []
