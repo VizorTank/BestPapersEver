@@ -514,13 +514,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Player: {fileID: 1316108400}
-  renderDistance: 16
+  renderDistance: 8
   WorldSizeInChunks:
     x: 64
-    y: 2
+    y: 6
     z: 64
   blockTypesList: {fileID: 11400000, guid: 7d02ef2692f7d5a4c984e6f3f30b45a0, type: 2}
-  BiomeAttributes: {fileID: 11400000, guid: 2e3ed30e8386f5944a41c2da90d9f6f6, type: 2}
+  BiomeAttributes: {fileID: 11400000, guid: 2afc7e5beb537324e9211a7524d0dd0c, type: 2}
   playerLastChunkPos:
     x: 0
     y: 0
