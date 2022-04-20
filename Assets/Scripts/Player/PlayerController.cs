@@ -46,11 +46,20 @@ public class PlayerController : MonoBehaviour
     public float reach = 8f;
     public int placingBlockID = 1;
 
+
+    //Inventory
+
     private void Awake()
     {
         BindInput();
     }
-
+    private void Start()
+    {
+        inventory = InventorySys.GetComponent<Inventory>();
+        toolbar = inventory.Toolbar.GetComponent<Toolbar>();
+        Backpack = inventory.Backpack;
+        cursorSlot = inventory.cursorSlot;
+    }
     private void BindInput()
     {
         playerInput = new PlayerInput();
@@ -61,9 +70,11 @@ public class PlayerController : MonoBehaviour
         playerInput.Player.PlaceBlock.started += PlaceBlock_started;
         playerInput.Player.DestroyBlock.started += DestroyBlock_started;
         playerInput.Player.NoClip.started += NoClip_started;
+        playerInput.Player.Inventory.started += Inventory_started;
     }
 
     private void NoClip_started(UnityEngine.InputSystem.InputAction.CallbackContext obj) => noClip = !noClip;
+    private void Inventory_started(UnityEngine.InputSystem.InputAction.CallbackContext obj) => inInventory = !inInventory;
 
     private void PlaceBlock_started(UnityEngine.InputSystem.InputAction.CallbackContext obj) => placeBlock = true;
     private void DestroyBlock_started(UnityEngine.InputSystem.InputAction.CallbackContext obj) => destroyBlock = true;
@@ -73,10 +84,13 @@ public class PlayerController : MonoBehaviour
 
     void Update()
     {
-        PlaceCursorBlock();
-        GetInput();
-        SetRotation();
-        SelectBlock();
+        if (!inInventory)
+        {
+            PlaceCursorBlock();
+            GetInput();
+            SetRotation();
+            SelectBlock();
+        }
 
         movement = (transform.forward * input.z + transform.right * input.x) * speed * Time.deltaTime;
         if (isSprinting)
@@ -217,5 +231,46 @@ public class PlayerController : MonoBehaviour
         yRotation = Mathf.Clamp(yRotation, -90f, 90f);
         Camera.localRotation = Quaternion.Euler(yRotation, 0f, 0f);
         //Camera.Rotate(Vector3.right * -mouseInput.y);
+    }
+
+
+    [Header("InventoryUI")]
+    public GameObject itempickup;
+    public GameObject InventorySys;
+    private GameObject Backpack;
+    private GameObject cursorSlot;
+    private Toolbar toolbar;
+    public bool _inInventory = false;
+    public bool _inContainer = false;
+    public bool inContainer = false;
+    private Inventory inventory;
+    public bool inInventory
+    {
+        get { return _inInventory; }
+
+        set
+        {
+
+            _inInventory = value;
+            if (_inInventory)
+            {
+                Cursor.lockState = CursorLockMode.None;
+                Backpack.SetActive(true);
+                cursorSlot.SetActive(true);
+            }
+            else
+            {
+                Cursor.lockState = CursorLockMode.Locked;
+                Backpack.SetActive(false);
+                cursorSlot.SetActive(false);
+
+            }
+
+        }
+    }
+
+    public ItemStack PickUpItem(ItemStack item)
+    {
+        return inventory.PickUpItem(item);
     }
 }

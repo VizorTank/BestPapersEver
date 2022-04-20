@@ -81,6 +81,38 @@ public class @PlayerInput : IInputActionCollection, IDisposable
                     ""expectedControlType"": ""Button"",
                     ""processors"": """",
                     ""interactions"": """"
+                },
+                {
+                    ""name"": ""Console"",
+                    ""type"": ""Button"",
+                    ""id"": ""34d68248-7b8a-4e2d-b186-a95c113321e8"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": """"
+                },
+                {
+                    ""name"": ""Inventory"",
+                    ""type"": ""Button"",
+                    ""id"": ""c9f1f67a-dad4-489d-b5c0-72c429160a07"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": """"
+                },
+                {
+                    ""name"": ""InventoryAdv"",
+                    ""type"": ""Button"",
+                    ""id"": ""4065bcb2-9b21-43fd-aae1-952116309ac6"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": """"
+                },
+                {
+                    ""name"": ""Confirm"",
+                    ""type"": ""Button"",
+                    ""id"": ""d2c73c6e-2a3f-49bb-8e53-b2d29686d6cd"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": """"
                 }
             ],
             ""bindings"": [
@@ -389,6 +421,50 @@ public class @PlayerInput : IInputActionCollection, IDisposable
                     ""processors"": """",
                     ""groups"": ""Keyboard&Mouse"",
                     ""action"": ""SelectHotbarSlot"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""a022c942-d432-4b23-9a26-9ea92531e0ab"",
+                    ""path"": ""<Keyboard>/backquote"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Console"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""74b559e5-e9af-4c18-8718-a6ce7160dc0a"",
+                    ""path"": ""<Keyboard>/e"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Keyboard&Mouse"",
+                    ""action"": ""Inventory"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""db1e8f31-80f4-4f60-8512-d11603b84f72"",
+                    ""path"": ""<Keyboard>/shift"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""InventoryAdv"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""fd31fbd5-8716-4cb7-94e2-a62d5609b07d"",
+                    ""path"": ""<Keyboard>/enter"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Confirm"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 }
@@ -974,6 +1050,10 @@ public class @PlayerInput : IInputActionCollection, IDisposable
         m_Player_Jump = m_Player.FindAction("Jump", throwIfNotFound: true);
         m_Player_NoClip = m_Player.FindAction("NoClip", throwIfNotFound: true);
         m_Player_Sprint = m_Player.FindAction("Sprint", throwIfNotFound: true);
+        m_Player_Console = m_Player.FindAction("Console", throwIfNotFound: true);
+        m_Player_Inventory = m_Player.FindAction("Inventory", throwIfNotFound: true);
+        m_Player_InventoryAdv = m_Player.FindAction("InventoryAdv", throwIfNotFound: true);
+        m_Player_Confirm = m_Player.FindAction("Confirm", throwIfNotFound: true);
         // UI
         m_UI = asset.FindActionMap("UI", throwIfNotFound: true);
         m_UI_Navigate = m_UI.FindAction("Navigate", throwIfNotFound: true);
@@ -1043,6 +1123,10 @@ public class @PlayerInput : IInputActionCollection, IDisposable
     private readonly InputAction m_Player_Jump;
     private readonly InputAction m_Player_NoClip;
     private readonly InputAction m_Player_Sprint;
+    private readonly InputAction m_Player_Console;
+    private readonly InputAction m_Player_Inventory;
+    private readonly InputAction m_Player_InventoryAdv;
+    private readonly InputAction m_Player_Confirm;
     public struct PlayerActions
     {
         private @PlayerInput m_Wrapper;
@@ -1055,6 +1139,10 @@ public class @PlayerInput : IInputActionCollection, IDisposable
         public InputAction @Jump => m_Wrapper.m_Player_Jump;
         public InputAction @NoClip => m_Wrapper.m_Player_NoClip;
         public InputAction @Sprint => m_Wrapper.m_Player_Sprint;
+        public InputAction @Console => m_Wrapper.m_Player_Console;
+        public InputAction @Inventory => m_Wrapper.m_Player_Inventory;
+        public InputAction @InventoryAdv => m_Wrapper.m_Player_InventoryAdv;
+        public InputAction @Confirm => m_Wrapper.m_Player_Confirm;
         public InputActionMap Get() { return m_Wrapper.m_Player; }
         public void Enable() { Get().Enable(); }
         public void Disable() { Get().Disable(); }
@@ -1088,6 +1176,18 @@ public class @PlayerInput : IInputActionCollection, IDisposable
                 @Sprint.started -= m_Wrapper.m_PlayerActionsCallbackInterface.OnSprint;
                 @Sprint.performed -= m_Wrapper.m_PlayerActionsCallbackInterface.OnSprint;
                 @Sprint.canceled -= m_Wrapper.m_PlayerActionsCallbackInterface.OnSprint;
+                @Console.started -= m_Wrapper.m_PlayerActionsCallbackInterface.OnConsole;
+                @Console.performed -= m_Wrapper.m_PlayerActionsCallbackInterface.OnConsole;
+                @Console.canceled -= m_Wrapper.m_PlayerActionsCallbackInterface.OnConsole;
+                @Inventory.started -= m_Wrapper.m_PlayerActionsCallbackInterface.OnInventory;
+                @Inventory.performed -= m_Wrapper.m_PlayerActionsCallbackInterface.OnInventory;
+                @Inventory.canceled -= m_Wrapper.m_PlayerActionsCallbackInterface.OnInventory;
+                @InventoryAdv.started -= m_Wrapper.m_PlayerActionsCallbackInterface.OnInventoryAdv;
+                @InventoryAdv.performed -= m_Wrapper.m_PlayerActionsCallbackInterface.OnInventoryAdv;
+                @InventoryAdv.canceled -= m_Wrapper.m_PlayerActionsCallbackInterface.OnInventoryAdv;
+                @Confirm.started -= m_Wrapper.m_PlayerActionsCallbackInterface.OnConfirm;
+                @Confirm.performed -= m_Wrapper.m_PlayerActionsCallbackInterface.OnConfirm;
+                @Confirm.canceled -= m_Wrapper.m_PlayerActionsCallbackInterface.OnConfirm;
             }
             m_Wrapper.m_PlayerActionsCallbackInterface = instance;
             if (instance != null)
@@ -1116,6 +1216,18 @@ public class @PlayerInput : IInputActionCollection, IDisposable
                 @Sprint.started += instance.OnSprint;
                 @Sprint.performed += instance.OnSprint;
                 @Sprint.canceled += instance.OnSprint;
+                @Console.started += instance.OnConsole;
+                @Console.performed += instance.OnConsole;
+                @Console.canceled += instance.OnConsole;
+                @Inventory.started += instance.OnInventory;
+                @Inventory.performed += instance.OnInventory;
+                @Inventory.canceled += instance.OnInventory;
+                @InventoryAdv.started += instance.OnInventoryAdv;
+                @InventoryAdv.performed += instance.OnInventoryAdv;
+                @InventoryAdv.canceled += instance.OnInventoryAdv;
+                @Confirm.started += instance.OnConfirm;
+                @Confirm.performed += instance.OnConfirm;
+                @Confirm.canceled += instance.OnConfirm;
             }
         }
     }
@@ -1280,6 +1392,10 @@ public class @PlayerInput : IInputActionCollection, IDisposable
         void OnJump(InputAction.CallbackContext context);
         void OnNoClip(InputAction.CallbackContext context);
         void OnSprint(InputAction.CallbackContext context);
+        void OnConsole(InputAction.CallbackContext context);
+        void OnInventory(InputAction.CallbackContext context);
+        void OnInventoryAdv(InputAction.CallbackContext context);
+        void OnConfirm(InputAction.CallbackContext context);
     }
     public interface IUIActions
     {
