@@ -420,9 +420,9 @@ MonoBehaviour:
   Player: {fileID: 7894782443635359299}
   renderDistance: 8
   WorldSizeInChunks:
-    x: 64
+    x: 8
     y: 6
-    z: 64
+    z: 8
   blockTypesList: {fileID: 11400000, guid: 7d02ef2692f7d5a4c984e6f3f30b45a0, type: 2}
   BiomeAttributes: {fileID: 11400000, guid: 2afc7e5beb537324e9211a7524d0dd0c, type: 2}
   playerLastChunkPos:
@@ -800,7 +800,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4589847573136423641, guid: 188064a7511e12a4ba9ca316d8ec3ee2, type: 3}
       propertyPath: m_Name
-      value: PlayerBody
+      value: Body
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 188064a7511e12a4ba9ca316d8ec3ee2, type: 3}
@@ -917,6 +917,10 @@ PrefabInstance:
     - target: {fileID: 1249207530589415230, guid: 85781675dc9c4994ca3d1e19c1232139, type: 3}
       propertyPath: m_AnchoredPosition.x
       value: -83
+      objectReference: {fileID: 0}
+    - target: {fileID: 1704207366909972917, guid: 85781675dc9c4994ca3d1e19c1232139, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5538787401182277552, guid: 85781675dc9c4994ca3d1e19c1232139, type: 3}
       propertyPath: m_Pivot.x
@@ -1363,6 +1367,8 @@ MonoBehaviour:
   checkIncrement: 0.1
   reach: 10
   placingBlockID: 1
+  controller: {fileID: 0}
+  characterStats: {fileID: 0}
   itempickup: {fileID: 0}
   InventorySys: {fileID: 1778096176}
   _inInventory: 0
@@ -1394,6 +1400,8 @@ GameObject:
   m_Component:
   - component: {fileID: 7894782443635359298}
   - component: {fileID: 7894782443635359300}
+  - component: {fileID: 7894782443635359302}
+  - component: {fileID: 7894782443635359303}
   - component: {fileID: 7894782443635359297}
   - component: {fileID: 790632439795015567}
   - component: {fileID: 7894782443635359301}
@@ -1431,3 +1439,54 @@ CapsuleCollider:
   m_Height: 2
   m_Direction: 1
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &7894782443635359302
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7894782443635359299}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 569c3930f1f276042a55c0479042ed9a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  worldClass: {fileID: 531812168}
+  Xaxis: 0
+  Zaxis: 0
+  reach: 2
+  checkIncrement: 0.5
+  DownBlock: {x: 0, y: 0, z: 0}
+  UpBlock: {x: 0, y: 0, z: 0}
+  LimiterFront: 0
+  LimiterBack: 0
+  LimiterLeft: 0
+  LimiterRight: 0
+  CharacterStats: {fileID: 0}
+  animator: {fileID: 0}
+--- !u!114 &7894782443635359303
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7894782443635359299}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 175e2ddd9430d5541a24ffef455982a0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  height: 2
+  width: 0.3
+  speed: 6
+  sprintSpeed: 2
+  jumpHeight: 0.015
+  gravity: -0.5
+  MaxHealth: 200
+  MaxStamina: 200
+  StaminaRegeneration: 20
+  HealthRegeneration: 0
+  CurrentHealth: 0
+  CurrentStamina: 0
+  IsTired: 0
+  Armour: 0

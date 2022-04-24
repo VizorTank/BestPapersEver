@@ -216,6 +216,7 @@ public class WorldClass : MonoBehaviour
         try
         {
             int3 chunkCoords = GetChunkCoords(position);
+            if (math.all(chunkCoords == new int3(int.MaxValue, int.MaxValue, int.MaxValue))) return 0;
             return chunks[chunkCoords.x, chunkCoords.y, chunkCoords.z].GetBlock(new int3(position) % ChunkSize);
         }
         catch (Exception e)
@@ -232,6 +233,7 @@ public class WorldClass : MonoBehaviour
         if (cPos.x >= 0 && cPos.x < WorldSizeInChunks.x &&
             cPos.y >= 0 && cPos.y < WorldSizeInChunks.y &&
             cPos.z >= 0 && cPos.z < WorldSizeInChunks.z) return cPos;
+        else return new int3(int.MaxValue, int.MaxValue, int.MaxValue);
         throw new Exception("Position outside of world.");
     }
 }

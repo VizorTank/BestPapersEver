@@ -45,7 +45,10 @@ public class PlayerController : MonoBehaviour
     public float checkIncrement = 0.1f;
     public float reach = 8f;
     public int placingBlockID = 1;
-
+    
+    
+    public CharacterController controller;
+    public CharacterStats characterStats;
 
     //Inventory
 
@@ -55,6 +58,7 @@ public class PlayerController : MonoBehaviour
     }
     private void Start()
     {
+        controller = transform.GetComponent<CharacterController>();
         inventory = InventorySys.GetComponent<Inventory>();
         toolbar = inventory.Toolbar.GetComponent<Toolbar>();
         Backpack = inventory.Backpack;
@@ -91,30 +95,35 @@ public class PlayerController : MonoBehaviour
             SetRotation();
             SelectBlock();
         }
+        controller.GetMovement(input, isSprinting);
+        
 
-        movement = (transform.forward * input.z + transform.right * input.x) * speed * Time.deltaTime;
-        if (isSprinting)
-            movement *= sprintSpeed;
-        if (!noClip)
-        {
-            movement = CheckCollisionSides(movement);
-            velocity.y = CheckGround(velocity.y);
-            if (!isGrounded)
-            {
-                velocity += Vector3.up * gravity * Time.deltaTime / 1;
-            }
-            if (isGrounded)
-            {
-                velocity.y = Mathf.Clamp(input.y, 0, 1) * jumpHeight;
-            }
-        }
-        else
-        {
-            movement += transform.up * input.y * speed * Time.deltaTime;
-            velocity.y = 0;
-        }
-
-        transform.position += (velocity + movement);
+        
+       //movement = (transform.forward * input.z + transform.right * input.x) * speed * Time.deltaTime;
+       //if (isSprinting)
+       //    movement *= sprintSpeed;
+       //if (!noClip)
+       //{
+       //    movement = CheckCollisionSides(movement);
+       //    velocity.y = CheckGround(velocity.y);
+       //    if (!isGrounded)
+       //    {
+       //        velocity += Vector3.up * gravity * Time.deltaTime / 1;
+       //    }
+       //    if (isGrounded)
+       //    {
+       //        velocity.y = Mathf.Clamp(input.y, 0, 1) * jumpHeight;
+       //    }
+       //}
+       //else
+       //{
+       //    movement += transform.up * input.y * speed * Time.deltaTime;
+       //    velocity.y = 0;
+       //}
+       //
+       //transform.position += (velocity + movement);
+        
+        
     }
     void GetInput()
     {
@@ -127,6 +136,7 @@ public class PlayerController : MonoBehaviour
         scroll = playerInput.Player.SelectHotbarSlot.ReadValue<float>();
 
         mouseInput = playerInput.Player.Look.ReadValue<Vector2>();
+        
     }
 
     private Vector3 CheckCollisionSides(Vector3 move)
