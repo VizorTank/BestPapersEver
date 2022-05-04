@@ -9,6 +9,7 @@ public class Item : ScriptableObject
     public int maxstack;
     public string ItemName;
     public Sprite image;
+    public bool isPlaceable;
     
 }
 

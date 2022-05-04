@@ -12,10 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5431e53348443ee41855b815707db3d5, type: 3}
   m_Name: Iron_Bar_Recipe
   m_EditorClassIdentifier: 
-  CraftedID: 3
+  CraftedID: 11
   AmountCrafted: 1
   CraftinRecipe:
-  - ID: 2
+  - ID: 10
     Amount: 1
-  - ID: 0
+  - ID: 8
     Amount: 5

@@ -12,7 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d761a190dab50534bba9c1bc6c48c768, type: 3}
   m_Name: Iron_Ore
   m_EditorClassIdentifier: 
-  id: 2
+  id: 10
   maxstack: 999
   ItemName: Iron Ore
   image: {fileID: 21300000, guid: bfb24fe6b1828ea49bc3d737d1c83cd4, type: 3}
+  isPlaceable: 0

@@ -10,10 +10,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d761a190dab50534bba9c1bc6c48c768, type: 3}
-  m_Name: Wood
+  m_Name: Bedrock
   m_EditorClassIdentifier: 
-  id: 12
+  id: 1
   maxstack: 999
-  ItemName: Wood
-  image: {fileID: 21300000, guid: ed8a92ef11110df41a3113196e4253bf, type: 3}
-  isPlaceable: 0
+  ItemName: Bedrock
+  image: {fileID: 21300000, guid: c84cde9b43c26d64ea7b810ffc510a08, type: 3}
+  isPlaceable: 1

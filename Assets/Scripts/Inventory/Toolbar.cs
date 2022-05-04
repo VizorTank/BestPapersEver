@@ -2,7 +2,8 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Toolbar : MonoBehaviour {
+public class Toolbar : MonoBehaviour
+{
 
     public UIItemSlot[] slots;
     public RectTransform highlight;
@@ -11,6 +12,7 @@ public class Toolbar : MonoBehaviour {
     public Item item;
     public Inventory inv;
     public PlayerInput playerInput;
+    public PlayerController playerController;
     private void Start()
     {
         playerInput = new PlayerInput();
@@ -21,11 +23,13 @@ public class Toolbar : MonoBehaviour {
         playerInput.Disable();
     }
 
-    private void Update() {
+    private void Update()
+    {
 
-        
+
         float scroll = playerInput.Player.SelectHotbarSlot.ReadValue<float>();
-        if (scroll != 0) {
+        if (scroll != 0)
+        {
 
             if (scroll > 0)
                 slotIndex--;
@@ -40,13 +44,18 @@ public class Toolbar : MonoBehaviour {
             highlight.position = slots[slotIndex].slotIcon.transform.position;
 
         }
-            
+
 
     }
     public void UseItem()
     {
-        if(slots[slotIndex].HasItem)
+        if (slots[slotIndex].HasItem)
         {
+            if (slots[slotIndex].itemSlot.stack.Item.isPlaceable)
+            {
+                playerController.PlaceBlock(slots[slotIndex].itemSlot.stack.Item.id);
+                slots[slotIndex].itemSlot.Take(1);
+            }
             Debug.Log(slots[slotIndex].itemSlot.stack.Item.name + " " + slots[slotIndex].itemSlot.stack.amount);
 
         }
@@ -54,6 +63,23 @@ public class Toolbar : MonoBehaviour {
         {
             Debug.Log("no item");
         }
+
     }
 
+
+    public bool IsPlaceable()
+    {
+        if (slots[slotIndex].HasItem)
+        {
+            if (slots[slotIndex].itemSlot.stack.Item.isPlaceable)
+            {
+                return slots[slotIndex].itemSlot.stack.Item.isPlaceable;
+            }
+        }
+        return false;
+
+    }
 }
+
+
+

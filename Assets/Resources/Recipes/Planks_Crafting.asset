@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5431e53348443ee41855b815707db3d5, type: 3}
   m_Name: Planks_Crafting
   m_EditorClassIdentifier: 
-  CraftedID: 5
+  CraftedID: 13
   AmountCrafted: 1
   CraftinRecipe:
-  - ID: 4
+  - ID: 12
     Amount: 1

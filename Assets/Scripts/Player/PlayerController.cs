@@ -7,7 +7,7 @@ public class PlayerController : MonoBehaviour
 {
     // World
     public WorldClass worldClass;
-
+    public bool IsConsoleOpenned = false;
     // Player Input
     public PlayerInput playerInput;
     private Vector3 input;
@@ -63,6 +63,7 @@ public class PlayerController : MonoBehaviour
         toolbar = inventory.Toolbar.GetComponent<Toolbar>();
         Backpack = inventory.Backpack;
         cursorSlot = inventory.cursorSlot;
+        toolbar.playerController = this;
     }
     private void BindInput()
     {
@@ -80,7 +81,7 @@ public class PlayerController : MonoBehaviour
     private void NoClip_started(UnityEngine.InputSystem.InputAction.CallbackContext obj) => noClip = !noClip;
     private void Inventory_started(UnityEngine.InputSystem.InputAction.CallbackContext obj) => inInventory = !inInventory;
 
-    private void PlaceBlock_started(UnityEngine.InputSystem.InputAction.CallbackContext obj) => placeBlock = true;
+    private void PlaceBlock_started(UnityEngine.InputSystem.InputAction.CallbackContext obj) => UseItem();
     private void DestroyBlock_started(UnityEngine.InputSystem.InputAction.CallbackContext obj) => destroyBlock = true;
 
     private void OnEnable() => playerInput.Enable();
@@ -88,41 +89,16 @@ public class PlayerController : MonoBehaviour
 
     void Update()
     {
-        if (!inInventory)
-        {
-            PlaceCursorBlock();
-            GetInput();
-            SetRotation();
-            SelectBlock();
-        }
+        if (!IsConsoleOpenned)
+            if (!inInventory)
+                {
+                    PlaceCursorBlock();
+                    GetInput();
+                    SetRotation();
+                    SelectBlock();
+                }
         controller.GetMovement(input, isSprinting);
-        
 
-        
-       //movement = (transform.forward * input.z + transform.right * input.x) * speed * Time.deltaTime;
-       //if (isSprinting)
-       //    movement *= sprintSpeed;
-       //if (!noClip)
-       //{
-       //    movement = CheckCollisionSides(movement);
-       //    velocity.y = CheckGround(velocity.y);
-       //    if (!isGrounded)
-       //    {
-       //        velocity += Vector3.up * gravity * Time.deltaTime / 1;
-       //    }
-       //    if (isGrounded)
-       //    {
-       //        velocity.y = Mathf.Clamp(input.y, 0, 1) * jumpHeight;
-       //    }
-       //}
-       //else
-       //{
-       //    movement += transform.up * input.y * speed * Time.deltaTime;
-       //    velocity.y = 0;
-       //}
-       //
-       //transform.position += (velocity + movement);
-        
         
     }
     void GetInput()
@@ -139,57 +115,11 @@ public class PlayerController : MonoBehaviour
         
     }
 
-    private Vector3 CheckCollisionSides(Vector3 move)
-    {
-        for (int i = -(int)(playerHeight / 2); i < (int)(playerHeight / 2); i++)
-        {
-            Vector3 block = new Vector3(transform.position.x, 
-                transform.position.y + i + 1, 
-                transform.position.z) + move;
 
-            for (int j = 0; j < 4; j++)
-            {
-                if (worldClass.blockTypesList.areSolid[worldClass.GetBlock(block + fourCorners[j] * playerWidth)])
-                {
-                    return Vector3.zero;
-                }
-            }
-        }
-        return move;
-    }
-    Vector3[] fourCorners = new Vector3[] {
-        new Vector3(-1, 0, -1),
-        new Vector3(1,  0, -1),
-        new Vector3(1,  0,  1),
-        new Vector3(-1, 0,  1)
-    };
-    private float CheckGround(float upSpeed)
-    {
-        Vector3 downBlock = new Vector3(transform.position.x, transform.position.y + upSpeed - playerHeight / 2, transform.position.z);
-        
-        for (int i = 0; i < 4; i++)
-        {
-            if (worldClass.blockTypesList.areSolid[worldClass.GetBlock(downBlock + fourCorners[i] * playerWidth)])
-            {
-                isGrounded = true;
-                return 0;
-            }
-        }
-        isGrounded = false;
-        return upSpeed;
-    }
+
 
     private void SelectBlock()
     {
-        if (scroll != 0)
-        {
-            placingBlockID += scroll > 0 ? 1 : -1;
-            if (placingBlockID >= worldClass.Materials.Count) placingBlockID = 1;
-            if (placingBlockID <= 0) placingBlockID = worldClass.Materials.Count - 1;
-
-            BlockDisplay.text = "Selected: " + worldClass.blockTypesList.Names[placingBlockID];
-        }
-
         if (HighlightBlock.gameObject.activeSelf)
         {
             if (destroyBlock)
@@ -205,6 +135,12 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    public void PlaceBlock(int BlockID)
+    {
+        worldClass.SetBlock(HighlightPlaceBlock.position, BlockID);
+        placeBlock = false;
+    }
+
     private void PlaceCursorBlock()
     {
         float step = checkIncrement;
@@ -217,13 +153,18 @@ public class PlayerController : MonoBehaviour
 
             if (worldClass.GetBlock(pos) != 0)
             {
-                HighlightBlock.position = new Vector3(Mathf.Floor(pos.x), Mathf.Floor(pos.y), Mathf.Floor(pos.z));
-                HighlightBlock.gameObject.SetActive(true);
+                if (worldClass.blockTypesList.areSolid[worldClass.GetBlock(pos)])
+                {
+                    HighlightBlock.position = new Vector3(Mathf.Floor(pos.x), Mathf.Floor(pos.y), Mathf.Floor(pos.z));
+                    HighlightBlock.gameObject.SetActive(true);
 
-                HighlightPlaceBlock.position = new Vector3(Mathf.Floor(lastPos.x), Mathf.Floor(lastPos.y), Mathf.Floor(lastPos.z));
-                HighlightPlaceBlock.gameObject.SetActive(true);
+                    HighlightPlaceBlock.position = new Vector3(Mathf.Floor(lastPos.x), Mathf.Floor(lastPos.y), Mathf.Floor(lastPos.z));
+                    HighlightPlaceBlock.gameObject.SetActive(toolbar.IsPlaceable());
+                    return;
 
-                return;
+                }
+
+                
             }
             lastPos = pos;
             step += checkIncrement;
@@ -260,20 +201,22 @@ public class PlayerController : MonoBehaviour
 
         set
         {
-
-            _inInventory = value;
-            if (_inInventory)
+            if (!IsConsoleOpenned)
             {
-                Cursor.lockState = CursorLockMode.None;
-                Backpack.SetActive(true);
-                cursorSlot.SetActive(true);
-            }
-            else
-            {
-                Cursor.lockState = CursorLockMode.Locked;
-                Backpack.SetActive(false);
-                cursorSlot.SetActive(false);
+                _inInventory = value;
+                if (_inInventory)
+                {
+                    Cursor.lockState = CursorLockMode.None;
+                    Backpack.SetActive(true);
+                    cursorSlot.SetActive(true);
+                }
+                else
+                {
+                    Cursor.lockState = CursorLockMode.Locked;
+                    Backpack.SetActive(false);
+                    cursorSlot.SetActive(false);
 
+                }
             }
 
         }
@@ -282,5 +225,11 @@ public class PlayerController : MonoBehaviour
     public ItemStack PickUpItem(ItemStack item)
     {
         return inventory.PickUpItem(item);
+    }
+
+    public void UseItem()
+    {
+        if(!IsConsoleOpenned)
+        toolbar.UseItem();
     }
 }

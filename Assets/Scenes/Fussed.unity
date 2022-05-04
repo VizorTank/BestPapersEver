@@ -1343,6 +1343,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   worldClass: {fileID: 531812168}
+  IsConsoleOpenned: 0
   scroll: 0
   speed: 10
   sprintSpeed: 2
@@ -1452,6 +1453,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   worldClass: {fileID: 531812168}
+  movement: {x: 0, y: 0, z: 0}
   Xaxis: 0
   Zaxis: 0
   reach: 2
@@ -1483,8 +1485,8 @@ MonoBehaviour:
   jumpHeight: 0.015
   gravity: -0.5
   MaxHealth: 200
-  MaxStamina: 200
-  StaminaRegeneration: 20
+  MaxStamina: 2000000
+  StaminaRegeneration: 2000000
   HealthRegeneration: 0
   CurrentHealth: 0
   CurrentStamina: 0

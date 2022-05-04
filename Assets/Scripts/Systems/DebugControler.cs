@@ -13,8 +13,10 @@ public class DebugControler : MonoBehaviour
     public void OnToggleDebug()
     {
         ShowConsole = !ShowConsole;
+        controller.IsConsoleOpenned = ShowConsole;
     }
     GameObject player;
+    PlayerController controller;
     private void OnGUI()
     {
         if (!ShowConsole) return;
@@ -31,6 +33,7 @@ public class DebugControler : MonoBehaviour
         inputs.Player.Confirm.started += Confirm_Command;
         inputs.Enable();
         player = GameObject.Find("Player");
+        controller = player.GetComponent<PlayerController>();
     }
     private void Console_started(UnityEngine.InputSystem.InputAction.CallbackContext obj) => OnToggleDebug();
     private void Confirm_Command(UnityEngine.InputSystem.InputAction.CallbackContext obj) => HandlingInput();

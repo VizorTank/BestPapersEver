@@ -12,7 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d761a190dab50534bba9c1bc6c48c768, type: 3}
   m_Name: Testowy
   m_EditorClassIdentifier: 
-  id: 0
+  id: 8
   maxstack: 99
   ItemName: Testowy
   image: {fileID: 21300000, guid: 55192c6314109a8479e39b6557b95a82, type: 3}
+  isPlaceable: 1

@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5431e53348443ee41855b815707db3d5, type: 3}
   m_Name: TestRecipe
   m_EditorClassIdentifier: 
-  CraftedID: 0
+  CraftedID: 8
   AmountCrafted: 4
   CraftinRecipe:
-  - ID: 1
+  - ID: 9
     Amount: 40
