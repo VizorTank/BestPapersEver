@@ -47,11 +47,11 @@ public class Toolbar : MonoBehaviour
 
 
     }
-    public void UseItem()
+    public void UseItem(bool IsAbleToPlace)
     {
         if (slots[slotIndex].HasItem)
         {
-            if (slots[slotIndex].itemSlot.stack.Item.isPlaceable)
+            if (IsAbleToPlace&&slots[slotIndex].itemSlot.stack.Item.isPlaceable)
             {
                 playerController.PlaceBlock(slots[slotIndex].itemSlot.stack.Item.id);
                 slots[slotIndex].itemSlot.Take(1);

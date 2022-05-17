@@ -152,12 +152,12 @@ public class ChunkGenerator
     public void SetNeighbours(ChunkNeighbours chunkNeighbours) => neighbours = chunkNeighbours;
     public int GetBlock(int3 position)
     {
-        if (!CanEditChunk()) return -1;
+        if (!CanEditChunk()) return 0;
         return blocksId[GetIndex(position)];
     }
     public int SetBlock(int3 position, int value)
     {
-        if (!CanEditChunk()) return -1;
+        if (!CanEditChunk()) return 0;
 
         int oldBlockID = GetBlock(position);
         blocksId[GetIndex(position)] = value;

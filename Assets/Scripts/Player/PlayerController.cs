@@ -50,6 +50,8 @@ public class PlayerController : MonoBehaviour
     public CharacterController controller;
     public CharacterStats characterStats;
 
+
+    bool placeStructure;
     //Inventory
 
     private void Awake()
@@ -76,13 +78,18 @@ public class PlayerController : MonoBehaviour
         playerInput.Player.DestroyBlock.started += DestroyBlock_started;
         playerInput.Player.NoClip.started += NoClip_started;
         playerInput.Player.Inventory.started += Inventory_started;
+
+        playerInput.Player.PlaceStructure.started += PlaceStructure_started;
     }
 
     private void NoClip_started(UnityEngine.InputSystem.InputAction.CallbackContext obj) => noClip = !noClip;
     private void Inventory_started(UnityEngine.InputSystem.InputAction.CallbackContext obj) => inInventory = !inInventory;
 
     private void PlaceBlock_started(UnityEngine.InputSystem.InputAction.CallbackContext obj) => UseItem();
-    private void DestroyBlock_started(UnityEngine.InputSystem.InputAction.CallbackContext obj) => destroyBlock = true;
+    private void DestroyBlock_started(UnityEngine.InputSystem.InputAction.CallbackContext obj) => DestroyBlock();
+
+
+    private void PlaceStructure_started(UnityEngine.InputSystem.InputAction.CallbackContext obj) => placeStructure = true;
 
     private void OnEnable() => playerInput.Enable();
     private void OnDisable() => playerInput.Disable();
@@ -132,9 +139,21 @@ public class PlayerController : MonoBehaviour
                 worldClass.SetBlock(HighlightPlaceBlock.position, placingBlockID);
                 placeBlock = false;
             }
+            if (placeStructure)
+            {
+                worldClass.CreateStructure(HighlightPlaceBlock.position - new Vector3(2, 0, 2), 0);
+                placeStructure = false;
+            }
         }
     }
 
+    public void DestroyBlock()
+    {
+        if (!IsConsoleOpenned)
+            if (!inInventory)
+                if (HighlightBlock.gameObject.activeSelf)
+                    worldClass.SetBlock(HighlightBlock.position, 0);
+    }
     public void PlaceBlock(int BlockID)
     {
         worldClass.SetBlock(HighlightPlaceBlock.position, BlockID);
@@ -230,6 +249,7 @@ public class PlayerController : MonoBehaviour
     public void UseItem()
     {
         if(!IsConsoleOpenned)
-        toolbar.UseItem();
+
+        toolbar.UseItem(HighlightPlaceBlock.gameObject.activeSelf);
     }
 }

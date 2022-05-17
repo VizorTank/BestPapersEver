@@ -113,6 +113,14 @@ public class @PlayerInput : IInputActionCollection, IDisposable
                     ""expectedControlType"": ""Button"",
                     ""processors"": """",
                     ""interactions"": """"
+                },
+                {
+                    ""name"": ""PlaceStructure"",
+                    ""type"": ""Button"",
+                    ""id"": ""b114ebd4-88a2-459c-9fb8-a992c7833f5a"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": """"
                 }
             ],
             ""bindings"": [
@@ -465,6 +473,17 @@ public class @PlayerInput : IInputActionCollection, IDisposable
                     ""processors"": """",
                     ""groups"": """",
                     ""action"": ""Confirm"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""8491a1c2-b621-4dac-8b0c-c726ebef277f"",
+                    ""path"": ""<Keyboard>/v"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""PlaceStructure"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 }
@@ -1054,6 +1073,7 @@ public class @PlayerInput : IInputActionCollection, IDisposable
         m_Player_Inventory = m_Player.FindAction("Inventory", throwIfNotFound: true);
         m_Player_InventoryAdv = m_Player.FindAction("InventoryAdv", throwIfNotFound: true);
         m_Player_Confirm = m_Player.FindAction("Confirm", throwIfNotFound: true);
+        m_Player_PlaceStructure = m_Player.FindAction("PlaceStructure", throwIfNotFound: true);
         // UI
         m_UI = asset.FindActionMap("UI", throwIfNotFound: true);
         m_UI_Navigate = m_UI.FindAction("Navigate", throwIfNotFound: true);
@@ -1127,6 +1147,7 @@ public class @PlayerInput : IInputActionCollection, IDisposable
     private readonly InputAction m_Player_Inventory;
     private readonly InputAction m_Player_InventoryAdv;
     private readonly InputAction m_Player_Confirm;
+    private readonly InputAction m_Player_PlaceStructure;
     public struct PlayerActions
     {
         private @PlayerInput m_Wrapper;
@@ -1143,6 +1164,7 @@ public class @PlayerInput : IInputActionCollection, IDisposable
         public InputAction @Inventory => m_Wrapper.m_Player_Inventory;
         public InputAction @InventoryAdv => m_Wrapper.m_Player_InventoryAdv;
         public InputAction @Confirm => m_Wrapper.m_Player_Confirm;
+        public InputAction @PlaceStructure => m_Wrapper.m_Player_PlaceStructure;
         public InputActionMap Get() { return m_Wrapper.m_Player; }
         public void Enable() { Get().Enable(); }
         public void Disable() { Get().Disable(); }
@@ -1188,6 +1210,9 @@ public class @PlayerInput : IInputActionCollection, IDisposable
                 @Confirm.started -= m_Wrapper.m_PlayerActionsCallbackInterface.OnConfirm;
                 @Confirm.performed -= m_Wrapper.m_PlayerActionsCallbackInterface.OnConfirm;
                 @Confirm.canceled -= m_Wrapper.m_PlayerActionsCallbackInterface.OnConfirm;
+                @PlaceStructure.started -= m_Wrapper.m_PlayerActionsCallbackInterface.OnPlaceStructure;
+                @PlaceStructure.performed -= m_Wrapper.m_PlayerActionsCallbackInterface.OnPlaceStructure;
+                @PlaceStructure.canceled -= m_Wrapper.m_PlayerActionsCallbackInterface.OnPlaceStructure;
             }
             m_Wrapper.m_PlayerActionsCallbackInterface = instance;
             if (instance != null)
@@ -1228,6 +1253,9 @@ public class @PlayerInput : IInputActionCollection, IDisposable
                 @Confirm.started += instance.OnConfirm;
                 @Confirm.performed += instance.OnConfirm;
                 @Confirm.canceled += instance.OnConfirm;
+                @PlaceStructure.started += instance.OnPlaceStructure;
+                @PlaceStructure.performed += instance.OnPlaceStructure;
+                @PlaceStructure.canceled += instance.OnPlaceStructure;
             }
         }
     }
@@ -1396,6 +1424,7 @@ public class @PlayerInput : IInputActionCollection, IDisposable
         void OnInventory(InputAction.CallbackContext context);
         void OnInventoryAdv(InputAction.CallbackContext context);
         void OnConfirm(InputAction.CallbackContext context);
+        void OnPlaceStructure(InputAction.CallbackContext context);
     }
     public interface IUIActions
     {
