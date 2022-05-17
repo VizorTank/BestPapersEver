@@ -19,6 +19,7 @@ public class WorldClass : MonoBehaviour
     {
         get => blockTypesList.Materials;
     }
+    public List<Structure> Structures = new List<Structure>();
 
     public BiomeAttributes BiomeAttributes;
     public BiomeAttributesStruct BiomeAttributesStruct;
@@ -33,6 +34,57 @@ public class WorldClass : MonoBehaviour
 
         BiomeAttributesStruct = BiomeAttributes.GetBiomeStruct();
         blockTypesList.ProcessData();
+
+        Structure structure = new Structure(new Vector3Int(5, 7, 5));
+        structure.BlockId = 1;
+        
+
+        for (int x = 0; x < 5; x++)
+        {
+            for (int y = 0; y < 2; y++)
+            {
+                for (int z = 0; z < 5; z++)
+                {
+                    structure.Blocks[x][2 + y][z] = 9;
+                }
+            }
+        }
+
+        structure.Blocks[2][0][2] = 8;
+        structure.Blocks[2][1][2] = 8;
+        structure.Blocks[2][2][2] = 8;
+        structure.Blocks[2][3][2] = 8;
+        structure.Blocks[2][4][2] = 8;
+
+        structure.Blocks[0][2][0] = 0;
+        structure.Blocks[0][3][0] = 0;
+
+        structure.Blocks[4][2][0] = 0;
+        structure.Blocks[4][3][0] = 0;
+
+        structure.Blocks[0][2][4] = 0;
+        structure.Blocks[0][3][4] = 0;
+
+        structure.Blocks[4][2][4] = 0;
+        structure.Blocks[4][3][4] = 0;
+
+        structure.Blocks[1][4][2] = 9;
+        structure.Blocks[3][4][2] = 9;
+        structure.Blocks[2][4][1] = 9;
+        structure.Blocks[2][4][3] = 9;
+
+        structure.Blocks[1][5][2] = 9;
+        structure.Blocks[3][5][2] = 9;
+        structure.Blocks[2][5][1] = 9;
+        structure.Blocks[2][5][3] = 9;
+
+        structure.Blocks[2][5][2] = 9;
+
+
+        structure.Hitbox = new Vector3Int(3, 6, 3);
+        structure.HitboxOffset = new Vector3Int(1, 1, 1);
+
+        Structures.Add(structure);
 
         chunks = new Chunk[WorldSizeInChunks.x, WorldSizeInChunks.y, WorldSizeInChunks.z];
 
@@ -105,6 +157,7 @@ public class WorldClass : MonoBehaviour
             foreach (int3 int3 in activeChunks)
             {
                 removeChunks.Remove(int3);
+                LinkChunk(int3);
             }
             foreach (int3 item in removeChunks)
             {
@@ -209,6 +262,12 @@ public class WorldClass : MonoBehaviour
             MyLogger.DisplayWarning(e.Message);
             return 0;
         }
+    }
+
+    public void CreateStructure(Vector3 position, int strucutreId)
+    {
+        int3 chunkPos = GetChunkCoords(position);
+        chunks[chunkPos.x, chunkPos.y, chunkPos.z].CreateStructure(new int3(position) % ChunkSize, strucutreId);
     }
 
     public int GetBlock(Vector3 position)

@@ -12,6 +12,11 @@ public class ChunkGenerator
     private Chunk chunk;
     private WorldClass world;
 
+    private BlockTypesList blockTypes
+    {
+        get => world.blockTypesList;
+    }
+
     private GameObject chunkObject;
     private MeshRenderer meshRenderer;
     private MeshFilter meshFilter;
@@ -143,15 +148,16 @@ public class ChunkGenerator
     public void NeighbourDepecency(int value) => usedByOtherChunks += value;
 
     public bool CanEditChunk() => !updating;
+    public void ForceUpdate() => requireUpdate = true;
     public void SetNeighbours(ChunkNeighbours chunkNeighbours) => neighbours = chunkNeighbours;
     public int GetBlock(int3 position)
     {
-        if (!CanEditChunk()) throw new Exception("Trying getting a block when can't edit.");
+        if (!CanEditChunk()) return -1;
         return blocksId[GetIndex(position)];
     }
     public int SetBlock(int3 position, int value)
     {
-        if (!CanEditChunk()) throw new Exception("Trying setting a block when can't edit.");
+        if (!CanEditChunk()) return -1;
 
         int oldBlockID = GetBlock(position);
         blocksId[GetIndex(position)] = value;
@@ -159,6 +165,32 @@ public class ChunkGenerator
         //MyLogger.Display(string.Format("Block Placed at: {0}, {1}, {2}", position.x, position.y, position.z));
 
         return oldBlockID;
+    }
+
+    public void CreateStructure(int3 lPosition, int structureId)
+    {
+        if (!CanEditChunk()) return;
+
+        int3 sSize = world.Structures[structureId].Size3;
+
+        for (int x = math.max(lPosition.x, 0); x < math.min(sSize.x + lPosition.x, Size.x); x++)
+        {
+            for (int y = math.max(lPosition.y, 0); y < math.min(sSize.y + lPosition.y, Size.y); y++)
+            {
+                for (int z = math.max(lPosition.z, 0); z < math.min(sSize.z + lPosition.z, Size.z); z++)
+                {
+                    int3 sBlockPos = new int3(x, y, z) - lPosition;
+                    int blockId = blocksId[GetIndex(new int3(x, y, z))];
+                    int structureBlockId = world.Structures[structureId].Blocks[sBlockPos.x][sBlockPos.y][sBlockPos.z];
+                    if (blockTypes.areReplacable[blockId] ||
+                        !blockTypes.areReplacable[structureBlockId])
+                    {
+                        blocksId[GetIndex(new int3(x, y, z))] = structureBlockId;
+                    }
+                }
+            }
+        }
+        requireUpdate = true;
     }
 
     public int GetIndex(int3 position) => position.x + (position.y + position.z * Size.y) * Size.x;
@@ -391,7 +423,7 @@ public class ChunkGenerator
 
         meshRenderer.materials = world.Materials.ToArray();
 
-        Debug.Log("Time enlapsed: " + Time.realtimeSinceStartup);
+        //Debug.Log("Time enlapsed: " + Time.realtimeSinceStartup);
 
         return 0;
     }
