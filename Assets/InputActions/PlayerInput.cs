@@ -51,6 +51,14 @@ public class @PlayerInput : IInputActionCollection, IDisposable
                     ""interactions"": """"
                 },
                 {
+                    ""name"": ""PlaceStructure"",
+                    ""type"": ""Button"",
+                    ""id"": ""fabcbb3b-7fb6-4052-b4ff-45a3985e9b6c"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": """"
+                },
+                {
                     ""name"": ""SelectHotbarSlot"",
                     ""type"": ""Value"",
                     ""id"": ""731faa39-2dc1-43c2-a242-c0fb8073711f"",
@@ -389,6 +397,17 @@ public class @PlayerInput : IInputActionCollection, IDisposable
                     ""processors"": """",
                     ""groups"": ""Keyboard&Mouse"",
                     ""action"": ""SelectHotbarSlot"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""b6dc532b-f748-4ca4-bf03-6a61bd1ea43e"",
+                    ""path"": ""<Keyboard>/v"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Keyboard&Mouse"",
+                    ""action"": ""PlaceStructure"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 }
@@ -970,6 +989,7 @@ public class @PlayerInput : IInputActionCollection, IDisposable
         m_Player_Look = m_Player.FindAction("Look", throwIfNotFound: true);
         m_Player_DestroyBlock = m_Player.FindAction("DestroyBlock", throwIfNotFound: true);
         m_Player_PlaceBlock = m_Player.FindAction("PlaceBlock", throwIfNotFound: true);
+        m_Player_PlaceStructure = m_Player.FindAction("PlaceStructure", throwIfNotFound: true);
         m_Player_SelectHotbarSlot = m_Player.FindAction("SelectHotbarSlot", throwIfNotFound: true);
         m_Player_Jump = m_Player.FindAction("Jump", throwIfNotFound: true);
         m_Player_NoClip = m_Player.FindAction("NoClip", throwIfNotFound: true);
@@ -1039,6 +1059,7 @@ public class @PlayerInput : IInputActionCollection, IDisposable
     private readonly InputAction m_Player_Look;
     private readonly InputAction m_Player_DestroyBlock;
     private readonly InputAction m_Player_PlaceBlock;
+    private readonly InputAction m_Player_PlaceStructure;
     private readonly InputAction m_Player_SelectHotbarSlot;
     private readonly InputAction m_Player_Jump;
     private readonly InputAction m_Player_NoClip;
@@ -1051,6 +1072,7 @@ public class @PlayerInput : IInputActionCollection, IDisposable
         public InputAction @Look => m_Wrapper.m_Player_Look;
         public InputAction @DestroyBlock => m_Wrapper.m_Player_DestroyBlock;
         public InputAction @PlaceBlock => m_Wrapper.m_Player_PlaceBlock;
+        public InputAction @PlaceStructure => m_Wrapper.m_Player_PlaceStructure;
         public InputAction @SelectHotbarSlot => m_Wrapper.m_Player_SelectHotbarSlot;
         public InputAction @Jump => m_Wrapper.m_Player_Jump;
         public InputAction @NoClip => m_Wrapper.m_Player_NoClip;
@@ -1076,6 +1098,9 @@ public class @PlayerInput : IInputActionCollection, IDisposable
                 @PlaceBlock.started -= m_Wrapper.m_PlayerActionsCallbackInterface.OnPlaceBlock;
                 @PlaceBlock.performed -= m_Wrapper.m_PlayerActionsCallbackInterface.OnPlaceBlock;
                 @PlaceBlock.canceled -= m_Wrapper.m_PlayerActionsCallbackInterface.OnPlaceBlock;
+                @PlaceStructure.started -= m_Wrapper.m_PlayerActionsCallbackInterface.OnPlaceStructure;
+                @PlaceStructure.performed -= m_Wrapper.m_PlayerActionsCallbackInterface.OnPlaceStructure;
+                @PlaceStructure.canceled -= m_Wrapper.m_PlayerActionsCallbackInterface.OnPlaceStructure;
                 @SelectHotbarSlot.started -= m_Wrapper.m_PlayerActionsCallbackInterface.OnSelectHotbarSlot;
                 @SelectHotbarSlot.performed -= m_Wrapper.m_PlayerActionsCallbackInterface.OnSelectHotbarSlot;
                 @SelectHotbarSlot.canceled -= m_Wrapper.m_PlayerActionsCallbackInterface.OnSelectHotbarSlot;
@@ -1104,6 +1129,9 @@ public class @PlayerInput : IInputActionCollection, IDisposable
                 @PlaceBlock.started += instance.OnPlaceBlock;
                 @PlaceBlock.performed += instance.OnPlaceBlock;
                 @PlaceBlock.canceled += instance.OnPlaceBlock;
+                @PlaceStructure.started += instance.OnPlaceStructure;
+                @PlaceStructure.performed += instance.OnPlaceStructure;
+                @PlaceStructure.canceled += instance.OnPlaceStructure;
                 @SelectHotbarSlot.started += instance.OnSelectHotbarSlot;
                 @SelectHotbarSlot.performed += instance.OnSelectHotbarSlot;
                 @SelectHotbarSlot.canceled += instance.OnSelectHotbarSlot;
@@ -1276,6 +1304,7 @@ public class @PlayerInput : IInputActionCollection, IDisposable
         void OnLook(InputAction.CallbackContext context);
         void OnDestroyBlock(InputAction.CallbackContext context);
         void OnPlaceBlock(InputAction.CallbackContext context);
+        void OnPlaceStructure(InputAction.CallbackContext context);
         void OnSelectHotbarSlot(InputAction.CallbackContext context);
         void OnJump(InputAction.CallbackContext context);
         void OnNoClip(InputAction.CallbackContext context);

@@ -29,6 +29,7 @@ public class PlayerController : MonoBehaviour
     // Input Flags
     public bool isGrounded;
     public bool placeBlock;
+    public bool placeStructure;
     public bool destroyBlock;
 
     // Camera management
@@ -59,6 +60,7 @@ public class PlayerController : MonoBehaviour
         //playerInput.Player.Move.canceled += Move_performed;
 
         playerInput.Player.PlaceBlock.started += PlaceBlock_started;
+        playerInput.Player.PlaceStructure.started += PlaceStructure_started;
         playerInput.Player.DestroyBlock.started += DestroyBlock_started;
         playerInput.Player.NoClip.started += NoClip_started;
     }
@@ -66,6 +68,7 @@ public class PlayerController : MonoBehaviour
     private void NoClip_started(UnityEngine.InputSystem.InputAction.CallbackContext obj) => noClip = !noClip;
 
     private void PlaceBlock_started(UnityEngine.InputSystem.InputAction.CallbackContext obj) => placeBlock = true;
+    private void PlaceStructure_started(UnityEngine.InputSystem.InputAction.CallbackContext obj) => placeStructure = true;
     private void DestroyBlock_started(UnityEngine.InputSystem.InputAction.CallbackContext obj) => destroyBlock = true;
 
     private void OnEnable() => playerInput.Enable();
@@ -177,6 +180,11 @@ public class PlayerController : MonoBehaviour
             {
                 worldClass.SetBlock(HighlightPlaceBlock.position, placingBlockID);
                 placeBlock = false;
+            }
+            if (placeStructure)
+            {
+                worldClass.CreateStructure(HighlightPlaceBlock.position - new Vector3(2, 0, 2), 0);
+                placeStructure = false;
             }
         }
     }

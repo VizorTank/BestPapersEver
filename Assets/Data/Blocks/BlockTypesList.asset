@@ -19,7 +19,7 @@ MonoBehaviour:
     isTransparent: 1
     isLiquid: 0
     isInvisible: 0
-    isReplaceable: 0
+    isReplaceable: 1
     isFalling: 0
     isGlowing: 0
     isGrowing: 0
@@ -101,4 +101,26 @@ MonoBehaviour:
     isGlowing: 0
     isGrowing: 0
     DropTable: 
-  BlockCount: 8
+  - name: Wood
+    material: {fileID: 2100000, guid: 536486c037199674d9c98d8a3fed6368, type: 2}
+    isSolid: 1
+    isTransparent: 0
+    isLiquid: 0
+    isInvisible: 0
+    isReplaceable: 0
+    isFalling: 0
+    isGlowing: 0
+    isGrowing: 0
+    DropTable: 
+  - name: Leaves
+    material: {fileID: 2100000, guid: 6e66f1bebf450694e9131c2c8af1ae29, type: 2}
+    isSolid: 1
+    isTransparent: 1
+    isLiquid: 0
+    isInvisible: 0
+    isReplaceable: 0
+    isFalling: 0
+    isGlowing: 0
+    isGrowing: 0
+    DropTable: 
+  BlockCount: 10

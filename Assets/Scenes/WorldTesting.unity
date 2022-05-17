@@ -520,7 +520,8 @@ MonoBehaviour:
     y: 6
     z: 64
   blockTypesList: {fileID: 11400000, guid: 7d02ef2692f7d5a4c984e6f3f30b45a0, type: 2}
-  BiomeAttributes: {fileID: 11400000, guid: 2afc7e5beb537324e9211a7524d0dd0c, type: 2}
+  Structures: []
+  BiomeAttributes: {fileID: 11400000, guid: 503623fffbb112c4aa807423949bff67, type: 2}
   playerLastChunkPos:
     x: 0
     y: 0

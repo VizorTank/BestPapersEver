@@ -1,4 +1,6 @@
 
+using Unity.Mathematics;
+
 public class ChunkNeighbours
 {
     public Chunk Back;
@@ -36,6 +38,19 @@ public class ChunkNeighbours
                 case 4: Left = value; break;
                 case 5: Right = value; break;
             }
+        }
+    }
+
+    public Chunk this[int3 pos]
+    {
+        get
+        {
+            for (int i = 0; i < 6; i++)
+            {
+                if (math.all(pos == VoxelData.voxelNeighbours[i])) return this[i];
+            }
+
+            throw new System.Exception("Index out of bounds");
         }
     }
 }
