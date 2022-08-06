@@ -23,7 +23,7 @@ public class PlayerController : MonoBehaviour
     public Vector3 movement;
     public Vector3 velocity;
     public float upSpeed = 0;
-    public bool noClip = false;
+    public bool noClip = true;
     public bool isSprinting;
 
     // Input Flags
@@ -84,7 +84,7 @@ public class PlayerController : MonoBehaviour
         movement = (transform.forward * input.z + transform.right * input.x) * speed * Time.deltaTime;
         if (isSprinting)
             movement *= sprintSpeed;
-        if (!noClip)
+        if (false)
         {
             movement = CheckCollisionSides(movement);
             velocity.y = CheckGround(velocity.y);
@@ -128,7 +128,10 @@ public class PlayerController : MonoBehaviour
 
             for (int j = 0; j < 4; j++)
             {
-                if (worldClass.blockTypesList.areSolid[worldClass.GetBlock(block + fourCorners[j] * playerWidth)])
+                int blockId = 0;
+                if (worldClass.TryGetBlock(block + fourCorners[j] * playerWidth, ref blockId) 
+                    && blockId >= 0 
+                    && worldClass.blockTypesList.areSolid[blockId])
                 {
                     return Vector3.zero;
                 }
@@ -171,14 +174,15 @@ public class PlayerController : MonoBehaviour
 
         if (HighlightBlock.gameObject.activeSelf)
         {
+            int a = 0;
             if (destroyBlock)
             {
-                worldClass.SetBlock(HighlightBlock.position, 0);
+                worldClass.TrySetBlock(HighlightBlock.position, 0, ref a);
                 destroyBlock = false;
             }
             if (placeBlock)
             {
-                worldClass.SetBlock(HighlightPlaceBlock.position, placingBlockID);
+                worldClass.TrySetBlock(HighlightPlaceBlock.position, placingBlockID, ref a);
                 placeBlock = false;
             }
             if (placeStructure)
@@ -198,8 +202,8 @@ public class PlayerController : MonoBehaviour
         while (step < reach)
         {
             Vector3 pos = Camera.position + Camera.forward * step;
-
-            if (worldClass.GetBlock(pos) != 0)
+            int blockId = 0;
+            if (worldClass.TryGetBlock(pos, ref blockId) && blockId != 0)
             {
                 HighlightBlock.position = new Vector3(Mathf.Floor(pos.x), Mathf.Floor(pos.y), Mathf.Floor(pos.z));
                 HighlightBlock.gameObject.SetActive(true);
