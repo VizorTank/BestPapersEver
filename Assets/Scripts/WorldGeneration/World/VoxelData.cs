@@ -1,4 +1,5 @@
 using Unity.Mathematics;
+using UnityEngine;
 using UnityEngine.Rendering;
 
 public static class VoxelData
@@ -72,4 +73,13 @@ public static class VoxelData
         new int3(0, 1, 1),
         new int3(0, 1, 1)
     };
+
+    public static int GetIndex(int3 position) => position.x + (position.y + position.z * ChunkSize.y) * ChunkSize.x;
+    public static int3 GetChunkCoordinates(float3 position)
+    {
+        int3 cPos = new int3(Mathf.FloorToInt(position.x / ChunkSize.x),
+            Mathf.FloorToInt(position.y / ChunkSize.y),
+            Mathf.FloorToInt(position.z / ChunkSize.z));
+        return cPos;
+    }
 }

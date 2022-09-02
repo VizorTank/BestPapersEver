@@ -1,10 +1,11 @@
+using Unity.Mathematics;
 using UnityEngine;
 
 public class ChunkRenderer : IChunkRenderer
 {
     private WorldClass _world;
     
-    private Chunk _chunk;
+    private IChunk _chunk;
     
     private GameObject _chunkObject;
     private MeshRenderer _meshRenderer;
@@ -12,16 +13,21 @@ public class ChunkRenderer : IChunkRenderer
     
     private ChunkRendererStateMachine _stateMachine;
 
-    private bool _requireUpdate = true;
+    private bool _requireUpdate;
 
-    public ChunkRenderer(WorldClass world, Chunk chunk)
+    public ChunkRenderer(IChunk chunk, WorldClass world)
     {
         _world = world;
         SetChunk(chunk);
         _stateMachine = new ChunkRendererStateMachine();
     }
 
-    private void SetChunk(Chunk chunk)
+    public void Destroy()
+    {
+        _stateMachine.Destroy();
+    }
+
+    private void SetChunk(IChunk chunk)
     {
         _chunk = chunk;
         
@@ -31,28 +37,28 @@ public class ChunkRenderer : IChunkRenderer
         
         _meshRenderer.materials = _world.Materials.ToArray();
         
+        int3 chunkCoordinates = chunk.GetChunkCoordinates();
+
         _chunkObject.transform.SetParent(_world.transform);
         _chunkObject.transform.position = Vector3.Scale(
-            new Vector3(chunk.Coordinates.x, chunk.Coordinates.y, chunk.Coordinates.z), 
+            new Vector3(chunkCoordinates.x, chunkCoordinates.y, chunkCoordinates.z), 
             new Vector3(VoxelData.ChunkSize.x, VoxelData.ChunkSize.y, VoxelData.ChunkSize.z));
-        _chunkObject.name = string.Format("Chunk {0}, {1}, {2}", chunk.Coordinates.x, chunk.Coordinates.y, chunk.Coordinates.z);
+        _chunkObject.name = string.Format("Chunk {0}, {1}, {2}", chunkCoordinates.x, chunkCoordinates.y, chunkCoordinates.z);
     }
     
     public void Render()
     {
-        if (_requireUpdate)
+        if (_requireUpdate && _stateMachine.Init(_chunk, _world))
         {
-            _stateMachine.Init(_chunk, _world);
-            _stateMachine.CopyBlocks();
-            _stateMachine.CreateClusters();
-            _stateMachine.CheckClusterVisibility();
-            _stateMachine.CreateMeshDataWithClusters();
-            if (_stateMachine.CreateMesh(out Mesh mesh))
-            {
-                _meshFilter.mesh = mesh;
-                //Debug.Log("Created Mesh");
-                _requireUpdate = false;
-            }
+            _requireUpdate = false;
+        }
+        _stateMachine.CopyBlocks();
+        _stateMachine.CreateClusters();
+        _stateMachine.CheckClusterVisibility();
+        _stateMachine.CreateMeshDataWithClusters();
+        if (_stateMachine.CreateMesh(out Mesh mesh))
+        {
+            _meshFilter.mesh = mesh;
         }
     }
 

@@ -24,7 +24,7 @@ public class WorldClass : MonoBehaviour
     public BiomeAttributes BiomeAttributes;
     public BiomeAttributesStruct BiomeAttributesStruct;
 
-    private Chunk[,,] chunks;
+    private IChunk[,,] chunks;
     private bool[,,] activeChunks;
     private List<int3> activeChunksList = new List<int3>();
     private int prevRenderDistanceSize;
@@ -44,7 +44,7 @@ public class WorldClass : MonoBehaviour
 
         CreateTreeStructure();
 
-        chunks = new Chunk[WorldSizeInChunks.x, WorldSizeInChunks.y, WorldSizeInChunks.z];
+        chunks = new IChunk[WorldSizeInChunks.x, WorldSizeInChunks.y, WorldSizeInChunks.z];
 
         if (Player != null)
         {
@@ -122,33 +122,33 @@ public class WorldClass : MonoBehaviour
         Structures.Add(structure);
     }
 
-    private void LinkChunks()
-    {
-        for (int x = 0; x < WorldSizeInChunks.x; x++)
-        {
-            for (int y = 0; y < WorldSizeInChunks.y; y++)
-            {
-                for (int z = 0; z < WorldSizeInChunks.z; z++)
-                {
-                    LinkChunk(new int3(x, y, z));
-                }
-            }
-        }
-    }
+    // private void LinkChunks()
+    // {
+    //     for (int x = 0; x < WorldSizeInChunks.x; x++)
+    //     {
+    //         for (int y = 0; y < WorldSizeInChunks.y; y++)
+    //         {
+    //             for (int z = 0; z < WorldSizeInChunks.z; z++)
+    //             {
+    //                 LinkChunk(new int3(x, y, z));
+    //             }
+    //         }
+    //     }
+    // }
 
-    private void LinkChunk(int3 position)
-    {
-        ChunkNeighbours chunkNeighbours = new ChunkNeighbours();
-        for (int i = 0; i < 6; i++)
-        {
-            int3 neighbourPos = position + VoxelData.voxelNeighbours[i];
-            if (neighbourPos.x < 0 || neighbourPos.x >= WorldSizeInChunks.x ||
-                neighbourPos.y < 0 || neighbourPos.y >= WorldSizeInChunks.y ||
-                neighbourPos.z < 0 || neighbourPos.z >= WorldSizeInChunks.z) continue;
-            chunkNeighbours[i] = chunks[neighbourPos.x, neighbourPos.y, neighbourPos.z];
-        }
-        chunks[position.x, position.y, position.z].SetNeighbours(chunkNeighbours);
-    }
+    // private void LinkChunk(int3 position)
+    // {
+    //     ChunkNeighbours chunkNeighbours = new ChunkNeighbours();
+    //     for (int i = 0; i < 6; i++)
+    //     {
+    //         int3 neighbourPos = position + VoxelData.voxelNeighbours[i];
+    //         if (neighbourPos.x < 0 || neighbourPos.x >= WorldSizeInChunks.x ||
+    //             neighbourPos.y < 0 || neighbourPos.y >= WorldSizeInChunks.y ||
+    //             neighbourPos.z < 0 || neighbourPos.z >= WorldSizeInChunks.z) continue;
+    //         chunkNeighbours[i] = chunks[neighbourPos.x, neighbourPos.y, neighbourPos.z];
+    //     }
+    //     chunks[position.x, position.y, position.z].SetNeighbours(chunkNeighbours);
+    // }
 
     // Update is called once per frame
     void Update()
@@ -279,7 +279,7 @@ public class WorldClass : MonoBehaviour
         if (!IsCoordInWorld(coordinates)) return;
 
         if (chunks[coordinates.x, coordinates.y, coordinates.z] == null)
-            chunks[coordinates.x, coordinates.y, coordinates.z] = new Chunk(coordinates, this);
+            chunks[coordinates.x, coordinates.y, coordinates.z] = new Chunk(this, coordinates);
     }
 
     public bool TryPlaceBlock(Vector3 position, int blockID)
@@ -287,7 +287,9 @@ public class WorldClass : MonoBehaviour
         if (!IsInWorld(position)) return false;
         int3 chunkPos = GetChunkCoords(position);
         if (chunks[chunkPos.x, chunkPos.y, chunkPos.z] == null) return false;
-        return chunks[chunkPos.x, chunkPos.y, chunkPos.z].TryPlaceBlock(new int3(position) % ChunkSize, blockID);
+        if (!chunks[chunkPos.x, chunkPos.y, chunkPos.z].TryGetBlock(new int3(position) % ChunkSize, out int replacedBlockId)) return false;
+        if (!blockTypesList.areReplacable[replacedBlockId]) return false;
+        return chunks[chunkPos.x, chunkPos.y, chunkPos.z].TrySetBlock(new int3(position) % ChunkSize, blockID, out int result);
     }
 
     public bool TrySetBlock(Vector3 position, int blockID, ref int replacedBlockId)
@@ -295,19 +297,22 @@ public class WorldClass : MonoBehaviour
         if (!IsInWorld(position)) return false;
         int3 chunkPos = GetChunkCoords(position);
         if (chunks[chunkPos.x, chunkPos.y, chunkPos.z] == null) return false;
-        return chunks[chunkPos.x, chunkPos.y, chunkPos.z].TrySetBlock(new int3(position) % ChunkSize, blockID, ref replacedBlockId);
+        bool result = chunks[chunkPos.x, chunkPos.y, chunkPos.z].TrySetBlock(new int3(position) % ChunkSize, blockID, out int retBlockId);
+        replacedBlockId = retBlockId;
+        return result;
     }
 
     public int SetBlock(Vector3 position, int blockID)
     {
         int3 chunkPos = GetChunkCoords(position);
-        return chunks[chunkPos.x, chunkPos.y, chunkPos.z].SetBlock(new int3(position) % ChunkSize, blockID);
+        chunks[chunkPos.x, chunkPos.y, chunkPos.z].TrySetBlock(new int3(position) % ChunkSize, blockID, out int result);
+        return result;
     }
 
     public void CreateStructure(Vector3 position, int strucutreId)
     {
-        int3 chunkPos = GetChunkCoords(position);
-        chunks[chunkPos.x, chunkPos.y, chunkPos.z].CreateStructure(new int3(position) % ChunkSize, strucutreId);
+        // int3 chunkPos = GetChunkCoords(position);
+        // chunks[chunkPos.x, chunkPos.y, chunkPos.z].CreateStructure(new int3(position) % ChunkSize, strucutreId);
     }
 
     public bool TryGetBlock(Vector3 position, ref int replacedBlockId)
@@ -315,14 +320,16 @@ public class WorldClass : MonoBehaviour
         if (!IsInWorld(position)) return false;
         int3 chunkPos = GetChunkCoords(position);
         if (chunks[chunkPos.x, chunkPos.y, chunkPos.z] == null) return false;
-        replacedBlockId = chunks[chunkPos.x, chunkPos.y, chunkPos.z].GetBlock(new int3(position) % ChunkSize);
-        return true;
+        bool tmp = chunks[chunkPos.x, chunkPos.y, chunkPos.z].TryGetBlock(new int3(position) % ChunkSize, out int result);
+        replacedBlockId = result;
+        return tmp;
     }
 
     public int GetBlock(Vector3 position)
     {
         int3 chunkPos = GetChunkCoords(position);
-        return chunks[chunkPos.x, chunkPos.y, chunkPos.z].GetBlock(new int3(position) % ChunkSize);
+        chunks[chunkPos.x, chunkPos.y, chunkPos.z].TryGetBlock(new int3(position) % ChunkSize, out int result);
+        return result;
     }
     public bool IsInWorld(float3 position) => IsInWorld(GetChunkCoords(position));
     public bool IsInWorld(int3 position)
@@ -339,6 +346,22 @@ public class WorldClass : MonoBehaviour
             Mathf.FloorToInt(position.y / ChunkSize.y),
             Mathf.FloorToInt(position.z / ChunkSize.z));
         return cPos;
+    }
+
+    public ChunkNeighbours GetNeighbours(int3 chunkCoordinates)
+    {
+        ChunkNeighbours neighbours = new ChunkNeighbours();
+
+        for (int i = 0; i < 6; i++)
+        {
+            int3 tmp = chunkCoordinates + VoxelData.voxelNeighbours[i];
+            if (IsInWorld(tmp) && chunks[tmp.x, tmp.y, tmp.z] != null)
+                neighbours[i] = chunks[tmp.x, tmp.y, tmp.z];
+            else
+                neighbours[i] = null;
+        }
+
+        return neighbours;
     }
 }
 

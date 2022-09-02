@@ -7,19 +7,19 @@ using System.Runtime.Serialization.Formatters.Binary;
 
 public class SaveManager
 {
-    public Dictionary<int3, Chunk> LoadedChunks;
+    public Dictionary<int3, IChunk> LoadedChunks;
     public Dictionary<int3, bool> GeneratedChunks;
 
-    public void SaveChunk(Chunk chunk)
+    public void SaveChunk(IChunk chunk)
     {
         BinaryFormatter formatter = new BinaryFormatter();
         ChunkData data = new ChunkData(chunk);
-        string path = GetChunkName(chunk.coordinates);
+        string path = GetChunkName(chunk.GetChunkCoordinates());
         FileStream stream = new FileStream(path, FileMode.Create);
         formatter.Serialize(stream, data);
         stream.Close();
-        if (!GeneratedChunks.TryGetValue(chunk.coordinates, out bool tmp))
-            GeneratedChunks.Add(chunk.coordinates, true);
+        if (!GeneratedChunks.TryGetValue(chunk.GetChunkCoordinates(), out bool tmp))
+            GeneratedChunks.Add(chunk.GetChunkCoordinates(), true);
     }
 
     public string GetChunkName(int3 chunkCoords)
@@ -32,7 +32,7 @@ public class SaveManager
                       + ".chunk";
     }
 
-    public Chunk LoadChunk(int3 ChunkCoord, WorldClass World)
+    public IChunk LoadChunk(int3 ChunkCoord, WorldClass World)
     {
         if (GeneratedChunks.TryGetValue(ChunkCoord, out bool tmp))
         {
@@ -42,10 +42,10 @@ public class SaveManager
                 BinaryFormatter formatter = new BinaryFormatter();
                 FileStream stream = new FileStream(path, FileMode.Open);
                 ChunkData data = formatter.Deserialize(stream) as ChunkData;
-                return new Chunk(World, data);
+                return new ChunkOld(World, data);
             }
         }
         GeneratedChunks.Add(ChunkCoord, true);
-        return new Chunk(ChunkCoord, World);
+        return new ChunkOld(World, ChunkCoord);
     }
 }

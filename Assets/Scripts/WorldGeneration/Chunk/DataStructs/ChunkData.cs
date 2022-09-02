@@ -8,9 +8,9 @@ public class ChunkData
     public int[] Coords;
     public int[] BlockIds;
     
-    public ChunkData(Chunk chunk)
+    public ChunkData(IChunk chunk)
     {
-        Coords = new [] {chunk.coordinates.x, chunk.coordinates.y, chunk.coordinates.z};
+        Coords = new [] {chunk.GetChunkCoordinates().x, chunk.GetChunkCoordinates().y, chunk.GetChunkCoordinates().z};
         BlockIds = chunk.GetBlocks().ToArray();
     }
 }

@@ -63,12 +63,12 @@ public struct CheckClusterVisibilityJob : IJobParallelFor
                             startPosition.y < 0 || startPosition.y >= chunkSize.y ||
                             startPosition.z < 0 || startPosition.z >= chunkSize.z)
                         {
-                            if (chunkNeighbourData[i].Length <= 0) continue;
+                            if (!chunkNeighbourData.ChunkNeighbourDataValid[i]) continue;
                             int3 blockPos = (startPosition + chunkSize) % chunkSize + new int3(x, y, z);
                             int idx = blockPos.x + (blockPos.y + blockPos.z * chunkSize.y) * chunkSize.x;
                             
                             // Add when block hides side
-                            if (!blockTypesIsTransparent[chunkNeighbourData[i][idx]] || blockId == blockIdDatas[idx]) 
+                            if (!blockTypesIsTransparent[chunkNeighbourData.ChunkNeighbourDataArray[i][idx]] || blockId == blockIdDatas[idx]) 
                                 clusterSidesVisibility[i]++;
                         }
                         else
@@ -76,9 +76,6 @@ public struct CheckClusterVisibilityJob : IJobParallelFor
                             int3 blockPos = startPosition + new int3(x, y, z);
                             int idx = blockPos.x + (blockPos.y + blockPos.z * chunkSize.y) * chunkSize.x;
 
-                            int a = 0;
-                            if (idx >= 4096) 
-                                a = 1; 
                             // Add when block hides side
                             if (!blockTypesIsTransparent[blockIdDatas[idx]] || blockId == blockIdDatas[idx])
                                 clusterSidesVisibility[i]++;
