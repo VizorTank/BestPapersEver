@@ -42,7 +42,10 @@ public class Toolbar : MonoBehaviour
                 slotIndex = slots.Length - 1;
 
             highlight.position = slots[slotIndex].slotIcon.transform.position;
-
+            if (slots[slotIndex].itemSlot.HasItem)
+                playerController.ItemType = slots[slotIndex].itemSlot.stack.Item.itemtype;
+            else
+                playerController.ItemType = Itemtype.None;
         }
 
 
@@ -51,17 +54,13 @@ public class Toolbar : MonoBehaviour
     {
         if (slots[slotIndex].HasItem)
         {
-            if (IsAbleToPlace&&slots[slotIndex].itemSlot.stack.Item.isPlaceable)
+            if (IsAbleToPlace&&slots[slotIndex].itemSlot.stack.Item.itemtype==Itemtype.Placeable)
             {
                 playerController.PlaceBlock(slots[slotIndex].itemSlot.stack.Item.id);
                 slots[slotIndex].itemSlot.Take(1);
             }
-            Debug.Log(slots[slotIndex].itemSlot.stack.Item.name + " " + slots[slotIndex].itemSlot.stack.amount);
+            
 
-        }
-        else
-        {
-            Debug.Log("no item");
         }
 
     }
@@ -69,14 +68,15 @@ public class Toolbar : MonoBehaviour
 
     public bool IsPlaceable()
     {
-        if (slots[slotIndex].HasItem)
-        {
-            if (slots[slotIndex].itemSlot.stack.Item.isPlaceable)
-            {
-                return slots[slotIndex].itemSlot.stack.Item.isPlaceable;
-            }
-        }
-        return false;
+        return true;
+     //  if (slots[slotIndex].HasItem)
+     //  {
+     //      if (slots[slotIndex].itemSlot.stack.Item.isPlaceable)
+     //      {
+     //          return slots[slotIndex].itemSlot.stack.Item.isPlaceable;
+     //      }
+     //  }
+     //  return false;
 
     }
 }

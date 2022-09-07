@@ -108,6 +108,14 @@
                     "expectedControlType": "Button",
                     "processors": "",
                     "interactions": ""
+                },
+                {
+                    "name": "EscapeMenu",
+                    "type": "Button",
+                    "id": "c316617b-7e5c-4a59-8716-c13b9e15d467",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
                 }
             ],
             "bindings": [
@@ -471,6 +479,17 @@
                     "processors": "",
                     "groups": "",
                     "action": "PlaceStructure",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "c0e0c66c-6799-4083-8ca0-d7bcfc4b198d",
+                    "path": "<Keyboard>/escape",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "EscapeMenu",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

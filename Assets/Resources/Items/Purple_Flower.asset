@@ -17,3 +17,4 @@ MonoBehaviour:
   ItemName: Purple Flower
   image: {fileID: 21300000, guid: f110a76dc5bd5304ea6f413edf5f7836, type: 3}
   isPlaceable: 0
+  itemtype: 3

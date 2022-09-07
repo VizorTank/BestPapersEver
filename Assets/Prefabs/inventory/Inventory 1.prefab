@@ -702,6 +702,7 @@ MonoBehaviour:
   slotIndex: 0
   item: {fileID: 11400000, guid: 33a648e2bb698514da1063d39343f01d, type: 2}
   inv: {fileID: 0}
+  playerController: {fileID: 0}
 --- !u!1 &1249207530589415231
 GameObject:
   m_ObjectHideFlags: 0
@@ -963,7 +964,6 @@ GameObject:
   - component: {fileID: 1704207366909972905}
   - component: {fileID: 1704207366909972904}
   - component: {fileID: 1704207366909972907}
-  - component: {fileID: 1704207366909972906}
   m_Layer: 5
   m_Name: Crafting
   m_TagString: Untagged
@@ -1028,30 +1028,6 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
---- !u!114 &1704207366909972906
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1704207366909972917}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8a8695521f0d02e499659fee002a26c2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_Padding:
-    m_Left: 0
-    m_Right: 0
-    m_Top: 0
-    m_Bottom: 0
-  m_ChildAlignment: 0
-  m_StartCorner: 0
-  m_StartAxis: 0
-  m_CellSize: {x: 24, y: 24}
-  m_Spacing: {x: 0, y: 0}
-  m_Constraint: 0
-  m_ConstraintCount: 2
 --- !u!1 &1704207368343082500
 GameObject:
   m_ObjectHideFlags: 0

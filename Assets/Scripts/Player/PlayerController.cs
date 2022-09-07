@@ -45,8 +45,8 @@ public class PlayerController : MonoBehaviour
     public float checkIncrement = 0.1f;
     public float reach = 8f;
     public int placingBlockID = 1;
-    
-    
+
+    public Player_HitResponder HitResponder;
     public CharacterController controller;
     public CharacterStats characterStats;
 
@@ -60,6 +60,7 @@ public class PlayerController : MonoBehaviour
     }
     private void Start()
     {
+        HitResponder = transform.GetComponentInChildren<Player_HitResponder>();
         controller = transform.GetComponent<CharacterController>();
         inventory = InventorySys.GetComponent<Inventory>();
         toolbar = inventory.Toolbar.GetComponent<Toolbar>();
@@ -80,33 +81,53 @@ public class PlayerController : MonoBehaviour
         playerInput.Player.Inventory.started += Inventory_started;
 
         playerInput.Player.PlaceStructure.started += PlaceStructure_started;
+        playerInput.Player.EscapeMenu.started += EscapeMenuStarded;
     }
 
     private void NoClip_started(UnityEngine.InputSystem.InputAction.CallbackContext obj) => noClip = !noClip;
     private void Inventory_started(UnityEngine.InputSystem.InputAction.CallbackContext obj) => inInventory = !inInventory;
 
     private void PlaceBlock_started(UnityEngine.InputSystem.InputAction.CallbackContext obj) => UseItem();
-    private void DestroyBlock_started(UnityEngine.InputSystem.InputAction.CallbackContext obj) => DestroyBlock();
+    private void DestroyBlock_started(UnityEngine.InputSystem.InputAction.CallbackContext obj) => HandleLeftClick();
 
 
     private void PlaceStructure_started(UnityEngine.InputSystem.InputAction.CallbackContext obj) => placeStructure = true;
 
+    private void EscapeMenuStarded(UnityEngine.InputSystem.InputAction.CallbackContext obj) => EscapeSys();
     private void OnEnable() => playerInput.Enable();
     private void OnDisable() => playerInput.Disable();
 
+    int atackdowdtime;
     void Update()
     {
-        if (!IsConsoleOpenned)
-            if (!inInventory)
+        if(EscapeMenuGO.IsActive()||IsConsoleOpenned||inInventory)
                 {
-                    PlaceCursorBlock();
-                    GetInput();
-                    SetRotation();
-                    SelectBlock();
-                }
+            Cursor.lockState = CursorLockMode.None;
+        }
+        else 
+        { 
+            
+            PlaceCursorBlock();
+            GetInput();
+            SetRotation();
+            SelectBlock();
+            Cursor.lockState = CursorLockMode.Locked;
+        }
         controller.GetMovement(input, isSprinting);
 
         
+    }
+
+    private void FixedUpdate()
+    {
+        if (HitResponder.Atack)
+        {
+            atackdowdtime++;
+        }
+        if (atackdowdtime >= 50)
+        {
+            HitResponder.Atack = false;
+        }
     }
     void GetInput()
     {
@@ -123,7 +144,19 @@ public class PlayerController : MonoBehaviour
     }
 
 
-
+    private void HandleLeftClick()
+    {
+        if (itemtype != Itemtype.Weapon)
+        {
+            DestroyBlock();
+        }
+        if (itemtype == Itemtype.Weapon)
+        {
+            HitResponder.Damage = 10;
+            HitResponder.Atack = true;
+            atackdowdtime = 0;
+        }
+    }
 
     private void SelectBlock()
     {
@@ -178,7 +211,7 @@ public class PlayerController : MonoBehaviour
                     HighlightBlock.gameObject.SetActive(true);
 
                     HighlightPlaceBlock.position = new Vector3(Mathf.Floor(lastPos.x), Mathf.Floor(lastPos.y), Mathf.Floor(lastPos.z));
-                    HighlightPlaceBlock.gameObject.SetActive(toolbar.IsPlaceable());
+                    HighlightPlaceBlock.gameObject.SetActive(itemtype == Itemtype.Placeable);
                     return;
 
                 }
@@ -214,6 +247,17 @@ public class PlayerController : MonoBehaviour
     public bool _inContainer = false;
     public bool inContainer = false;
     private Inventory inventory;
+    [SerializeField] private EscapeMenu EscapeMenuGO;
+
+
+    public void EscapeSys()
+    {
+        if (EscapeMenuGO.IsActive())
+        {
+            EscapeMenuGO.ExitMenu();
+        }
+        else EscapeMenuGO.EnterMenu();
+    }
     public bool inInventory
     {
         get { return _inInventory; }
@@ -226,15 +270,16 @@ public class PlayerController : MonoBehaviour
                 if (_inInventory)
                 {
                     Cursor.lockState = CursorLockMode.None;
-                    Backpack.SetActive(true);
-                    cursorSlot.SetActive(true);
+                    //  Backpack.SetActive(true);
+                    //  cursorSlot.SetActive(true);
+                    inventory.OpenInventory();
                 }
                 else
                 {
                     Cursor.lockState = CursorLockMode.Locked;
-                    Backpack.SetActive(false);
-                    cursorSlot.SetActive(false);
-
+                    //  Backpack.SetActive(false);
+                    //  cursorSlot.SetActive(false);
+                    inventory.CloseInventory();
                 }
             }
 
@@ -245,11 +290,24 @@ public class PlayerController : MonoBehaviour
     {
         return inventory.PickUpItem(item);
     }
-
+    Itemtype itemtype;
+    public Itemtype ItemType { set => itemtype = value; }
     public void UseItem()
     {
-        if(!IsConsoleOpenned)
-
-        toolbar.UseItem(HighlightPlaceBlock.gameObject.activeSelf);
+        if (!IsConsoleOpenned)
+        {
+            if(itemtype == Itemtype.Placeable)
+            toolbar.UseItem(HighlightPlaceBlock.gameObject.activeSelf);
+        }
     }
 }
+
+public enum Itemtype
+{
+    Placeable,
+    Tool, 
+    Weapon,
+    Useable,
+    Other,
+    None
+};

@@ -11,9 +11,19 @@ public class Inventory : MonoBehaviour {
     public GameObject cursorSlot;
     public GameObject Toolbar;
     public GameObject ContainerUI;
-    public GameObject CraftingUI;
+    public GameObject Equipment;
+    public GameObject InventoryUI;
     public List<UIItemSlot> ContainerSlots;
     public List<int> CraftingItemsSlot;
+
+
+
+    [Header("Crafting")]
+    public GameObject CraftingUI;
+    public GameObject CraftingWindow;
+    public GameObject CraftingPreviev;
+    public UIItemSlot CraftingPrevievSlot;
+    public int SelectedCraft = 0;
     private void Start() {
 
         foreach (UIItemSlot slot in toolbaruislots)
@@ -34,10 +44,66 @@ public class Inventory : MonoBehaviour {
             GameObject newSlot = Instantiate(slotPrefab, ContainerUI.transform);
             ContainerSlots.Add(newSlot.GetComponent<UIItemSlot>());
         }
-
-        
+        CraftingPrevievSlot.itemSlot = new ItemSlot(CraftingPrevievSlot);
+        CraftingPrevievSlot.itemSlot.isOther = true;
+        CraftingGrid();
     }
 
+    public void OpenInventory()
+    {
+        InventoryUI.SetActive(true);
+        Backpack.SetActive(true);
+        cursorSlot.SetActive(true);
+    }
+
+    public void CloseInventory()
+    {
+        InventoryUI.SetActive(false);
+        Backpack.SetActive(false);
+        cursorSlot.SetActive(false);
+        CraftingWindow.SetActive(false);
+        Equipment.SetActive(false);
+    }
+    public void ChangeHighlightedCrafting(int select)
+    {
+        SelectedCraft = select;
+
+        UpdatePreviev();
+
+    }
+    public void UpdatePreviev()
+    {
+        foreach (Transform child in CraftingPreviev.transform)
+        {
+            GameObject.Destroy(child.gameObject);
+        }
+        foreach (CraftinReci reci in RecipeMenager.GetRecipe(SelectedCraft).CraftinRecipe)
+        {
+
+            Item item = ItemMenager.GetItem(reci.ID);
+            //if (!isCraftable(item)) continue;
+
+            GameObject newSlot = Instantiate(slotPrefab, CraftingPreviev.transform);
+            ItemSlot slot = new ItemSlot(newSlot.GetComponent<UIItemSlot>(), "Crafting");
+            slot.isOther = true;
+            slot.InsertStack(new ItemStack(item, reci.Amount));
+            string message = CraftingItemsSlot[reci.ID] + "/" + reci.Amount;
+            slot.UpdateSlot(message,!( reci.Amount > CraftingItemsSlot[reci.ID]));
+        }
+        CraftingPrevievSlot.itemSlot.InsertStack(new ItemStack(ItemMenager.GetItem(RecipeMenager.GetRecipe(SelectedCraft).CraftedID), RecipeMenager.GetRecipe(SelectedCraft).AmountCrafted));
+        CraftingPrevievSlot.UpdateSlot();
+    }
+
+    public void OpenCrafting()
+    {
+        Equipment.SetActive(false);
+        CraftingWindow.SetActive(!CraftingWindow.activeSelf);
+    }
+    public void OpenEqupment()
+    {
+        CraftingWindow.SetActive(false);
+        Equipment.SetActive(!Equipment.activeSelf);
+    }
 
     public ItemStack PickUpItem(ItemStack item, string _SlotType = null)
     {
@@ -151,7 +217,7 @@ public class Inventory : MonoBehaviour {
             }
         }
 
-        int a = 0;
+        
     }
 
    public ItemStack CraftItem(Item item)
@@ -213,6 +279,7 @@ public class Inventory : MonoBehaviour {
 
     public void CraftingGrid()
     {
+        
         CalculateInventory();
         foreach(Transform child in CraftingUI.transform)
         {
@@ -221,15 +288,15 @@ public class Inventory : MonoBehaviour {
         foreach(CraftingRecipe recipe in RecipeMenager.GetRecipesList())
         {
             
-            Item item = ItemMenager.GetItem(recipe.CraftedID);
-            if (!isCraftable(item)) continue;
+           //Item item = ItemMenager.GetItem(recipe.CraftedID);
+           //if (!isCraftable(item)) continue;
 
             GameObject newSlot = Instantiate(slotPrefab, CraftingUI.transform);
             ItemSlot slot = new ItemSlot(newSlot.GetComponent<UIItemSlot>(), "Crafting");
             slot.isCrafting = true;
-            slot.InsertStack(new ItemStack(item, 1));
+            slot.InsertCraftng(recipe);
         }
-
+        UpdatePreviev();
     }
     
 }

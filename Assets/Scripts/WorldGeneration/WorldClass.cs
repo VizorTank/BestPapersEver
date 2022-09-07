@@ -276,7 +276,8 @@ public class WorldClass : MonoBehaviour
         {
             int3 chunkCoords = GetChunkCoords(position);
             if (math.all(chunkCoords == new int3(int.MaxValue, int.MaxValue, int.MaxValue))) return 0;
-            return chunks[chunkCoords.x, chunkCoords.y, chunkCoords.z].GetBlock(new int3(position) % ChunkSize);
+            int block = chunks[chunkCoords.x, chunkCoords.y, chunkCoords.z].GetBlock(new int3(position) % ChunkSize);
+            return block;
         }
         catch (Exception e)
         {

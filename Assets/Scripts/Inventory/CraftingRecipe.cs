@@ -5,6 +5,7 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "New Recipe", menuName = "Inventory/CraftingRecipe")]
 public class CraftingRecipe : ScriptableObject
 {
+    public int CraftingID;
     public int CraftedID;
     public int AmountCrafted;
     public List<CraftinReci> CraftinRecipe;

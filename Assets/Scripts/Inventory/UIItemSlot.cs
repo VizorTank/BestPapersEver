@@ -58,9 +58,33 @@ public class UIItemSlot : MonoBehaviour {
             slotIcon.enabled = true;
             slotAmount.enabled = true;
 
-        } else
+        } 
+        else if(itemSlot != null && itemSlot.Crrecipe!=null)
+        {
+            slotIcon.sprite = ItemMenager.GetItem(itemSlot.Crrecipe.CraftedID).image;
+            slotAmount.text = "";
+            slotIcon.enabled = true;
+            slotAmount.enabled = false;
+        }
+        else
             Clear();
 
+    }
+
+    public void UpdateSlot(string message, bool color)
+    {
+        if (itemSlot != null && itemSlot.HasItem)
+        {
+            slotIcon.sprite = itemSlot.stack.Item.image;
+            slotAmount.text = message;
+            slotAmount.color = color ? Color.white : Color.red;
+            slotAmount.fontSize = 9;
+            slotIcon.enabled = true;
+            slotAmount.enabled = true;
+        }
+
+        else
+            Clear();
     }
 
     public void Clear () {
@@ -83,10 +107,13 @@ public class UIItemSlot : MonoBehaviour {
 
 public class ItemSlot {
 
+
+    public CraftingRecipe Crrecipe = null;
     public ItemStack stack = null;
     private UIItemSlot uiItemSlot = null;
     public string SlotType = null;
     public bool isCrafting;
+    public bool isOther;
 
     public ItemSlot (UIItemSlot _uiItemSlot) {
 
@@ -145,6 +172,11 @@ public class ItemSlot {
     {
         uiItemSlot.UpdateSlot();
     }
+    public void UpdateSlot(string message, bool color)
+    {
+        uiItemSlot.UpdateSlot(message, color);
+    }
+
     public int Take (int amt) {
 
         if (amt > stack.amount) {
@@ -175,6 +207,11 @@ public class ItemSlot {
         stack = _stack;
         uiItemSlot.UpdateSlot();
 
+    }
+    public void InsertCraftng(CraftingRecipe reci)
+    {
+        Crrecipe = reci;
+        uiItemSlot.UpdateSlot();
     }
 
     public bool HasItem {

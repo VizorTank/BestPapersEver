@@ -10,7 +10,7 @@ public class Item : ScriptableObject
     public string ItemName;
     public Sprite image;
     public bool isPlaceable;
-    
+    public Itemtype itemtype;
 }
 
 

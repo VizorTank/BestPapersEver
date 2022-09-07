@@ -17,3 +17,4 @@ MonoBehaviour:
   ItemName: Planks
   image: {fileID: 21300000, guid: ed8a92ef11110df41a3113196e4253bf, type: 3}
   isPlaceable: 0
+  itemtype: 3

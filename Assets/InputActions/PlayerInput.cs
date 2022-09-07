@@ -121,6 +121,14 @@ public class @PlayerInput : IInputActionCollection, IDisposable
                     ""expectedControlType"": ""Button"",
                     ""processors"": """",
                     ""interactions"": """"
+                },
+                {
+                    ""name"": ""EscapeMenu"",
+                    ""type"": ""Button"",
+                    ""id"": ""c316617b-7e5c-4a59-8716-c13b9e15d467"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": """"
                 }
             ],
             ""bindings"": [
@@ -484,6 +492,17 @@ public class @PlayerInput : IInputActionCollection, IDisposable
                     ""processors"": """",
                     ""groups"": """",
                     ""action"": ""PlaceStructure"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""c0e0c66c-6799-4083-8ca0-d7bcfc4b198d"",
+                    ""path"": ""<Keyboard>/escape"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""EscapeMenu"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 }
@@ -1074,6 +1093,7 @@ public class @PlayerInput : IInputActionCollection, IDisposable
         m_Player_InventoryAdv = m_Player.FindAction("InventoryAdv", throwIfNotFound: true);
         m_Player_Confirm = m_Player.FindAction("Confirm", throwIfNotFound: true);
         m_Player_PlaceStructure = m_Player.FindAction("PlaceStructure", throwIfNotFound: true);
+        m_Player_EscapeMenu = m_Player.FindAction("EscapeMenu", throwIfNotFound: true);
         // UI
         m_UI = asset.FindActionMap("UI", throwIfNotFound: true);
         m_UI_Navigate = m_UI.FindAction("Navigate", throwIfNotFound: true);
@@ -1148,6 +1168,7 @@ public class @PlayerInput : IInputActionCollection, IDisposable
     private readonly InputAction m_Player_InventoryAdv;
     private readonly InputAction m_Player_Confirm;
     private readonly InputAction m_Player_PlaceStructure;
+    private readonly InputAction m_Player_EscapeMenu;
     public struct PlayerActions
     {
         private @PlayerInput m_Wrapper;
@@ -1165,6 +1186,7 @@ public class @PlayerInput : IInputActionCollection, IDisposable
         public InputAction @InventoryAdv => m_Wrapper.m_Player_InventoryAdv;
         public InputAction @Confirm => m_Wrapper.m_Player_Confirm;
         public InputAction @PlaceStructure => m_Wrapper.m_Player_PlaceStructure;
+        public InputAction @EscapeMenu => m_Wrapper.m_Player_EscapeMenu;
         public InputActionMap Get() { return m_Wrapper.m_Player; }
         public void Enable() { Get().Enable(); }
         public void Disable() { Get().Disable(); }
@@ -1213,6 +1235,9 @@ public class @PlayerInput : IInputActionCollection, IDisposable
                 @PlaceStructure.started -= m_Wrapper.m_PlayerActionsCallbackInterface.OnPlaceStructure;
                 @PlaceStructure.performed -= m_Wrapper.m_PlayerActionsCallbackInterface.OnPlaceStructure;
                 @PlaceStructure.canceled -= m_Wrapper.m_PlayerActionsCallbackInterface.OnPlaceStructure;
+                @EscapeMenu.started -= m_Wrapper.m_PlayerActionsCallbackInterface.OnEscapeMenu;
+                @EscapeMenu.performed -= m_Wrapper.m_PlayerActionsCallbackInterface.OnEscapeMenu;
+                @EscapeMenu.canceled -= m_Wrapper.m_PlayerActionsCallbackInterface.OnEscapeMenu;
             }
             m_Wrapper.m_PlayerActionsCallbackInterface = instance;
             if (instance != null)
@@ -1256,6 +1281,9 @@ public class @PlayerInput : IInputActionCollection, IDisposable
                 @PlaceStructure.started += instance.OnPlaceStructure;
                 @PlaceStructure.performed += instance.OnPlaceStructure;
                 @PlaceStructure.canceled += instance.OnPlaceStructure;
+                @EscapeMenu.started += instance.OnEscapeMenu;
+                @EscapeMenu.performed += instance.OnEscapeMenu;
+                @EscapeMenu.canceled += instance.OnEscapeMenu;
             }
         }
     }
@@ -1425,6 +1453,7 @@ public class @PlayerInput : IInputActionCollection, IDisposable
         void OnInventoryAdv(InputAction.CallbackContext context);
         void OnConfirm(InputAction.CallbackContext context);
         void OnPlaceStructure(InputAction.CallbackContext context);
+        void OnEscapeMenu(InputAction.CallbackContext context);
     }
     public interface IUIActions
     {

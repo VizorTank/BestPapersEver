@@ -11,15 +11,15 @@ public class CharacterController : MonoBehaviour
 
 
 
-    Vector3 VerticalMomentum = Vector3.zero;
-    public Vector3 movement;
-    Vector3 velocity;
-    float upSpeed = 0;
-    bool noClip = false;
-    bool isSprinting;
-    bool isGrounded;
-    Vector3 zero = Vector3.zero;
-    bool jumprequest = false;
+    public Vector3 VerticalMomentum = Vector3.zero;
+    public  Vector3 movement;
+    public Vector3 velocity;
+    public float upSpeed = 0;
+    public bool noClip = false;
+    public bool isSprinting;
+    public bool isGrounded;
+    public Vector3 zero = Vector3.zero;
+    public bool jumprequest = false;
 
 
     public bool Xaxis = false;
@@ -40,13 +40,14 @@ public class CharacterController : MonoBehaviour
     public bool BackBlocked;
     public bool LeftBlocked;
     public bool RightBlocked;
-
+    public Vector3 input;
 
     public CharacterStats CharacterStats;
     public Animator animator;
     // Start is called before the first frame update
     void Start()
     {
+        if(animator==null)
         animator = transform.Find("Body").GetComponent<Animator>();
         CharacterStats = transform.GetComponent<CharacterStats>();
     }
@@ -59,7 +60,7 @@ public class CharacterController : MonoBehaviour
     public void GetMovement(Vector3 input , bool isSprinting = false)
     {
         
-        movement = (transform.forward * input.z + transform.right * input.x) * CharacterStats.speed * Time.deltaTime;
+        this.input = (transform.forward * input.z + transform.right * input.x) * CharacterStats.speed * Time.deltaTime;
         if(input.y!=0)
         {
             jumprequest = true;
@@ -80,7 +81,8 @@ public class CharacterController : MonoBehaviour
     protected void Move()
     {
         
-        movement = CalculateMovement(movement);
+        movement = CalculateMovement(input);
+        input = Vector3.zero;
         if (!isGrounded)
         {
             VerticalMomentum +=new Vector3(0,1f,0) * CharacterStats.gravity * Time.deltaTime / 1;
@@ -137,7 +139,7 @@ public class CharacterController : MonoBehaviour
 
 
 
-        /*
+        
         if (move.z > 0 && transform.position.z + CharacterStats.width >= LimiterFront)
         {
             move.z = 0f;
@@ -162,7 +164,7 @@ public class CharacterController : MonoBehaviour
             move.x = 0f;
             transform.position = new Vector3(LimiterRight - CharacterStats.width, transform.position.y, transform.position.z);
         }
-        */
+        
 
 
 

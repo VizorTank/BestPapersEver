@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -29,6 +30,9 @@ public class CharacterStats : MonoBehaviour
     [Header("Defences")]
     public int Armour=0;
 
+
+
+    public Dictionary<int, int> LataDamageTable = new Dictionary<int, int>();
     // Start is called before the first frame update
     void Start()
     {
@@ -40,6 +44,23 @@ public class CharacterStats : MonoBehaviour
     void FixedUpdate()
     {
         UpdateStats();
+        UpdateDamageTable();
+    }
+
+    private void UpdateDamageTable()
+    {
+        if(LataDamageTable.Count>0)
+        {
+            List<int> Array = new List<int>(LataDamageTable.Keys);
+            foreach(int damageints in Array)
+            {
+                LataDamageTable[damageints]--;
+                if(LataDamageTable[damageints]<=0)
+                {
+                    LataDamageTable.Remove(damageints);
+                }
+            }
+        }
     }
 
     public void TakeHeal(float heal)
@@ -50,12 +71,23 @@ public class CharacterStats : MonoBehaviour
         CurrentHealth = Mathf.Clamp(CurrentHealth, 0, MaxHealth);
     }
 
-    public void TakeDamage(float damage)
+    public void TakeDamage(HitData data)
     {
-        damage = Mathf.Clamp(damage, 0, int.MaxValue);
+        float damage = Mathf.Clamp(data.damage, 0, int.MaxValue);
+        if (!LataDamageTable.ContainsKey(data.Sourse.GetInstanceID()))
+        {
+            LataDamageTable.Add(data.Sourse.GetInstanceID(), 10);
 
-        CurrentHealth -= damage;
-        CurrentHealth = Mathf.Clamp(CurrentHealth, 0, MaxHealth);
+            CurrentHealth -= damage;
+            CurrentHealth = Mathf.Clamp(CurrentHealth, 0, MaxHealth);
+            if (CurrentHealth == 0)
+            { Die(); }
+        }
+    }
+
+    private void Die()
+    {
+        Destroy(transform.gameObject);
     }
 
     public bool TryUseStamina(float useStamina)
