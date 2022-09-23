@@ -575,7 +575,8 @@ PrefabInstance:
       propertyPath: HighlightPlaceBlock
       value: 
       objectReference: {fileID: 275290401}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 790632439439750156, guid: 66a480f8c6f040f458fb5749266c35c8, type: 3}
   m_SourcePrefab: {fileID: 100100000, guid: 66a480f8c6f040f458fb5749266c35c8, type: 3}
 --- !u!1 &531812167
 GameObject:
@@ -606,19 +607,35 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0077ec0bc53b41f40b58eff7de9fd8cb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  Load: 0
+  Save: 0
+  data:
+    RenderDistance: 16
+    WorldSizeInChunks:
+      x: 64
+      y: 8
+      z: 64
+    BlockTypesList: {fileID: 0}
+    Structures: []
+    BiomeAttributes: []
+    WaterLevel: 64
   Player: {fileID: 1316108400}
-  renderDistance: 8
+  renderDistance: 4
   WorldSizeInChunks:
     x: 64
-    y: 6
+    y: 12
     z: 64
   blockTypesList: {fileID: 11400000, guid: 7d02ef2692f7d5a4c984e6f3f30b45a0, type: 2}
   Structures: []
-  BiomeAttributes: {fileID: 11400000, guid: 503623fffbb112c4aa807423949bff67, type: 2}
-  playerLastChunkPos:
-    x: 0
-    y: 0
-    z: 0
+  WorldBiomes:
+    Biomes:
+    - {fileID: 11400000, guid: 2e3ed30e8386f5944a41c2da90d9f6f6, type: 2}
+    - {fileID: 11400000, guid: 503623fffbb112c4aa807423949bff67, type: 2}
+    - {fileID: 11400000, guid: 4f44c725bba9d41599b3880eb351d60b, type: 2}
+    BiomeDensity: 0.2
+    OceanDensity: 0.01
+    WaterLevel: 64
+  GlobalLightLevel: 1
 --- !u!4 &531812169
 Transform:
   m_ObjectHideFlags: 0
@@ -627,12 +644,17 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 531812167}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 1.8000002, z: 10}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!20 &1018151664 stripped
+Camera:
+  m_CorrespondingSourceObject: {fileID: 7894782442145641243, guid: 66a480f8c6f040f458fb5749266c35c8, type: 3}
+  m_PrefabInstance: {fileID: 492120963}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1128921910
 GameObject:
   m_ObjectHideFlags: 0
@@ -895,6 +917,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_MoveRepeatDelay: 0.5
   m_MoveRepeatRate: 0.1
+  m_XRTrackingOrigin: {fileID: 0}
   m_ActionsAsset: {fileID: -944628639613478452, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
   m_PointAction: {fileID: 1054132383583890850, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
   m_MoveAction: {fileID: 3710738434707379630, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
@@ -942,6 +965,36 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 7894782443280209344, guid: 66a480f8c6f040f458fb5749266c35c8, type: 3}
   m_PrefabInstance: {fileID: 492120963}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1316108401
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1316108400}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 62899f850307741f2a39c98a8b639597, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Actions: {fileID: -944628639613478452, guid: 744ffb4075349dc49b92f0f100159b73, type: 3}
+  m_NotificationBehavior: 3
+  m_UIInputModule: {fileID: 0}
+  m_DeviceLostEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  m_DeviceRegainedEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  m_ControlsChangedEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  m_ActionEvents: []
+  m_NeverAutoSwitchControlSchemes: 0
+  m_DefaultControlScheme: Keyboard&Mouse
+  m_DefaultActionMap: Player
+  m_SplitScreenIndex: -1
+  m_Camera: {fileID: 1018151664}
 --- !u!1 &2102692397
 GameObject:
   m_ObjectHideFlags: 0

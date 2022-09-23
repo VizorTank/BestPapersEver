@@ -4,48 +4,230 @@ using Unity.Mathematics;
 using UnityEngine;
 using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
+using System;
+using System.Threading.Tasks;
+using System.Threading;
+using UnityEngine.Profiling;
 
-public class SaveManager
+public class SaveManager : ISaveManager
 {
-    public Dictionary<int3, Chunk> LoadedChunks;
-    public Dictionary<int3, bool> GeneratedChunks;
+    // public Dictionary<int3, IChunk> LoadedChunks;
 
-    public void SaveChunk(Chunk chunk)
+    #region Singleton
+    private static ISaveManager _instance;
+    private static string _applicationPath;
+    private SaveManager() 
+    { 
+        _generatedChunks = new Dictionary<int3, IChunk>();
+        _generatedChunks.Clear();
+    }
+    public static ISaveManager GetInstance()
     {
+        if (_instance == null)
+        {
+            _instance = new SaveManager();
+            _applicationPath = Application.persistentDataPath;
+        }
+        
+        return _instance;
+    }
+    #endregion
+
+    private Dictionary<int3, IChunk> _generatedChunks = new Dictionary<int3, IChunk>();
+    private List<Task<ChunkData>> _chunksToLoad = new List<Task<ChunkData>>();
+    private Dictionary<int3, IChunk> _chunksToSave = new Dictionary<int3, IChunk>();
+
+    public void Run()
+    {
+        LoadingChunks();
+        SavingChunks();
+    }
+
+    public void SaveWorld()
+    {
+        string path = _applicationPath + "/world.world";
+
         BinaryFormatter formatter = new BinaryFormatter();
-        ChunkData data = new ChunkData(chunk);
-        string path = GetChunkName(chunk.coordinates);
+        WorldData data = new WorldData(_generatedChunks);
+
+        Debug.Log("Saved " + path);
+
         FileStream stream = new FileStream(path, FileMode.Create);
         formatter.Serialize(stream, data);
         stream.Close();
-        if (!GeneratedChunks.TryGetValue(chunk.coordinates, out bool tmp))
-            GeneratedChunks.Add(chunk.coordinates, true);
     }
 
-    public string GetChunkName(int3 chunkCoords)
+    public void LoadWorld()
     {
-        return Application.persistentDataPath
-                      + "/chunk"
-                      + chunkCoords.x + "_"
-                      + chunkCoords.y + "_"
-                      + chunkCoords.z
+        string path = _applicationPath + "/world.world";
+        if (File.Exists(path))
+        {
+            BinaryFormatter formatter = new BinaryFormatter();
+            FileStream stream = new FileStream(path, FileMode.Open);
+
+            WorldData data = formatter.Deserialize(stream) as WorldData;
+
+            stream.Close();
+            //Debug.Log("Chunk loaded!");
+            _generatedChunks = data.GetGeneratedChunks();
+        }
+        else
+        {
+            Debug.Log("File does not exists!");
+            _generatedChunks = new Dictionary<int3, IChunk>();
+        }
+    }
+
+    
+
+    public string GetChunkPath(int3 chunkCoords)
+    {
+        return _applicationPath
+                      + "/Chunks/chunk"
+                      + "_" + chunkCoords.x 
+                      + "_" + chunkCoords.y
+                      + "_" + chunkCoords.z
                       + ".chunk";
     }
 
-    public Chunk LoadChunk(int3 ChunkCoord, WorldClass World)
+    public void SavingChunks()
     {
-        if (GeneratedChunks.TryGetValue(ChunkCoord, out bool tmp))
+        Dictionary<int3, IChunk> chunksToSave = new Dictionary<int3, IChunk>();
+        foreach (var item in _chunksToSave)
         {
-            string path = GetChunkName(ChunkCoord);
-            if (File.Exists(path))
+            if (!SaveChunk(item.Value))
+                chunksToSave.Add(item.Key, item.Value);
+            else
+                item.Value.Destroy();
+        }
+        _chunksToSave = chunksToSave;
+    }
+
+    public bool SaveChunk(IChunk chunk)
+    {
+        if (chunk == null || !chunk.CanAccess())
+        {
+            // Debug.Log("Cant access chunk");
+            return false;
+        }
+
+        int3 chunkCoordinates = chunk.GetChunkCoordinates();
+
+        // BinaryFormatter formatter = new BinaryFormatter();
+        // ChunkData data = new ChunkData(chunk);
+
+        // string path = GetChunkPath(chunkCoordinates);
+        // //Debug.Log("Saved " + path);
+
+        // FileStream stream = new FileStream(path, FileMode.Create);
+        // formatter.Serialize(stream, data);
+        // stream.Close();
+
+        if (!_generatedChunks.ContainsKey(chunkCoordinates))
+            _generatedChunks.Add(chunkCoordinates, null);
+        else
+            _generatedChunks[chunkCoordinates] = null;
+        
+        return true;
+    }
+
+    public void LoadingChunks()
+    {
+        List<Task<ChunkData>> chunksToLoad = new List<Task<ChunkData>>();
+        foreach (Task<ChunkData> task in _chunksToLoad)
+        {
+            if (this == null) return;
+            if (!task.IsCompleted)
+            {
+                chunksToLoad.Add(task);
+                continue;
+            }
+            
+            ChunkData data = task.Result;
+            int3 coords = new int3(data.Coords[0], data.Coords[1], data.Coords[2]);
+            if (_generatedChunks.ContainsKey(coords))
+                _generatedChunks[coords].Init(data);
+        }
+        _chunksToLoad = chunksToLoad;
+    }
+
+    public IChunk LoadChunk(IWorld world, int3 chunkCoord)
+    {
+        if (_generatedChunks.ContainsKey(chunkCoord))
+        {
+            if (_generatedChunks[chunkCoord] != null)
+            {
+                return _generatedChunks[chunkCoord];
+            }
+            else
+            {
+                _generatedChunks[chunkCoord] = new Chunk(world, chunkCoord);
+                LoadChunkFromFile(chunkCoord);
+                return _generatedChunks[chunkCoord];
+            }
+        }
+        else
+        {
+            _generatedChunks.Add(chunkCoord, new Chunk(world, chunkCoord));
+            _generatedChunks[chunkCoord].Init();
+            return _generatedChunks[chunkCoord];
+        }
+    }
+
+    public void UnloadChunks(IWorld world, Dictionary<int3, IChunk> chunksToUnload)
+    {
+        foreach (var chunk in chunksToUnload)
+        {
+            UnloadChunk(world, chunk.Value);
+        }
+    }
+
+    public void UnloadChunk(IWorld world, IChunk chunk)
+    {
+        if (chunk == null || _chunksToSave.ContainsKey(chunk.GetChunkCoordinates())) return;
+
+        _chunksToSave.Add(chunk.GetChunkCoordinates(), chunk);
+
+        // SaveChunk(chunk);
+        // // GeneratedChunks[chunk.GetChunkCoordinates()] = null;
+        // chunk.Destroy();
+    }
+
+    
+
+    private void LoadChunkFromFile(int3 chunkCoord)
+    {
+        Profiler.BeginSample("GetChunkPath");
+        string path = GetChunkPath(chunkCoord);
+        Profiler.EndSample();
+
+        Profiler.BeginSample("CreateTask");
+        Task<ChunkData> task = Task.Factory.StartNew<ChunkData>(() => {
+            // if (File.Exists(path))
+            if (false)
             {
                 BinaryFormatter formatter = new BinaryFormatter();
                 FileStream stream = new FileStream(path, FileMode.Open);
+
                 ChunkData data = formatter.Deserialize(stream) as ChunkData;
-                return new Chunk(World, data);
+
+                stream.Close();
+                //Debug.Log("Chunk loaded!");
+                return data;
             }
-        }
-        GeneratedChunks.Add(ChunkCoord, true);
-        return new Chunk(ChunkCoord, World);
+            else
+            {
+                // Debug.LogWarning("File does not exists!");
+                return new ChunkData(chunkCoord);
+            }
+        });
+        Profiler.EndSample();
+
+        _chunksToLoad.Add(task);
+    }
+
+    public static void Destroy()
+    {
+        _instance = null;
     }
 }

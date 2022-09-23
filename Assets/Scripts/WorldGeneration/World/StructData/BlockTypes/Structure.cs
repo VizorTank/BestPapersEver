@@ -12,6 +12,7 @@ public class Structure : ScriptableObject
     public Vector3Int HitboxOffset;
 
     public int BlockId;
+    // public ListOfListsOfLists blocksId;
     public List<List<List<int>>> Blocks;
 
     public Structure(Vector3Int size) 
@@ -41,4 +42,22 @@ public class Structure : ScriptableObject
             }
         }
     }
+}
+
+[System.Serializable]
+public class ListOfListsOfLists
+{
+    public List<ListOfLists> blocksId;
+}
+
+[System.Serializable]
+public class ListOfLists
+{
+    public List<ListOfInt> blocksId;
+}
+
+[System.Serializable]
+public class ListOfInt
+{
+    public List<int> blocksId;
 }

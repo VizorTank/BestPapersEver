@@ -46,7 +46,7 @@ public struct CreateMeshWithClustersJob : IJob
         // Count sides and sides per block type
         NativeArray<int> sidesCountPerType = new NativeArray<int>(blockTypesCount, Allocator.Temp);
         int sidesCount = 0;
-
+        int2 perfectSize = new int2();
         for (int index = 0; index < ClusterData.Length; index++)
         {
             if (!blockTypesIsInvisible[ClusterData[index].BlockId])
@@ -54,20 +54,31 @@ public struct CreateMeshWithClustersJob : IJob
                 for (int j = 0; j < 6; j++)
                 {
                     int3 actualSize = ClusterData[index].Size;
-                    int maxSize = 0;
+                    // int maxSize = 0;
+                    // switch (j)
+                    // {
+                    //     case 0: maxSize = actualSize.x * actualSize.y; break;
+                    //     case 1: maxSize = actualSize.x * actualSize.y; break;
+                    //     case 2: maxSize = actualSize.x * actualSize.z; break;
+                    //     case 3: maxSize = actualSize.x * actualSize.z; break;
+                    //     case 4: maxSize = actualSize.y * actualSize.z; break;
+                    //     case 5: maxSize = actualSize.y * actualSize.z; break;
+                    //     default:
+                    //         break;
+                    // }
                     switch (j)
                     {
-                        case 0: maxSize = actualSize.x * actualSize.y; break;
-                        case 1: maxSize = actualSize.x * actualSize.y; break;
-                        case 2: maxSize = actualSize.x * actualSize.z; break;
-                        case 3: maxSize = actualSize.x * actualSize.z; break;
-                        case 4: maxSize = actualSize.y * actualSize.z; break;
-                        case 5: maxSize = actualSize.y * actualSize.z; break;
-                        default:
-                            break;
+                        case 0: perfectSize.x = actualSize.x; perfectSize.y = actualSize.y; break;
+                        case 1: perfectSize.x = actualSize.x; perfectSize.y = actualSize.y; break;
+                        case 2: perfectSize.x = actualSize.x; perfectSize.y = actualSize.z; break;
+                        case 3: perfectSize.x = actualSize.x; perfectSize.y = actualSize.z; break;
+                        case 4: perfectSize.x = actualSize.z; perfectSize.y = actualSize.y; break;
+                        case 5: perfectSize.x = actualSize.z; perfectSize.y = actualSize.y; break;
+                        default: break;
                     }
 
-                    if (ClusterData[index].Visibility[j] >= maxSize) continue;
+                    // if (ClusterData[index].Visibility[j] >= maxSize) continue;
+                    if (ClusterData[index].Visibility[j] >= perfectSize.x * perfectSize.y) continue;
                     sidesCount++;
                     sidesCountPerType[ClusterData[index].BlockId]++;
                 }
@@ -97,7 +108,7 @@ public struct CreateMeshWithClustersJob : IJob
         int vertexIndex = 0;
 
         // Foreach block
-        int2 perfectSize = new int2();
+        
         for (int index = 0; index < ClusterData.Length; index++)
         {
             if (!blockTypesIsInvisible[ClusterData[index].BlockId])
@@ -115,8 +126,20 @@ public struct CreateMeshWithClustersJob : IJob
                         case 5: perfectSize.x = actualSize.z; perfectSize.y = actualSize.y; break;
                         default: break;
                     }
-
+                    // int maxSize = 0;
+                    // switch (j)
+                    // {
+                    //     case 0: maxSize = actualSize.x * actualSize.y; break;
+                    //     case 1: maxSize = actualSize.x * actualSize.y; break;
+                    //     case 2: maxSize = actualSize.x * actualSize.z; break;
+                    //     case 3: maxSize = actualSize.x * actualSize.z; break;
+                    //     case 4: maxSize = actualSize.y * actualSize.z; break;
+                    //     case 5: maxSize = actualSize.y * actualSize.z; break;
+                    //     default:
+                    //         break;
+                    // }
                     if (ClusterData[index].Visibility[j] >= perfectSize.x * perfectSize.y) continue;
+                    // if (ClusterData[index].Visibility[j] >= maxSize) continue;
 
                     int blockID = ClusterData[index].BlockId;
                     float3 position = ClusterData[index].Position;

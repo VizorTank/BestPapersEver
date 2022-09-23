@@ -10,32 +10,18 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 837194a7ab9fa0c48bc4a799218673cb, type: 3}
-  m_Name: Default 2
+  m_Name: Plains
   m_EditorClassIdentifier: 
-  biomeName: Default
-  solidGroundHeight: 60
+  biomeName: Plains
+  BiomeHeightThresholdMin: 0.25
+  BiomeHeightThresholdMax: 0.75
+  solidGroundHeight: 70
   terrainHeightDifference: 16
   terrainSize: 0.2
+  treeThreshold: 1
+  treeMaxCount: 12
   WaterLevel: 64
   lodes:
-  - name: Dirt
-    blockID: 4
-    minHeight: 1
-    maxHeight: 255
-    scale: 0.05
-    threshold: 0.5
-    noiseOffset: 0
-  - name: Sand
-    blockID: 5
-    minHeight: 30
-    maxHeight: 60
-    scale: 0.2
-    threshold: 0.6
-    noiseOffset: 500
-  - name: Cave
-    blockID: 0
-    minHeight: 10
-    maxHeight: 60
-    scale: 0.07
-    threshold: 0.3
-    noiseOffset: 1456
+  - {fileID: 11400000, guid: dec30047ce585463f9539af68f99a6d8, type: 2}
+  - {fileID: 11400000, guid: 78469d7a8549d41ec9e4eddc4b865f43, type: 2}
+  - {fileID: 11400000, guid: 26112ca2868a1492080f7d8f4e740bfb, type: 2}

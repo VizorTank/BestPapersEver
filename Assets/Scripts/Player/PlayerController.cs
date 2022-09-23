@@ -63,6 +63,8 @@ public class PlayerController : MonoBehaviour
         playerInput.Player.PlaceStructure.started += PlaceStructure_started;
         playerInput.Player.DestroyBlock.started += DestroyBlock_started;
         playerInput.Player.NoClip.started += NoClip_started;
+
+        playerInput.Enable();
     }
 
     private void NoClip_started(UnityEngine.InputSystem.InputAction.CallbackContext obj) => noClip = !noClip;
@@ -84,24 +86,24 @@ public class PlayerController : MonoBehaviour
         movement = (transform.forward * input.z + transform.right * input.x) * speed * Time.deltaTime;
         if (isSprinting)
             movement *= sprintSpeed;
-        if (false)
-        {
-            movement = CheckCollisionSides(movement);
-            velocity.y = CheckGround(velocity.y);
-            if (!isGrounded)
-            {
-                velocity += Vector3.up * gravity * Time.deltaTime / 1;
-            }
-            if (isGrounded)
-            {
-                velocity.y = Mathf.Clamp(input.y, 0, 1) * jumpHeight;
-            }
-        }
-        else
-        {
+        // if (false)
+        // {
+        //     movement = CheckCollisionSides(movement);
+        //     velocity.y = CheckGround(velocity.y);
+        //     if (!isGrounded)
+        //     {
+        //         velocity += Vector3.up * gravity * Time.deltaTime / 1;
+        //     }
+        //     if (isGrounded)
+        //     {
+        //         velocity.y = Mathf.Clamp(input.y, 0, 1) * jumpHeight;
+        //     }
+        // }
+        // else
+        // {
             movement += transform.up * input.y * speed * Time.deltaTime;
             velocity.y = 0;
-        }
+        // }
 
         transform.position += (velocity + movement);
     }

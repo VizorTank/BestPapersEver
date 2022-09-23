@@ -4,19 +4,19 @@ public struct ChunkNeighbourData
 {
     // Back Front Top Bottom Left Right
     public ChunkNeighbourDataArray ChunkNeighbourDataArray;
-    public ChunkNeighbourDataValid ChunkNeighbourDataValid;
+    // public ChunkNeighbourDataValid ChunkNeighbourDataValid;
 
-    public NativeArray<int> this[int i]
-    {
-        get => ChunkNeighbourDataArray[i];
-        set => ChunkNeighbourDataArray[i] = value;
-    }
+    // public NativeArray<int> this[int i]
+    // {
+    //     get => ChunkNeighbourDataArray[i];
+    //     set => ChunkNeighbourDataArray[i] = value;
+    // }
     public void Destroy()
     {
         for (int i = 0; i < 6; i++)
         {
-            if (!ChunkNeighbourDataValid[i])
-                try { this[i].Dispose(); } catch { }
+            // if (!ChunkNeighbourDataValid[i])
+                try { ChunkNeighbourDataArray[i].Dispose(); } catch { }
         }
     }
 }

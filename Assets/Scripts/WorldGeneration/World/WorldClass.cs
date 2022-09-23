@@ -4,9 +4,13 @@ using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.Profiling;
 
-public class WorldClass : MonoBehaviour
+public class WorldClass : MonoBehaviour, IWorld
 {
+    public bool Load = false;
+    public bool Save = false;
+    public WorldStaticData data;
     public GameObject Player;
 
     public int renderDistance = 16;
@@ -15,58 +19,105 @@ public class WorldClass : MonoBehaviour
     private static int3 ChunkSize { get => VoxelData.ChunkSize; }
 
     public BlockTypesList blockTypesList;
+    public BlockTypesList GetBlockTypesList()
+    {
+        return blockTypesList;
+    }
     public List<Material> Materials
     {
         get => blockTypesList.Materials;
     }
+    public Transform GetTransform()
+    {
+        return transform;
+    }
     public List<Structure> Structures = new List<Structure>();
 
-    public BiomeAttributes BiomeAttributes;
-    public BiomeAttributesStruct BiomeAttributesStruct;
+    public WorldBiomesList WorldBiomes;
+    // public List<BiomeAttributes> BiomeAttributes;
+    // private List<BiomeAttributesStruct> BiomeAttributesStruct = new List<BiomeAttributesStruct>();
 
-    private Chunk[,,] chunks;
-    private bool[,,] activeChunks;
-    private List<int3> activeChunksList = new List<int3>();
-    private int prevRenderDistanceSize;
-    private int renderDistanceSize;
+    // private IChunk[,,] chunks;
+
+    public IChunk GetChunk(int3 chunkCoordinates)
+    {
+        Profiler.BeginSample("Contains chunk");
+        bool contains = activeChunksList.ContainsKey(chunkCoordinates);
+        Profiler.EndSample();
+        if (!contains) return null;
+        return activeChunksList[chunkCoordinates];
+    }
+
+    
+    // private Dictionary<int3, IChunk> activeChunks = new Dictionary<int3, IChunk>();
+    private Dictionary<int3, IChunk> activeChunksList = new Dictionary<int3, IChunk>();
+    // private int prevRenderDistanceSize;
     //private List<int3> activeChunks = new List<int3>();
 
     [Range(0, 1)]
     public float GlobalLightLevel = 1;
 
+    private ISaveManager _saveManager;
+
     // Start is called before the first frame update
+    void Awake()
+    {
+        // chunks = new IChunk[WorldSizeInChunks.x, WorldSizeInChunks.y, WorldSizeInChunks.z];
+        _saveManager = SaveManager.GetInstance();
+        if (Load)
+            _saveManager.LoadWorld();
+    }
+
     void Start()
     {
         Cursor.lockState = CursorLockMode.Locked;
 
-        BiomeAttributesStruct = BiomeAttributes.GetBiomeStruct();
+
+
+        // foreach (var biome in BiomeAttributes)
+        // {
+        //     BiomeAttributesStruct.Add(biome.GetBiomeStruct());
+        // }
         blockTypesList.ProcessData();
 
         CreateTreeStructure();
 
-        chunks = new Chunk[WorldSizeInChunks.x, WorldSizeInChunks.y, WorldSizeInChunks.z];
 
         if (Player != null)
         {
-            Player.transform.position = new Vector3(VoxelData.ChunkSize.x * WorldSizeInChunks.x / 2, 
-                VoxelData.ChunkSize.y * WorldSizeInChunks.y, 
-                VoxelData.ChunkSize.z * WorldSizeInChunks.z / 2);
+            Player.transform.position = new Vector3(0, 
+                VoxelData.ChunkSize.y * WorldSizeInChunks.y / 2, 
+                0);
         }
 
         //GenerateWorld();
         //LinkChunks();
-        CreateActiveChunkArray();
+        // CreateActiveChunkArray();
     }
 
-    public BiomeAttributesStruct GetBiome(int3 ChunkCoord)
+    public BiomeAttributesStruct GetBiome(int3 chunkCoordinates)
     {
-        return BiomeAttributesStruct;
+        return WorldBiomes.GetBiomeStruct(chunkCoordinates);
     }
-    
-    public void CreateActiveChunkArray()
+
+    public BiomeAttributesStruct GetBiome(int index)
     {
-        prevRenderDistanceSize = renderDistance * 2 + 1;
-        activeChunks = new bool[prevRenderDistanceSize, WorldSizeInChunks.y, prevRenderDistanceSize];
+        return WorldBiomes.GetBiomeStruct(index);
+    }
+
+    public int GetBiomeIndex(int3 chunkCoordinates)
+    {
+        return WorldBiomes.GetBiomeIndex(chunkCoordinates);
+    }
+
+    public NativeArray<LodeStruct> GetLodes(int3 chunkCoordinates)
+    {
+        return WorldBiomes.GetBiomeLodes(chunkCoordinates);
+    }
+
+    public ChunkGeneraionBiomes GetChunkGeneraionBiomes(int3 chunkCoordinates)
+    {
+        return WorldBiomes.GetChunkGeneraionBiomes(this, chunkCoordinates);
     }
 
     public void CreateTreeStructure()
@@ -122,223 +173,259 @@ public class WorldClass : MonoBehaviour
         Structures.Add(structure);
     }
 
-    private void LinkChunks()
-    {
-        for (int x = 0; x < WorldSizeInChunks.x; x++)
-        {
-            for (int y = 0; y < WorldSizeInChunks.y; y++)
-            {
-                for (int z = 0; z < WorldSizeInChunks.z; z++)
-                {
-                    LinkChunk(new int3(x, y, z));
-                }
-            }
-        }
-    }
-
-    private void LinkChunk(int3 position)
-    {
-        ChunkNeighbours chunkNeighbours = new ChunkNeighbours();
-        for (int i = 0; i < 6; i++)
-        {
-            int3 neighbourPos = position + VoxelData.voxelNeighbours[i];
-            if (neighbourPos.x < 0 || neighbourPos.x >= WorldSizeInChunks.x ||
-                neighbourPos.y < 0 || neighbourPos.y >= WorldSizeInChunks.y ||
-                neighbourPos.z < 0 || neighbourPos.z >= WorldSizeInChunks.z) continue;
-            chunkNeighbours[i] = chunks[neighbourPos.x, neighbourPos.y, neighbourPos.z];
-        }
-        chunks[position.x, position.y, position.z].SetNeighbours(chunkNeighbours);
-    }
 
     // Update is called once per frame
     void Update()
     {
         Shader.SetGlobalFloat("GlobalLightLevel", 1 - GlobalLightLevel);
+        
+        Profiler.BeginSample("ShowWorld");
         ShowWorld();
+        Profiler.EndSample();
+
+        Profiler.BeginSample("LoadingChunks");
+        // _saveManager.LoadingChunks();
+        _saveManager.Run();
+        Profiler.EndSample();
+
+        // Profiler.BeginSample("DrawChunks");
         DrawChunks();
+        // Profiler.EndSample();
+        // Debug.Log(activeChunksList.Count);
     }
 
-    public int3 playerLastChunkPos = new int3();
-
+    private int3 playerLastChunkPos = new int3(0, 1, 0);
+    private bool _showWorld = true;
     // Trash
     // Please remove future me
+    // No U
     private void ShowWorld()
     {
-        //if (!IsInWorld(Player.transform.position)) return;
         int3 playerChunkPos = GetChunkCoords(Player.transform.position);
+        Profiler.BeginSample("Calculate player pos");
         playerChunkPos.y = 0;
         int3 pPosDiff = playerChunkPos - playerLastChunkPos;
-        if (math.all(pPosDiff == 0))
+        _showWorld = math.any(pPosDiff != 0);
+        Profiler.EndSample();
+        // Debug.Log(draw);
+        if (_showWorld)
         {
-            activeChunksList.Clear();
-            renderDistanceSize = renderDistance * 2 + 1;
-            bool[,,] removeChunks = activeChunks;
-            activeChunks = new bool[renderDistanceSize, WorldSizeInChunks.y, renderDistanceSize];
+            var newActiveChunksList = new Dictionary<int3, IChunk>();
+            int renderDistanceSize = renderDistance * 2 + 1;
             for (int x = 0; x < renderDistanceSize; x++)
             {
                 for (int z = 0; z < renderDistanceSize; z++)
                 {
-                    for (int y = 0; y < WorldSizeInChunks.y; y++)
+                    for (int y = -1; y < WorldSizeInChunks.y; y++)
                     {
-                        CreateNewChunk(new int3(x - renderDistance - 1, y, z - renderDistance - 1) + playerChunkPos);
-                        activeChunks[x, y, z] = true;
-                        activeChunksList.Add(new int3(x - renderDistance - 1, y, z - renderDistance - 1) + playerChunkPos);
+                        int3 pos = new int3(x - renderDistance, y, z - renderDistance) + playerChunkPos;
+                        newActiveChunksList.Add(pos, GetOrCreateChunk(pos));
+                        if (activeChunksList.ContainsKey(pos))
+                            activeChunksList.Remove(pos);
                     }
                 }
             }
-
-            for (int x = 0; x < prevRenderDistanceSize; x++)
-            {
-                for (int z = 0; z < prevRenderDistanceSize; z++)
-                {
-                    for (int y = 0; y < WorldSizeInChunks.y; y++)
-                    {
-                        if (removeChunks[x, y, z] && !activeChunks[x + pPosDiff.x, y, z + pPosDiff.z])
-                            chunks[x + playerLastChunkPos.x, y, z + playerLastChunkPos.z].Hide();
-                    }
-                }
-            }
-            prevRenderDistanceSize = renderDistanceSize;
-            //foreach (int3 int3 in activeChunks)
-            //{
-            //    removeChunks.Remove(int3);
-            //    LinkChunk(int3);
-            //}
-            //foreach (int3 item in removeChunks)
-            //{
-            //    chunks[item.x, item.y, item.z].Destroy();
-            //    chunks[item.x, item.y, item.z] = null;
-            //}
+            _saveManager.UnloadChunks(this, activeChunksList);
+            activeChunksList = newActiveChunksList;
+            playerLastChunkPos = playerChunkPos;
         }
-        playerLastChunkPos = playerChunkPos;
+
+        
     }
 
-    private void DrawChunks()
+    public void DrawChunks()
     {
-        // 1 for TODO
-        for (int x = 0; x < renderDistanceSize; x++)
+        Profiler.BeginSample("Draw Chunks");
+        int i = 0;
+        foreach (var item in activeChunksList)
         {
-            for (int z = 0; z < renderDistanceSize; z++)
+            if (item.Value != null)
             {
-                for (int y = 0; y < WorldSizeInChunks.y; y++)
-                {
-                    int3 chunk = new int3(x - renderDistance - 1, y, z - renderDistance - 1) + playerLastChunkPos;
-                    if (chunks[chunk.x, chunk.y, chunk.z] != null)
-                    {
-                        chunks[chunk.x, chunk.y, chunk.z].Render();
-                    }
-                }
+                item.Value.Render();
             }
+            else
+                i++;
+            //     Debug.LogWarning("Missing Chunk");
         }
+        Profiler.EndSample();
+        if (i > 0)
+            Debug.LogWarning($"Missing {i} out of {activeChunksList.Count}");
     }
 
     void OnDestroy()
     {
-        for (int x = 0; x < WorldSizeInChunks.x; x++)
-        {
-            for (int y = 0; y < WorldSizeInChunks.y; y++)
-            {
-                for (int z = 0; z < WorldSizeInChunks.z; z++)
-                {
-                    if (chunks[x, y, z] != null)
-                        chunks[x, y, z].Destroy();
-                }
-            }
-        }
+        SaveWorld();
         blockTypesList.Destroy();
-        BiomeAttributesStruct.lodes.Dispose();
-    }
-    private void GenerateWorld()
-    {
-        for (int x = 0; x < WorldSizeInChunks.x; x++)
-        {
-            for (int y = 0; y < WorldSizeInChunks.y; y++)
-            {
-                for (int z = 0; z < WorldSizeInChunks.z; z++)
-                {
-                    int3 coord = new int3(x, y, z);
-                    CreateNewChunk(coord);
-                }
-            }
-        }
+        // foreach (var biome in BiomeAttributesStruct)
+        // {
+        //     biome.lodes.Dispose();
+        // }
+        WorldBiomes.Destroy();
+        // BiomeAttributesStruct.lodes.Dispose();
+        SaveManager.Destroy();
     }
 
-    private void CreateNewChunk(int x, int y, int z) => CreateNewChunk(new int3(x, y, z));
-
-    public bool IsCoordInWorld(int3 coordinates)
+    private void SaveWorld()
     {
-        if (coordinates.x < 0 || coordinates.x >= WorldSizeInChunks.x ||
-            coordinates.y < 0 || coordinates.y >= WorldSizeInChunks.y ||
-            coordinates.z < 0 || coordinates.z >= WorldSizeInChunks.z) return false;
+        if (!Save) return;
+        _saveManager.SaveWorld();
+        _saveManager.UnloadChunks(this, activeChunksList);
+    }
+
+    public bool IsCoordInWorld(int3 chunkCoordinates)
+    {
         return true;
+        // if (coordinates.x < 0 || coordinates.x >= WorldSizeInChunks.x ||
+        //     coordinates.y < -1 || coordinates.y >= WorldSizeInChunks.y ||
+        //     coordinates.z < 0 || coordinates.z >= WorldSizeInChunks.z) return false;
+        // return true;
     }
 
-    private void CreateNewChunk(int3 coordinates)
+    public IChunk GetOrCreateChunk(int3 chunkCoordinates)
     {
         // TODO: Center of World in (0, 0)
-        if (!IsCoordInWorld(coordinates)) return;
-
-        if (chunks[coordinates.x, coordinates.y, coordinates.z] == null)
-            chunks[coordinates.x, coordinates.y, coordinates.z] = new Chunk(coordinates, this);
+        if (!IsCoordInWorld(chunkCoordinates) || GetChunk(chunkCoordinates) != null) return GetChunk(chunkCoordinates);
+        return _saveManager.LoadChunk(this, chunkCoordinates);
     }
 
     public bool TryPlaceBlock(Vector3 position, int blockID)
     {
-        if (!IsInWorld(position)) return false;
+        // if (!IsInWorld(position)) return false;
         int3 chunkPos = GetChunkCoords(position);
-        if (chunks[chunkPos.x, chunkPos.y, chunkPos.z] == null) return false;
-        return chunks[chunkPos.x, chunkPos.y, chunkPos.z].TryPlaceBlock(new int3(position) % ChunkSize, blockID);
+        if (GetChunk(chunkPos) == null) return false;
+        if (!GetChunk(chunkPos).TryGetBlock(GetLocalPos(position), out int replacedBlockId)) return false;
+        if (!blockTypesList.areReplacable[replacedBlockId]) return false;
+        return GetChunk(chunkPos).TrySetBlock(GetLocalPos(position), blockID, out int result);
     }
 
     public bool TrySetBlock(Vector3 position, int blockID, ref int replacedBlockId)
     {
-        if (!IsInWorld(position)) return false;
+        // if (!IsInWorld(position)) return false;
         int3 chunkPos = GetChunkCoords(position);
-        if (chunks[chunkPos.x, chunkPos.y, chunkPos.z] == null) return false;
-        return chunks[chunkPos.x, chunkPos.y, chunkPos.z].TrySetBlock(new int3(position) % ChunkSize, blockID, ref replacedBlockId);
+        if (GetChunk(chunkPos) == null) return false;
+        int3 p =GetLocalPos(position);
+        bool result = GetChunk(chunkPos).TrySetBlock(p, blockID, out int retBlockId);
+        replacedBlockId = retBlockId;
+        Debug.Log($"Placed block: {p.x}, {p.y}, {p.z} Pos: {position.x}, {position.y}, {position.z}");
+        return result;
     }
 
-    public int SetBlock(Vector3 position, int blockID)
+    public bool TryGetBlock(float3 position, ref int replacedBlockId)
     {
+        // if (!IsInWorld(position)) return false;
         int3 chunkPos = GetChunkCoords(position);
-        return chunks[chunkPos.x, chunkPos.y, chunkPos.z].SetBlock(new int3(position) % ChunkSize, blockID);
+        if (GetChunk(chunkPos) == null) return false;
+        bool tmp = GetChunk(chunkPos).TryGetBlock(GetLocalPos(position), out int result);
+        replacedBlockId = result;
+        return tmp;
     }
 
-    public void CreateStructure(Vector3 position, int strucutreId)
+    // public int SetBlock(Vector3 position, int blockID)
+    // {
+    //     int3 chunkPos = GetChunkCoords(position);
+    //     GetChunk(chunkPos).TrySetBlock(new int3(position) % ChunkSize, blockID, out int result);
+    //     return result;
+    // }
+
+    public void CreateStructure(Vector3 position, int structureId) => CreateStructure(new int3(position), structureId);
+    // public void CreateStructure(int3 position, int structureId) => CreateStructure(position, GetStructure(structureId));
+    public void CreateStructure(int3 position, int structureId)
     {
-        int3 chunkPos = GetChunkCoords(position);
-        chunks[chunkPos.x, chunkPos.y, chunkPos.z].CreateStructure(new int3(position) % ChunkSize, strucutreId);
+        // // Debug.Log("Created structure "  + position.x + " " + position.y + " " + position.z);
+        // int3 chunkPos = GetChunkCoords(position);
+        // // if (!IsInWorld(chunkPos)) return;
+        // // Debug.Log("Created structure2");
+        // IChunk chunk = GetOrCreateChunk(chunkPos);
+        // chunk.CreateStructure(GetLocalPos(position), structureId);
+        CreateStructure(GetChunkCoords(position), GetLocalPos(position), structureId);
     }
 
-    public bool TryGetBlock(Vector3 position, ref int replacedBlockId)
+    public void CreateStructure(int3 chunkCoordinates, int3 structurePos, int structureId)
     {
-        if (!IsInWorld(position)) return false;
-        int3 chunkPos = GetChunkCoords(position);
-        if (chunks[chunkPos.x, chunkPos.y, chunkPos.z] == null) return false;
-        replacedBlockId = chunks[chunkPos.x, chunkPos.y, chunkPos.z].GetBlock(new int3(position) % ChunkSize);
-        return true;
+        // if (!IsInWorld(chunkCoordinates)) return;
+        // Debug.Log("Created structure2");
+        IChunk chunk = GetOrCreateChunk(chunkCoordinates);
+        chunk.CreateStructure(structurePos, structureId);
+    }
+
+    private int3 GetLocalPos(float3 position)
+    {
+        int3 p = new int3(math.floor(position));
+        return GetLocalPos(new int3(p));
+    }
+    private int3 GetLocalPos(int3 position)
+    {
+        return (position % ChunkSize + ChunkSize) % ChunkSize;
     }
 
     public int GetBlock(Vector3 position)
     {
         int3 chunkPos = GetChunkCoords(position);
-        return chunks[chunkPos.x, chunkPos.y, chunkPos.z].GetBlock(new int3(position) % ChunkSize);
+        GetChunk(chunkPos).TryGetBlock(GetLocalPos(position), out int result);
+        return result;
     }
-    public bool IsInWorld(float3 position) => IsInWorld(GetChunkCoords(position));
-    public bool IsInWorld(int3 position)
-    {
-        if (position.x >= 0 && position.x < WorldSizeInChunks.x &&
-            position.y >= 0 && position.y < WorldSizeInChunks.y &&
-            position.z >= 0 && position.z < WorldSizeInChunks.z) return true;
-        return false;
-    }
+    // private bool IsInWorld(float3 position) => IsInWorld(GetChunkCoords(position));
+    // private bool IsInWorld(int3 chunkCoordinates)
+    // {
+    //     if (chunkCoordinates.x >= 0 && chunkCoordinates.x < WorldSizeInChunks.x &&
+    //         chunkCoordinates.y >= 0 && chunkCoordinates.y < WorldSizeInChunks.y &&
+    //         chunkCoordinates.z >= 0 && chunkCoordinates.z < WorldSizeInChunks.z) return true;
+    //     return false;
+    // }
 
-    public int3 GetChunkCoords(float3 position)
+    private int3 GetChunkCoords(float3 position)
     {
         int3 cPos = new int3(Mathf.FloorToInt(position.x / ChunkSize.x),
             Mathf.FloorToInt(position.y / ChunkSize.y),
             Mathf.FloorToInt(position.z / ChunkSize.z));
+        // if (math.any(position < 0))
+        //     Debug.Log($"Pos: {position.x}, {position.y}, {position.z} Chunk: {cPos.x}, {cPos.y}, {cPos.z}");
+
         return cPos;
+    }
+
+    public bool TryGetNeighbours(int3 chunkCoordinates, ref ChunkNeighbours neighbours)
+    {
+        // ChunkNeighbours result = new ChunkNeighbours();
+
+        for (int i = 0; i < 6; i++)
+        {
+            if (neighbours[i] != null && !neighbours[i].IsDestroyed()) continue;
+
+            int3 neighbourCoordinates = chunkCoordinates + VoxelData.voxelNeighbours[i];
+            Profiler.BeginSample("Get Chunk");
+            neighbours[i] = GetChunk(neighbourCoordinates);
+            Profiler.EndSample();
+            if (neighbours[i] == null)
+            {
+                // if (math.all(chunkCoordinates == playerLastChunkPos))
+                //     Debug.Log("Missing chunk " + i);
+                return false;
+            }
+        }
+
+        // neighbours = result;
+        return true;
+    }
+
+    public bool TryGetBlocks(Vector3 position, NativeArray<int> blockIds)
+    {
+        throw new System.NotImplementedException();
+    }
+
+    public void SetChunkActive(int3 chunkCoordinates)
+    {
+        throw new System.NotImplementedException();
+    }
+
+    public bool TryPlaceBlock(Vector3 position, int blockID, ref int replacedBlockId)
+    {
+        throw new System.NotImplementedException();
+    }
+
+    public Structure GetStructure(int structureId)
+    {
+        return Structures[structureId];
     }
 }
 

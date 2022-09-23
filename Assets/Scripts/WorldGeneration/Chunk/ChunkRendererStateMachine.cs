@@ -6,10 +6,10 @@ using UnityEngine.Rendering;
 
 public class ChunkRendererStateMachine
 {
-    public Chunk Chunk;
-    public WorldClass World;
+    private IChunk _chunk;
+    private IWorld _world;
 
-    private ChunkRendererStates _state = ChunkRendererStates.Ready;
+    private ChunkRendererStates _state = ChunkRendererStates.RequireInit;
     private NativeArray<int> blocksForMeshGeneration;
     
     private NativeList<ClusterCreationStruct> ClusterData;
@@ -22,13 +22,11 @@ public class ChunkRendererStateMachine
     
     private Mesh.MeshDataArray meshDataArray;
     private ChunkNeighbourData ChunkNeighbourData;
-    
-    public void Init(Chunk chunk, WorldClass world)
-    {
-        if (Chunk != null) return;
-        Chunk = chunk;
-        World = world;
 
+    private bool _isDestroyed = false;
+
+    public ChunkRendererStateMachine()
+    {
         ClusterData = new NativeList<ClusterCreationStruct>(Allocator.Persistent);
 
         blocksForMeshGeneration = new NativeArray<int>(
@@ -39,14 +37,48 @@ public class ChunkRendererStateMachine
             VoxelData.ChunkSize.x * VoxelData.ChunkSize.y * VoxelData.ChunkSize.z, 
             Allocator.Persistent);
     }
+    
+    public void Destroy()
+    {
+        _isDestroyed = true;
+        try { ClusterData.Dispose(); } catch { }
+        try { blocksForMeshGeneration.Dispose(); } catch { }
+        try { blocksClusterIdDatas.Dispose(); } catch { }
+    }
+
+    public bool Init(IChunk chunk, IWorld world)
+    {
+        if (_isDestroyed) return false;
+        if (_state != ChunkRendererStates.RequireInit) return false;
+        _state = ChunkRendererStates.Ready;
+
+        _chunk = chunk;
+        _world = world;
+
+        ClusterData.Clear();
+        return true;
+    }
+
+    // public bool Render(IChunk chunk, IWorld world, out Mesh mesh)
+    // {
+    //     Init(chunk, world);
+    //     CopyBlocks();
+    //     CreateClusters();
+    //     CheckClusterVisibility();
+    //     CreateMeshDataWithClusters();
+    //     bool result = CreateMesh(out Mesh _mesh);
+    //     mesh = _mesh;
+    //     return result;
+    // }
 
     public void CopyBlocks()
     {
         if (_state != ChunkRendererStates.Ready) return;
+        
 
         _state = ChunkRendererStates.CopyingBlocks;
-
-        Chunk.GetBlocks().CopyTo(blocksForMeshGeneration);
+        // Debug.Log("Init");
+        _chunk.GetBlocks().CopyTo(blocksForMeshGeneration);
     }
     
     public void CreateClusters()
@@ -55,7 +87,7 @@ public class ChunkRendererStateMachine
         if (_state != ChunkRendererStates.CopyingBlocks || !generatingBlockIdJobHandle.IsCompleted) return;
         _state = ChunkRendererStates.CreatingClusters;
         ClusterData.Clear();
-
+        // Debug.Log("CreateClusters");
         CreateClustersJob createClustersJob = new CreateClustersJob
         {
             blockIdDatas = blocksForMeshGeneration,
@@ -71,34 +103,36 @@ public class ChunkRendererStateMachine
     }
     
 
-    private void GetNeighboursData()
-    {
-        ChunkNeighbourData = Chunk.GetNeighbourData();
-    }
+    // private void GetNeighboursData()
+    // {
+    //     ChunkNeighbourData = _chunk.GetNeighbourData();
+    // }
 
-    private void FreeNeighboursData()
-    {
-        Chunk.FreeNeighboursData();
-    }
+    // private void FreeNeighbourData()
+    // {
+    //     _chunk.ReleaseNeighbourData();
+    // }
     
-    public void CheckClusterVisibility()
+    public void CheckClusterVisibility(ChunkNeighbours neighbours)
     {
         
         if (_state != ChunkRendererStates.CreatingClusters || !generatingClustersJobHandle.IsCompleted) return;
+        if (!neighbours.GetData(out ChunkNeighbourData data)) return;
         _state = ChunkRendererStates.CheckingVisibility;
 
         generatingClustersJobHandle.Complete();
-        GetNeighboursData();
-
+        
+        
+        // Debug.Log("CheckClusterVisibility");
         CheckClusterVisibilityJob checkClusterVisibilityJob = new CheckClusterVisibilityJob
         {
             blockIdDatas = blocksForMeshGeneration,
             
             ClusterData = ClusterData,
 
-            blockTypesIsTransparent = World.blockTypesList.areTransparent,
+            blockTypesIsTransparent = _world.GetBlockTypesList().areTransparent,
 
-            chunkNeighbourData = ChunkNeighbourData,
+            chunkNeighbourData = data,
 
             neighbours = ChunkRendererConst.voxelNeighbours,
             clusterSides = ChunkRendererConst.clusterSides,
@@ -107,14 +141,15 @@ public class ChunkRendererStateMachine
         checkingVisibilityJobHandle = checkClusterVisibilityJob.Schedule(ClusterData.Length, 16);
     }
 
-    public void CreateMeshDataWithClusters()
+    public void CreateMeshDataWithClusters(ChunkNeighbours neighbours)
     {
         if (_state != ChunkRendererStates.CheckingVisibility || !checkingVisibilityJobHandle.IsCompleted) return;
+        
         _state = ChunkRendererStates.CreatingMeshData;
 
         checkingVisibilityJobHandle.Complete();
-        FreeNeighboursData();
-
+        neighbours.ReleaseData();
+        // Debug.Log("CreateMeshDataWithClusters");
         // Allocate mesh to create
         meshDataArray = Mesh.AllocateWritableMeshData(1);
 
@@ -132,14 +167,14 @@ public class ChunkRendererStateMachine
             triangleOrder = ChunkRendererConst.triangleOrder,
 
             // Block Types Count
-            blockTypesCount = World.blockTypesList.BlockCount,
-            blockTypesIsInvisible = World.blockTypesList.areInvisible,
+            blockTypesCount = _world.GetBlockTypesList().BlockCount,
+            blockTypesIsInvisible = _world.GetBlockTypesList().areInvisible,
 
             // How data is inserted to MeshData
             layout = ChunkRendererConst.layout,
 
             // Chunk position
-            chunkPos = Chunk.ChunkPosition,
+            chunkPos = _chunk.GetChunkPosition(),
             chunkSize = VoxelData.ChunkSize,
 
             // Mesh to create
@@ -158,7 +193,7 @@ public class ChunkRendererStateMachine
             mesh = null;
             return false;
         }
-        _state = ChunkRendererStates.Ready;
+        _state = ChunkRendererStates.RequireInit;
 
         generatingMeshJobHandle.Complete();
 
@@ -166,7 +201,7 @@ public class ChunkRendererStateMachine
 
         Mesh.ApplyAndDisposeWritableMeshData(meshDataArray, mesh);
 
-        mesh.RecalculateNormals();
+        // mesh.RecalculateNormals();
         mesh.RecalculateBounds();
 
         return true;
@@ -175,6 +210,7 @@ public class ChunkRendererStateMachine
 
 public enum ChunkRendererStates
 {
+    RequireInit,
     Ready,
     CopyingBlocks,
     CreatingClusters,

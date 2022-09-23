@@ -3,16 +3,16 @@ using Unity.Mathematics;
 
 public class ChunkNeighbours
 {
-    public Chunk Back;
-    public Chunk Front;
+    public IChunk Back;
+    public IChunk Front;
 
-    public Chunk Top;
-    public Chunk Bottom;
+    public IChunk Top;
+    public IChunk Bottom;
 
-    public Chunk Left;
-    public Chunk Right;
+    public IChunk Left;
+    public IChunk Right;
 
-    public Chunk this[int i]
+    public IChunk this[int i]
     {
         get
         {
@@ -41,7 +41,7 @@ public class ChunkNeighbours
         }
     }
 
-    public Chunk this[int3 pos]
+    public IChunk this[int3 pos]
     {
         get
         {
@@ -51,6 +51,36 @@ public class ChunkNeighbours
             }
 
             throw new System.Exception("Index out of bounds");
+        }
+    }
+
+    public bool IsValid()
+    {
+        for (int i = 0; i < 6; i++)
+        {
+            if (this[i] == null || this[i].IsDestroyed()) return false;
+        }
+        return true;
+    }
+
+    public bool GetData(out ChunkNeighbourData neighbourData)
+    {
+        neighbourData = new ChunkNeighbourData();
+        if (!IsValid()) return false;
+        for (int i = 0; i < 6; i++)
+        {
+            if (!this[i].CanAccess()) return false;
+            neighbourData.ChunkNeighbourDataArray[i] = this[i].GetSharedData();
+        }
+        return true;
+    }
+
+    public void ReleaseData()
+    {
+        for (int i = 0; i < 6; i++)
+        {
+            if (this[i] != null)
+                this[i].ReleaseSharedData();
         }
     }
 }

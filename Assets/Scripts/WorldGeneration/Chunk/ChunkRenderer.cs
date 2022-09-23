@@ -1,10 +1,12 @@
+using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.Profiling;
 
 public class ChunkRenderer : IChunkRenderer
 {
-    private WorldClass _world;
+    private IWorld _world;
     
-    private Chunk _chunk;
+    private IChunk _chunk;
     
     private GameObject _chunkObject;
     private MeshRenderer _meshRenderer;
@@ -12,16 +14,27 @@ public class ChunkRenderer : IChunkRenderer
     
     private ChunkRendererStateMachine _stateMachine;
 
-    private bool _requireUpdate = true;
+    private bool _requireUpdate;
+    private bool _processing;
 
-    public ChunkRenderer(WorldClass world, Chunk chunk)
+    private ChunkNeighbours _chunkNeighbours;
+
+    private bool isHidden = true;
+
+    public ChunkRenderer(IChunk chunk, IWorld world)
     {
         _world = world;
         SetChunk(chunk);
         _stateMachine = new ChunkRendererStateMachine();
     }
 
-    private void SetChunk(Chunk chunk)
+    public void Destroy()
+    {
+        _stateMachine.Destroy();
+        MonoBehaviour.Destroy(_chunkObject);
+    }
+
+    private void SetChunk(IChunk chunk)
     {
         _chunk = chunk;
         
@@ -29,40 +42,68 @@ public class ChunkRenderer : IChunkRenderer
         _meshFilter = _chunkObject.AddComponent<MeshFilter>();
         _meshRenderer = _chunkObject.AddComponent<MeshRenderer>();
         
-        _meshRenderer.materials = _world.Materials.ToArray();
+        _meshRenderer.materials = _world.GetBlockTypesList().Materials.ToArray();
         
-        _chunkObject.transform.SetParent(_world.transform);
+        int3 chunkCoordinates = chunk.GetChunkCoordinates();
+
+        _chunkObject.transform.SetParent(_world.GetTransform());
         _chunkObject.transform.position = Vector3.Scale(
-            new Vector3(chunk.Coordinates.x, chunk.Coordinates.y, chunk.Coordinates.z), 
+            new Vector3(chunkCoordinates.x, chunkCoordinates.y, chunkCoordinates.z), 
             new Vector3(VoxelData.ChunkSize.x, VoxelData.ChunkSize.y, VoxelData.ChunkSize.z));
-        _chunkObject.name = string.Format("Chunk {0}, {1}, {2}", chunk.Coordinates.x, chunk.Coordinates.y, chunk.Coordinates.z);
+        _chunkObject.name = string.Format("Chunk {0}, {1}, {2}", chunkCoordinates.x, chunkCoordinates.y, chunkCoordinates.z);
+
+        if (_meshFilter == null)
+            Debug.Log("A");
     }
     
-    public void Render()
+    public void Render(ChunkNeighbours neighbours)
     {
-        if (_requireUpdate)
+        Profiler.BeginSample("Render");
+        if (_requireUpdate && _stateMachine.Init(_chunk, _world))
         {
-            _stateMachine.Init(_chunk, _world);
-            _stateMachine.CopyBlocks();
-            _stateMachine.CreateClusters();
-            _stateMachine.CheckClusterVisibility();
-            _stateMachine.CreateMeshDataWithClusters();
-            if (_stateMachine.CreateMesh(out Mesh mesh))
-            {
-                _meshFilter.mesh = mesh;
-                //Debug.Log("Created Mesh");
-                _requireUpdate = false;
-            }
+            _requireUpdate = false;
+            _processing = true;
         }
+        _stateMachine.CopyBlocks();
+        _stateMachine.CreateClusters();
+        _stateMachine.CheckClusterVisibility(neighbours);
+        _stateMachine.CreateMeshDataWithClusters(neighbours);
+        if (_stateMachine.CreateMesh(out Mesh mesh))
+        {
+            if (_meshFilter == null)
+                Debug.Log("A");
+            _meshFilter.mesh = mesh;
+            isHidden = false;
+            _processing = false;
+        }
+
+        Profiler.EndSample();
     }
+
 
     public void Unload()
     {
-        
+        if (_meshFilter == null)
+            Debug.Log("A");
+        if (!isHidden)
+        {
+            _meshFilter.mesh = null;
+            isHidden = true;
+        }
+    }
+
+    public bool CanAccess()
+    {
+        return _meshFilter != null && _meshRenderer != null;
     }
 
     public void Update()
     {
         _requireUpdate = true;
+    }
+
+    public bool RequireProcessing()
+    {
+        return _requireUpdate || _processing;
     }
 }
