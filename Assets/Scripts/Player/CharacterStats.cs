@@ -32,7 +32,7 @@ public class CharacterStats : MonoBehaviour
 
 
 
-    public Dictionary<int, int> LataDamageTable = new Dictionary<int, int>();
+    public Dictionary<Transform, int> LataDamageTable = new Dictionary<Transform, int>();
     // Start is called before the first frame update
     void Start()
     {
@@ -51,8 +51,8 @@ public class CharacterStats : MonoBehaviour
     {
         if(LataDamageTable.Count>0)
         {
-            List<int> Array = new List<int>(LataDamageTable.Keys);
-            foreach(int damageints in Array)
+            List<Transform> Array = new List<Transform>(LataDamageTable.Keys);
+            foreach(Transform damageints in Array)
             {
                 LataDamageTable[damageints]--;
                 if(LataDamageTable[damageints]<=0)
@@ -71,23 +71,30 @@ public class CharacterStats : MonoBehaviour
         CurrentHealth = Mathf.Clamp(CurrentHealth, 0, MaxHealth);
     }
 
+
+    public event EventHandler OnDamageTaken;
     public void TakeDamage(HitData data)
     {
         float damage = Mathf.Clamp(data.damage, 0, int.MaxValue);
-        if (!LataDamageTable.ContainsKey(data.Sourse.GetInstanceID()))
+        if (data.Sourse == transform || data.damageTarget.ToString()!=transform.tag)
+            return;
+        if (!LataDamageTable.ContainsKey(data.Sourse))
         {
-            LataDamageTable.Add(data.Sourse.GetInstanceID(), 10);
-
+            LataDamageTable.Add(data.Sourse, 10);
+            if (OnDamageTaken != null) OnDamageTaken(this, EventArgs.Empty);
             CurrentHealth -= damage;
             CurrentHealth = Mathf.Clamp(CurrentHealth, 0, MaxHealth);
             if (CurrentHealth == 0)
             { Die(); }
         }
     }
-
+    public void SetArmor(int armor)
+    {
+        Armour = armor;
+    }
     private void Die()
     {
-        Destroy(transform.gameObject);
+       // Destroy(transform.gameObject);
     }
 
     public bool TryUseStamina(float useStamina)
@@ -107,7 +114,6 @@ public class CharacterStats : MonoBehaviour
 
     public void UpdateStats()
     {
-        //CurrentStamina += StaminaRegeneration * Time.fixedDeltaTime;
         CurrentStamina = Mathf.Clamp(CurrentStamina += StaminaRegeneration * Time.fixedDeltaTime, 0, MaxStamina);
         CurrentHealth = Mathf.Clamp(CurrentHealth += HealthRegeneration * Time.fixedDeltaTime, 0, MaxHealth);
         if(CurrentStamina >= 0.7f * MaxStamina)

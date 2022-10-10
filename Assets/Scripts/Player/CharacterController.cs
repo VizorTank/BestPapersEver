@@ -7,23 +7,11 @@ public class CharacterController : MonoBehaviour
     public WorldClass worldClass;
 
 
-
-
-
-
     public Vector3 VerticalMomentum = Vector3.zero;
     public  Vector3 movement;
-    public Vector3 velocity;
-    public float upSpeed = 0;
-    public bool noClip = false;
     public bool isSprinting;
     public bool isGrounded;
-    public Vector3 zero = Vector3.zero;
     public bool jumprequest = false;
-
-
-    public bool Xaxis = false;
-    public bool Zaxis = false;
 
     public float reach = 8f;
     public float checkIncrement = 0.1f;
@@ -36,27 +24,39 @@ public class CharacterController : MonoBehaviour
     public int LimiterBack;
     public int LimiterLeft;
     public int LimiterRight;
-    public bool FrontBlocked;
-    public bool BackBlocked;
-    public bool LeftBlocked;
-    public bool RightBlocked;
     public Vector3 input;
+    public bool MovementBlocked;
+    public bool _InLiquid;
+    public bool inLiquid
+    {
+        set
+        {
+            bool oldValue = _InLiquid;
+            if(value&&value!=oldValue)
+            EnterWater();
+            _InLiquid = value;
+        }
+        get { return _InLiquid; }
+    }
 
     public CharacterStats CharacterStats;
     public Animator animator;
-    // Start is called before the first frame update
-    void Start()
+    private void Awake()
     {
-        if(animator==null)
-        animator = transform.Find("Body").GetComponent<Animator>();
+        if (animator == null)
+            animator = transform.Find("Body").GetComponent<Animator>();
         CharacterStats = transform.GetComponent<CharacterStats>();
+        if (worldClass == null)
+        {
+            worldClass = GameObject.Find("World").transform.GetComponent<WorldClass>();
+        }
     }
 
-    // Update is called once per frame
     void Update()
     {
         Move();
     }
+
     public void GetMovement(Vector3 input , bool isSprinting = false)
     {
         
@@ -65,11 +65,13 @@ public class CharacterController : MonoBehaviour
         {
             jumprequest = true;
         }
+        if(input.y==0)
+        {
+            jumprequest = false;
+        }
 
         this.isSprinting = isSprinting;
         input = Vector3.zero;
-
-        
     }
 
     private void Jump()
@@ -83,19 +85,26 @@ public class CharacterController : MonoBehaviour
         
         movement = CalculateMovement(input);
         input = Vector3.zero;
-        if (!isGrounded)
+        if (!isGrounded&&!inLiquid)
         {
             VerticalMomentum +=new Vector3(0,1f,0) * CharacterStats.gravity * Time.deltaTime / 1;
             jumprequest = false;
             animator.SetBool("InAir", true);
         }
-        if (isGrounded)
+        if (isGrounded&&!inLiquid)
         {
             animator.SetBool("InAir", false);
             if (jumprequest)
                 VerticalMomentum.y = Mathf.Sqrt(CharacterStats.jumpHeight * -CharacterStats.gravity * 2f);// * Time.deltaTime;
             
 
+        }
+        if(inLiquid)
+        {
+            if(!jumprequest)
+                VerticalMomentum += new Vector3(0, .1f, 0) * CharacterStats.gravity * Time.deltaTime / 1;
+            if(jumprequest)
+                VerticalMomentum -= new Vector3(0, .1f, 0) * CharacterStats.gravity * Time.deltaTime / 1;
         }
        
         
@@ -119,10 +128,19 @@ public class CharacterController : MonoBehaviour
         transform.position += movement + VerticalMomentum;
     }
 
+
+    public Vector3 EnterWater()
+    {
+
+        Vector3 oldVertical = VerticalMomentum;
+        if(VerticalMomentum.y>=.11f)
+        VerticalMomentum = new Vector3(0, .1f, 0) * CharacterStats.gravity * Time.deltaTime / 1;
+        return oldVertical - VerticalMomentum;
+    }
     protected Vector3 CalculateMovement(Vector3 move)
     {
+        Findlegblock();
         FindGroundBlock();
-        //FindCowerBlock();
         FindFrontBlock();
         FindBackBlock();
         FindLeftBlock();
@@ -137,66 +155,29 @@ public class CharacterController : MonoBehaviour
         }
         else isGrounded = false;
 
-
-
-        
         if (move.z > 0 && transform.position.z + CharacterStats.width >= LimiterFront)
         {
             move.z = 0f;
-            transform.position = new Vector3(transform.position.x, transform.position.y, LimiterFront - CharacterStats.width);
+            MovementBlocked = true;
         }
-
 
         if (move.z < 0 && transform.position.z - CharacterStats.width <= LimiterBack)
         {
             move.z = 0f;
-            transform.position = new Vector3(transform.position.x, transform.position.y, LimiterBack + CharacterStats.width);
+            MovementBlocked = true;
         }
 
         if (move.x < 0 && transform.position.x - CharacterStats.width <= LimiterLeft)
         {
             move.x = 0f;
-            transform.position = new Vector3(LimiterLeft + CharacterStats.width, transform.position.y, transform.position.z);
+            MovementBlocked = true;
         }
 
         if (move.x > 0 && transform.position.x + CharacterStats.width >= LimiterRight)
         {
             move.x = 0f;
-            transform.position = new Vector3(LimiterRight - CharacterStats.width, transform.position.y, transform.position.z);
+            MovementBlocked = true;
         }
-        
-
-
-
-        if (transform.position.z + CharacterStats.width >= LimiterFront)
-        {
-            transform.position = new Vector3(transform.position.x, transform.position.y, LimiterFront - CharacterStats.width);
-            if(move.z > 0)
-                move.z = 0f;
-        }
-
-
-        if (transform.position.z - CharacterStats.width <= LimiterBack)
-        {
-            transform.position = new Vector3(transform.position.x, transform.position.y, LimiterBack + CharacterStats.width);
-            if (move.z < 0) move.z = 0f;
-        }
-
-        if (transform.position.x - CharacterStats.width <= LimiterLeft)
-        {
-            transform.position = new Vector3(LimiterLeft + CharacterStats.width, transform.position.y, transform.position.z);
-            if (move.x < 0) move.x = 0f;
-        }
-
-        if (transform.position.x + CharacterStats.width >= LimiterRight)
-        {
-            transform.position = new Vector3(LimiterRight - CharacterStats.width, transform.position.y, transform.position.z);
-            if (move.x > 0) move.x = 0f;
-        }
-
-
-
-
 
         if (transform.position.y + CharacterStats.height / 2 >= UpBlock.y)
         {
@@ -204,11 +185,12 @@ public class CharacterController : MonoBehaviour
             VerticalMomentum = Vector3.zero;
         }
 
-
         return move;
     }
 
     //Correct
+
+    
     private void FindGroundBlock()
     {
 
@@ -229,61 +211,6 @@ public class CharacterController : MonoBehaviour
 
     }
 
-    private void FindCowerBlock()
-    {
-        bool front = true, back = true, right= true, left= true;
-        for (int i = 0; i < CharacterStats.height; i++)
-        {
-            Vector3 pos = transform.position + new Vector3(0, (-CharacterStats.height / 4 + i), 0) + Vector3.forward * CharacterStats.width * 1.1f;
-
-            if (worldClass.GetBlock(pos) != 0)
-            {
-                if (worldClass.blockTypesList.areSolid[worldClass.GetBlock(pos)])
-                {
-                    LimiterFront = (int)Mathf.Floor(pos.z);
-                    front = false;
-                }
-            }
-
-            Vector3 pos2 = transform.position + new Vector3(0, (-CharacterStats.height / 4 + i), 0) - Vector3.forward * CharacterStats.width * 1.1f;
-
-            if (worldClass.GetBlock(pos2) != 0)
-            {
-                if (worldClass.blockTypesList.areSolid[worldClass.GetBlock(pos2)])
-                {
-                    LimiterBack = (int)Mathf.Floor(pos2.z) + 1;
-                    back = false;
-                }
-            }
-
-            Vector3 pos3 = transform.position + new Vector3(0, (-CharacterStats.height / 4 + i), 0) + Vector3.right * CharacterStats.width * 1.1f;
-
-            if (worldClass.GetBlock(pos3) != 0)
-            {
-                if (worldClass.blockTypesList.areSolid[worldClass.GetBlock(pos3)])
-                {
-                    LimiterRight = (int)Mathf.Floor(pos.x);
-                    right = false;
-                }
-            }
-
-            Vector3 pos4 = transform.position + new Vector3(0, (-CharacterStats.height / 4 + i), 0) - Vector3.right * CharacterStats.width * 1.1f;
-
-            if (worldClass.GetBlock(pos4) != 0)
-            {
-                if (worldClass.blockTypesList.areSolid[worldClass.GetBlock(pos4)])
-                {
-                    LimiterLeft = (int)Mathf.Floor(pos4.x) + 1;
-                    left = false;
-                }
-            }
-        }
-        if (front) LimiterFront = int.MaxValue;
-        if (back) LimiterBack = int.MinValue;
-        if (right) LimiterRight = int.MaxValue;
-        if (left) LimiterLeft = int.MinValue;
-        
-    }
 
 
     private void FindUpBlock()
@@ -328,8 +255,6 @@ public class CharacterController : MonoBehaviour
 
     private void FindBackBlock()
     {
-
-
         for (int i = 0; i < CharacterStats.height; i++)
         {
             Vector3 pos = transform.position + new Vector3(0, (-CharacterStats.height / 4 + i), 0) - Vector3.forward * CharacterStats.width * 1.1f;
@@ -346,10 +271,22 @@ public class CharacterController : MonoBehaviour
         LimiterBack = int.MinValue;
     }
 
+    private void Findlegblock()
+    {
+        Vector3 pos = transform.position + new Vector3(0, (-CharacterStats.height / 4 ), 0);
+        if (worldClass.GetBlock(pos) != 0)
+        {
+            if (worldClass.blockTypesList.areLiquid[worldClass.GetBlock(pos)])
+            {
+                inLiquid = true;
+                return;
+            }
+        }
+        inLiquid = false;
+    }
+
     private void FindRightBlock()
     {
-
-
         for (int i = 0; i < CharacterStats.height; i++)
         {
             Vector3 pos = transform.position + new Vector3(0, (-CharacterStats.height / 4 + i), 0) + Vector3.right * CharacterStats.width * 1.1f;
@@ -368,8 +305,6 @@ public class CharacterController : MonoBehaviour
 
     private void FindLeftBlock()
     {
-
-
         for (int i = 0; i < CharacterStats.height; i++)
         {
             Vector3 pos = transform.position + new Vector3(0, (-CharacterStats.height / 4 + i), 0) - Vector3.right * CharacterStats.width * 1.1f;

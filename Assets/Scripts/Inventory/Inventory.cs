@@ -14,7 +14,7 @@ public class Inventory : MonoBehaviour {
     public GameObject Equipment;
     public GameObject InventoryUI;
     public List<UIItemSlot> ContainerSlots;
-    public List<int> CraftingItemsSlot;
+    public List<CraftinReci> CraftingItemsSlot;
 
 
 
@@ -23,7 +23,17 @@ public class Inventory : MonoBehaviour {
     public GameObject CraftingWindow;
     public GameObject CraftingPreviev;
     public UIItemSlot CraftingPrevievSlot;
-    public int SelectedCraft = 0;
+    public CraftingRecipe SelectedCraft = null;
+
+
+
+
+    [Header("Equipment")]
+    public List<UIItemSlot> equipmentSlots;
+    public UIItemSlot HelmetSlot;
+    public UIItemSlot ChestplateSlot;
+    public UIItemSlot LeggingsSlot;
+    public UIItemSlot BootsSlot;
     private void Start() {
 
         foreach (UIItemSlot slot in toolbaruislots)
@@ -44,8 +54,34 @@ public class Inventory : MonoBehaviour {
             GameObject newSlot = Instantiate(slotPrefab, ContainerUI.transform);
             ContainerSlots.Add(newSlot.GetComponent<UIItemSlot>());
         }
+
+        foreach (UIItemSlot slot in equipmentSlots)
+        {
+            if (slot.itemSlot == null)
+                slot.itemSlot = new ItemSlot(slot);
+            slot.itemSlot.slotType = UISlotType.EqSlot;
+        }
+
+        HelmetSlot.itemSlot = new ItemSlot(HelmetSlot);
+        HelmetSlot.itemSlot.slotType = UISlotType.Helmet;
+        equipmentSlots.Add(HelmetSlot);
+
+        ChestplateSlot.itemSlot = new ItemSlot(ChestplateSlot);
+        ChestplateSlot.itemSlot.slotType = UISlotType.ChestPlate;
+        equipmentSlots.Add(ChestplateSlot);
+
+        LeggingsSlot.itemSlot = new ItemSlot(LeggingsSlot);
+        LeggingsSlot.itemSlot.slotType = UISlotType.Leggings;
+        equipmentSlots.Add(LeggingsSlot);
+
+        BootsSlot.itemSlot = new ItemSlot(BootsSlot);
+        BootsSlot.itemSlot.slotType = UISlotType.Boots;
+        equipmentSlots.Add(BootsSlot);
+
         CraftingPrevievSlot.itemSlot = new ItemSlot(CraftingPrevievSlot);
-        CraftingPrevievSlot.itemSlot.isOther = true;
+        CraftingPrevievSlot.itemSlot.slotType = UISlotType.CraftingPreviev;
+
+        SelectedCraft = RecipeMenager.GetRecipe("Planks");
         CraftingGrid();
     }
 
@@ -64,7 +100,7 @@ public class Inventory : MonoBehaviour {
         CraftingWindow.SetActive(false);
         Equipment.SetActive(false);
     }
-    public void ChangeHighlightedCrafting(int select)
+    public void ChangeHighlightedCrafting(CraftingRecipe select)
     {
         SelectedCraft = select;
 
@@ -77,20 +113,19 @@ public class Inventory : MonoBehaviour {
         {
             GameObject.Destroy(child.gameObject);
         }
-        foreach (CraftinReci reci in RecipeMenager.GetRecipe(SelectedCraft).CraftinRecipe)
+        foreach (CraftinReci reci in SelectedCraft.CraftinRecipe)
         {
 
-            Item item = ItemMenager.GetItem(reci.ID);
-            //if (!isCraftable(item)) continue;
+            Item item = ItemMenager.GetItem(reci.ItemName);
 
             GameObject newSlot = Instantiate(slotPrefab, CraftingPreviev.transform);
             ItemSlot slot = new ItemSlot(newSlot.GetComponent<UIItemSlot>(), "Crafting");
-            slot.isOther = true;
+            slot.slotType = UISlotType.Other;
             slot.InsertStack(new ItemStack(item, reci.Amount));
-            string message = CraftingItemsSlot[reci.ID] + "/" + reci.Amount;
-            slot.UpdateSlot(message,!( reci.Amount > CraftingItemsSlot[reci.ID]));
+            string message = CraftingItemsSlot.Find(x=> x.ItemName==reci.ItemName).Amount + "/" + reci.Amount;
+            slot.UpdateSlot(message,!( reci.Amount > CraftingItemsSlot.Find(x => x.ItemName == reci.ItemName).Amount));
         }
-        CraftingPrevievSlot.itemSlot.InsertStack(new ItemStack(ItemMenager.GetItem(RecipeMenager.GetRecipe(SelectedCraft).CraftedID), RecipeMenager.GetRecipe(SelectedCraft).AmountCrafted));
+        CraftingPrevievSlot.itemSlot.InsertStack(new ItemStack(ItemMenager.GetItem(SelectedCraft.ItemName), SelectedCraft.AmountCrafted));
         CraftingPrevievSlot.UpdateSlot();
     }
 
@@ -115,6 +150,7 @@ public class Inventory : MonoBehaviour {
             }
         }
         CraftingGrid();
+        Toolbar.GetComponent<Toolbar>().UpdateHander();
         return item;
     }
 
@@ -127,7 +163,6 @@ public class Inventory : MonoBehaviour {
         }
         return item;
     }
-
 
     public ItemStack Stacking(ItemStack item, ItemSlot slot)
     {
@@ -204,38 +239,37 @@ public class Inventory : MonoBehaviour {
 
     public void CalculateInventory()
     {
-        CraftingItemsSlot.Clear();
-        for (int i = 0; i < ItemMenager.AmountofItems(); i++)
-        {
-            CraftingItemsSlot.Add(0);
-        }
-        foreach(ItemSlot slot in slots)
-        {
-            if (slot.HasItem)
-            {
-                CraftingItemsSlot[slot.stack.Item.id] += slot.stack.amount;
-            }
-        }
 
-        
+       CraftingItemsSlot.Clear();
+        foreach (Item item in ItemMenager.GetItemList())
+        {
+            CraftingItemsSlot.Add(new CraftinReci(item.NameID, 0));
+        }
+         foreach(ItemSlot slot in slots)
+         {
+             if (slot.HasItem)
+             {
+                CraftingItemsSlot.Find(x => x.ItemName == slot.stack.Item.NameID).Amount += slot.stack.amount;
+             }
+         }
     }
 
-   public ItemStack CraftItem(Item item)
+    public ItemStack CraftItem()
    {
-        foreach(CraftinReci reci in RecipeMenager.GetRecipe(item.id).CraftinRecipe)
+        foreach(CraftinReci reci in SelectedCraft.CraftinRecipe)
         {
-            FindAndTake(new ItemStack(ItemMenager.GetItem(reci.ID) , reci.Amount));
+            FindAndTake(new ItemStack(ItemMenager.GetItem(reci.ItemName) , reci.Amount));
         }
         CraftingGrid();
-        return new ItemStack(item, RecipeMenager.GetRecipe(item.id).AmountCrafted);
+        return new ItemStack(ItemMenager.GetItem(SelectedCraft.ItemName), SelectedCraft.AmountCrafted);
        
    }
 
-    public bool isCraftable(Item item)
+    public bool isCraftable()
     {
-        foreach(CraftinReci reci in RecipeMenager.GetRecipe(item.id).CraftinRecipe)
+        foreach(CraftinReci reci in SelectedCraft.CraftinRecipe)
         {
-            if (reci.Amount > CraftingItemsSlot[reci.ID]) return false;
+            if (reci.Amount > CraftingItemsSlot.Find(x => x.ItemName == reci.ItemName).Amount) return false;
         }
         return true;
     }
@@ -243,20 +277,21 @@ public class Inventory : MonoBehaviour {
     public void CraftUntil(ItemStack itemStack, Item item)
     {
 
-        for(; itemStack.amount + RecipeMenager.GetRecipe(item.id).AmountCrafted<= item.maxstack;)
+        for(; itemStack.amount + RecipeMenager.GetRecipe(item.NameID).AmountCrafted<= item.maxstack;)
         {
-            if (!isCraftable(item)) break;
-            itemStack.amount += CraftItem(item).amount;
+            if (!isCraftable()) break;
+            itemStack.amount += CraftItem().amount;
         }
     }
 
-    public void CraftMax(ItemStack itemStack, Item item)
+    public void CraftMax(ItemStack itemStack )
     {
-        CraftingRecipe recipe = RecipeMenager.GetRecipe(item.id);
+        CraftingRecipe recipe = SelectedCraft;
+        Item item = ItemMenager.GetItem(recipe.ItemName);
         int itemamount = int.MaxValue;
         foreach(CraftinReci reci in recipe.CraftinRecipe)
         {
-            int crafted = CraftingItemsSlot[reci.ID] / reci.Amount;
+            int crafted = CraftingItemsSlot.Find(x => x.ItemName == reci.ItemName).Amount / reci.Amount;
             if (crafted < itemamount) itemamount = crafted;
         }
 
@@ -269,7 +304,7 @@ public class Inventory : MonoBehaviour {
 
         foreach(CraftinReci reci in recipe.CraftinRecipe)
         {
-            FindAndTake(new ItemStack(ItemMenager.GetItem(reci.ID), reci.Amount * itemamount));
+            FindAndTake(new ItemStack(ItemMenager.GetItem(reci.ItemName), reci.Amount * itemamount));
         }
 
         CraftingGrid();
@@ -293,10 +328,61 @@ public class Inventory : MonoBehaviour {
 
             GameObject newSlot = Instantiate(slotPrefab, CraftingUI.transform);
             ItemSlot slot = new ItemSlot(newSlot.GetComponent<UIItemSlot>(), "Crafting");
-            slot.isCrafting = true;
+            slot.slotType = UISlotType.Crafting;
             slot.InsertCraftng(recipe);
         }
         UpdatePreviev();
     }
-    
+    public List<Stats> GetItemStats()
+    {
+        List<Stats> output = new List<Stats>();
+
+        foreach(UIItemSlot slot in equipmentSlots)
+            if (slot.HasItem)
+            foreach(Stats stat in ((Equipable)slot.itemSlot.stack.Item).ItemStats)
+            {
+                Stats stats = output.Find(x => x.StatName == stat.StatName);
+                if (stats == null)
+                {
+                    Stats temp = new Stats(stat.StatName, stat.GetValue());
+                    output.Add(temp);
+                }
+                else
+                    stats.Value += stat.GetValue();
+            }
+
+        return output;
+    }
+}
+
+[System.Serializable]
+public class Stats
+{
+    public StatEnum StatName;
+    public float Value;
+    private string fmt = "0.00";
+    public Stats(StatEnum Name, float Value)
+    {
+        StatName = Name;
+        this.Value = Value;
+    }
+    public float GetValue()
+    {
+        return Value;
+    }
+    public override string ToString()
+    {
+        return StatName.ToString() + " : " + Value.ToString(fmt);
+    }
+}
+
+public enum StatEnum
+{
+    Armor,
+    Damage,
+    ColdResist,
+    HeatResist,
+    MagicResist,
+    BonusHealth,
+    BonusStamina
 }

@@ -65,6 +65,19 @@ public class DebugControler : MonoBehaviour
             }
 
         }
+        if (Inputs[0].CompareTo("SpawnEnemy") == 0)
+        {
+            if (Inputs.Length == 3)
+            {
+                int amount;
+                int.TryParse(Inputs[2], out amount);
+                EnemySpawn(Inputs[1], amount);
+            }
+            else if (Inputs.Length==2)
+            {
+                EnemySpawn(Inputs[1]);
+            }
+        }
         input = "";
 
     }
@@ -76,14 +89,37 @@ public class DebugControler : MonoBehaviour
         if (item != null)
         {
             GameObject a = Instantiate(itempickup) as GameObject;
-            a.GetComponent<ItemInteractable>().item = item;
-            a.GetComponent<ItemInteractable>().amount = Amount;
-            a.transform.position = player.transform.position + new Vector3(0, 1f, 0);
-            Debug.Log("Spawned " + item.name);
+            a.GetComponent<ItemFizician>().item = item;
+            a.GetComponent<ItemFizician>().amount = Amount;
+            a.transform.position = player.transform.position + new Vector3(0f, 1f, 0);
+            Debug.Log("Spawned " + item.ItemName);
         }
         else
         {
             Debug.Log("Didn't Find " + itemname);
+        }
+    }
+
+    public void EnemySpawn(string EnemyName)
+    {
+        Object enemy = EnemyMenager.GetEnemy(EnemyName);
+        if(enemy!=null)
+        {
+            GameObject a = Instantiate(enemy) as GameObject;
+            a.transform.position = player.transform.position + new Vector3(Random.Range(-1f,1f), 1f, Random.Range(-1f, 1f));
+            Debug.Log("Spawned " + enemy.name);
+        }
+        else
+        {
+            Debug.Log("Didn't Find " + enemy.name);
+        }
+    }
+
+    public void EnemySpawn(string EnemyName, int Amount)
+    {
+        for (int i = 0; i < Amount; i++)
+        {
+            EnemySpawn(EnemyName);
         }
     }
     public void ItemSpawn(string itemname, int Amount, int Times)

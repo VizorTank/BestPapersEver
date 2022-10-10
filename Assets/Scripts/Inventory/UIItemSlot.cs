@@ -11,13 +11,7 @@ public class UIItemSlot : MonoBehaviour {
     public Image slotIcon;
     public Text slotAmount;
 
-    //World world;
 
-    private void Awake() {
-
-        //world = GameObject.Find("World").GetComponent<World>();
-
-    }
 
     public bool HasItem {
 
@@ -56,12 +50,16 @@ public class UIItemSlot : MonoBehaviour {
             slotIcon.sprite = itemSlot.stack.Item.image;
             slotAmount.text = itemSlot.stack.amount.ToString();
             slotIcon.enabled = true;
-            slotAmount.enabled = true;
+            if (itemSlot.stack.Item.itemtype == Itemtype.Tool || itemSlot.stack.Item.itemtype == Itemtype.Weapon || itemSlot.stack.Item.itemtype == Itemtype.Equipable)
+            {
+                slotAmount.enabled = false;
+            }
+            else slotAmount.enabled = true;
 
         } 
         else if(itemSlot != null && itemSlot.Crrecipe!=null)
         {
-            slotIcon.sprite = ItemMenager.GetItem(itemSlot.Crrecipe.CraftedID).image;
+            slotIcon.sprite = ItemMenager.GetItem(itemSlot.Crrecipe.ItemName).image;
             slotAmount.text = "";
             slotIcon.enabled = true;
             slotAmount.enabled = false;
@@ -112,8 +110,9 @@ public class ItemSlot {
     public ItemStack stack = null;
     private UIItemSlot uiItemSlot = null;
     public string SlotType = null;
-    public bool isCrafting;
-    public bool isOther;
+    public UISlotType slotType = UISlotType.Item;
+
+
 
     public ItemSlot (UIItemSlot _uiItemSlot) {
 
@@ -227,4 +226,16 @@ public class ItemSlot {
 
     }
 
+}
+public enum UISlotType
+{
+    Item,
+    Crafting,
+    Other,
+    CraftingPreviev,
+    EqSlot,
+    Helmet,
+    ChestPlate,
+    Leggings,
+    Boots
 }

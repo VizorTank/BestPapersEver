@@ -48,8 +48,9 @@ public class PlayerController : MonoBehaviour
 
     public Player_HitResponder HitResponder;
     public CharacterController controller;
-    public CharacterStats characterStats;
-
+    public BarSystem barSystem;
+    public BuildingBlocked buildingBlocked;
+    public GameObject AtackHitbox;
 
     bool placeStructure;
     //Inventory
@@ -57,6 +58,9 @@ public class PlayerController : MonoBehaviour
     private void Awake()
     {
         BindInput();
+        ItemMenager.GetInstance();
+        RecipeMenager.GetInstance();
+        EnemyMenager.GetInstance();
     }
     private void Start()
     {
@@ -67,13 +71,12 @@ public class PlayerController : MonoBehaviour
         Backpack = inventory.Backpack;
         cursorSlot = inventory.cursorSlot;
         toolbar.playerController = this;
+        barSystem.SetMaxStats(controller.CharacterStats.MaxHealth, controller.CharacterStats.MaxStamina);
     }
     private void BindInput()
     {
         playerInput = new PlayerInput();
-        //playerInput.Player.Move.performed += Move_performed;
-        //playerInput.Player.Move.started += Move_performed;
-        //playerInput.Player.Move.canceled += Move_performed;
+
 
         playerInput.Player.PlaceBlock.started += PlaceBlock_started;
         playerInput.Player.DestroyBlock.started += DestroyBlock_started;
@@ -114,8 +117,10 @@ public class PlayerController : MonoBehaviour
             Cursor.lockState = CursorLockMode.Locked;
         }
         controller.GetMovement(input, isSprinting);
+        SetArmor();
+        barSystem.SetHealth(controller.CharacterStats.CurrentHealth);
+        barSystem.SetStamina(controller.CharacterStats.CurrentStamina);
 
-        
     }
 
     private void FixedUpdate()
@@ -143,18 +148,25 @@ public class PlayerController : MonoBehaviour
         
     }
 
-
+    public void OnDestroy()
+    {
+        EnemyMenager.Destroy();
+        ItemMenager.Destroy();
+        RecipeMenager.Destroy();
+    }
     private void HandleLeftClick()
     {
-        if (itemtype != Itemtype.Weapon)
+        if (SelectedItem is Weapon)
         {
-            DestroyBlock();
-        }
-        if (itemtype == Itemtype.Weapon)
-        {
-            HitResponder.Damage = 10;
+            AtackHitbox.SetActive(true);
+            HitResponder.Damage = ((Weapon)SelectedItem).AtackDamage;
             HitResponder.Atack = true;
             atackdowdtime = 0;
+        }
+        else
+        {
+            DestroyBlock();
+            AtackHitbox.SetActive(false);
         }
     }
 
@@ -211,7 +223,7 @@ public class PlayerController : MonoBehaviour
                     HighlightBlock.gameObject.SetActive(true);
 
                     HighlightPlaceBlock.position = new Vector3(Mathf.Floor(lastPos.x), Mathf.Floor(lastPos.y), Mathf.Floor(lastPos.z));
-                    HighlightPlaceBlock.gameObject.SetActive(itemtype == Itemtype.Placeable);
+                    HighlightPlaceBlock.gameObject.SetActive(SelectedItem is Placeable);
                     return;
 
                 }
@@ -270,15 +282,11 @@ public class PlayerController : MonoBehaviour
                 if (_inInventory)
                 {
                     Cursor.lockState = CursorLockMode.None;
-                    //  Backpack.SetActive(true);
-                    //  cursorSlot.SetActive(true);
                     inventory.OpenInventory();
                 }
                 else
                 {
                     Cursor.lockState = CursorLockMode.Locked;
-                    //  Backpack.SetActive(false);
-                    //  cursorSlot.SetActive(false);
                     inventory.CloseInventory();
                 }
             }
@@ -289,25 +297,32 @@ public class PlayerController : MonoBehaviour
     public ItemStack PickUpItem(ItemStack item)
     {
         return inventory.PickUpItem(item);
+        
     }
-    Itemtype itemtype;
-    public Itemtype ItemType { set => itemtype = value; }
+    Item SelectedItem;
+    public Item SelectItem { set => SelectedItem = value; }
     public void UseItem()
     {
-        if (!IsConsoleOpenned)
+        if (!IsConsoleOpenned&&!inInventory)
         {
-            if(itemtype == Itemtype.Placeable)
-            toolbar.UseItem(HighlightPlaceBlock.gameObject.activeSelf);
+            if(SelectedItem!=null)
+            if(SelectedItem.itemtype == Itemtype.Building)
+                    if(buildingBlocked.CheckBuilding())
+                        toolbar.UseItem(HighlightPlaceBlock.gameObject.activeSelf);
         }
     }
+    
+    public void SetArmor()
+    {
+        
+        Stats def = inventory.GetItemStats().Find(x => x.StatName == StatEnum.Armor);
+        if(def!=null)
+        controller.CharacterStats.SetArmor((int)def.Value);
+        else
+            controller.CharacterStats.SetArmor(0);
+    }
+
+
 }
 
-public enum Itemtype
-{
-    Placeable,
-    Tool, 
-    Weapon,
-    Useable,
-    Other,
-    None
-};
+

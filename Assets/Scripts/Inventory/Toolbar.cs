@@ -17,6 +17,7 @@ public class Toolbar : MonoBehaviour
     {
         playerInput = new PlayerInput();
         playerInput.Enable();
+
     }
     private void OnDestroy()
     {
@@ -25,12 +26,9 @@ public class Toolbar : MonoBehaviour
 
     private void Update()
     {
-
-
         float scroll = playerInput.Player.SelectHotbarSlot.ReadValue<float>();
         if (scroll != 0)
         {
-
             if (scroll > 0)
                 slotIndex--;
             else
@@ -42,43 +40,29 @@ public class Toolbar : MonoBehaviour
                 slotIndex = slots.Length - 1;
 
             highlight.position = slots[slotIndex].slotIcon.transform.position;
-            if (slots[slotIndex].itemSlot.HasItem)
-                playerController.ItemType = slots[slotIndex].itemSlot.stack.Item.itemtype;
-            else
-                playerController.ItemType = Itemtype.None;
+            UpdateHander();
         }
-
-
     }
     public void UseItem(bool IsAbleToPlace)
     {
         if (slots[slotIndex].HasItem)
         {
-            if (IsAbleToPlace&&slots[slotIndex].itemSlot.stack.Item.itemtype==Itemtype.Placeable)
+            if (IsAbleToPlace&& slots[slotIndex].itemSlot.stack.Item is Placeable)
             {
-                playerController.PlaceBlock(slots[slotIndex].itemSlot.stack.Item.id);
+                playerController.PlaceBlock(((Placeable)slots[slotIndex].itemSlot.stack.Item).BlockID);
                 slots[slotIndex].itemSlot.Take(1);
             }
-            
-
         }
-
     }
 
-
-    public bool IsPlaceable()
+    public void UpdateHander()
     {
-        return true;
-     //  if (slots[slotIndex].HasItem)
-     //  {
-     //      if (slots[slotIndex].itemSlot.stack.Item.isPlaceable)
-     //      {
-     //          return slots[slotIndex].itemSlot.stack.Item.isPlaceable;
-     //      }
-     //  }
-     //  return false;
-
+        if (slots[slotIndex].itemSlot.HasItem)
+            playerController.SelectItem = slots[slotIndex].itemSlot.stack.Item;
+        else
+            playerController.SelectItem = null;
     }
+
 }
 
 

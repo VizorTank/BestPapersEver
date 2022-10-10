@@ -6,7 +6,7 @@ public class Comp_Hitbox : MonoBehaviour, IHitDetector
 {
     [SerializeField] private BoxCollider m_colider;
     [SerializeField] private LayerMask m_layerMask;
-
+    [SerializeField] private DamageTarget Damagetarget;
 
     private float m_thickness = 0.025f;
     private IHitResponder m_hitResponder;
@@ -47,7 +47,8 @@ public class Comp_Hitbox : MonoBehaviour, IHitDetector
                     hitNormal = _hit.normal,
                     hurtbox = _hurtbox,
                     hitDetector = this,
-                    Sourse = transform
+                    Sourse = transform.parent,
+                    damageTarget = Damagetarget
                 };
 
                 if(_hitData.Validate())

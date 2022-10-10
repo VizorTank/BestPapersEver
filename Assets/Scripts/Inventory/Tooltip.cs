@@ -29,11 +29,9 @@ public class Tooltip : MonoBehaviour
         if (CheckForSlot() != null && CheckForSlot().itemSlot.HasItem)
         {
 
-            ShowTooltip(CheckForSlot().itemSlot.stack.Item.ItemName);
+            ShowTooltip(CheckForSlot().itemSlot.stack.Item.NameID);
         }
         else HideTooltip();
-
-        
 
     }
 

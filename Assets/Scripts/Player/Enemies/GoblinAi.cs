@@ -4,28 +4,31 @@ using UnityEngine;
 
 public class GoblinAi : EnemyAi
 {
-    public Vector3 Direction;
-    public float angle;
-    public Vector3 homePosition;
 
+    public Vector3 homePosition;
+    public WanderAi wander;
     //to replace
-    public Transform target;
+
     public bool Frigenned = false;
     public string State1;
 
     public override void Awake()
     {
         base.Awake();
+
+    }
+    private void Start()
+    {
         homePosition = transform.position;
+        MoveController.CharacterStats.OnDamageTaken += SetTarget;
+        wander = new WanderAi(0f, 1.5f, 0, 1, 0, 2.5f, 0, 1, 200);
     }
 
-    protected override void EnemyMovment()
+    protected override void EnemyMovement()
     {
-       // if(Vector3.Distance(transform.position,homePosition)>30)
-       // {
-       //     LookAtHome();
-       // }
-        if(!Frigenned && Vector3.Distance(transform.position,target.position)<16.5)
+
+   
+        if (target != null && !Frigenned && Vector3.Distance(transform.position, target.position) < 16.5)
         {
             LookAtTarget();
             State1 = State.LookingTarget.ToString();
@@ -37,11 +40,12 @@ public class GoblinAi : EnemyAi
             if (Vector3.Distance(transform.position, target.position) < 2.5)
             {
                 Frigenned = true;
+                MoveController.jumprequest = true;
             }
         }
-        else if(Frigenned)
+        else if (target != null && Frigenned)
         {
-            if(Vector3.Distance(transform.position, target.position) < 15)
+            if (Vector3.Distance(transform.position, target.position) < 15)
             {
                 State1 = State.Runing.ToString();
                 RunFromTarget();
@@ -49,17 +53,54 @@ public class GoblinAi : EnemyAi
             }
             else { Frigenned = false; }
         }
+        
         else
         {
-            if(Vector3.Distance(transform.position, homePosition) > 2.5)
+            if (Vector2.Distance(new Vector2(transform.position.x,transform.position.z), new Vector2(homePosition.x,homePosition.z)) > 2.5)
             {
                 LookAtHome();
                 State1 = State.GoingHome.ToString();
                 WalkForward();
             }
+            else
+            {
+                Wandering();
+            }
         }
 
     }
+
+    void Wandering()
+    {
+        if (wander.isWandering == false)
+        {
+            StartCoroutine(wander.Wander());
+        }
+        if (wander.isRotatingRight == true)
+        {
+            //gameObject.GetComponent<Animator>().Play("idle");
+            transform.Rotate(transform.up * Time.deltaTime * wander.rotSpeed);
+        }
+        if (wander.isRotatingLeft == true)
+        {
+            //gameObject.GetComponent<Animator>().Play("idle");
+            transform.Rotate(transform.up * Time.deltaTime * -wander.rotSpeed);
+        }
+        if (wander.isWalking == true)
+        {
+            //gameObject.GetComponent<Animator>().Play("waalk");
+            WalkForward();
+        }
+    }
+
+    public void SetTarget(object sender,System.EventArgs e)
+    {
+        List<Transform> keys = new List<Transform>(MoveController.CharacterStats.LataDamageTable.Keys);
+        
+        target = keys[keys.Count-1];
+
+    }
+
 
     public void LookAtHome()
     {
@@ -68,18 +109,8 @@ public class GoblinAi : EnemyAi
         transform.localEulerAngles = new Vector3(0f, angle, 0f);
     }
 
-    public void WalkForward()
-    {
-        MoveController.GetMovement(new Vector3(0, 0, 1));
-        if ((MoveController.movement.x == 0 && MoveController.input.x != 0) || (MoveController.movement.z == 0 && MoveController.input.z != 0))
-        { MoveController.jumprequest = true; }
-    }
-    public void LookAtTarget()
-    {
-        Direction = target.position - transform.position;
-        angle = (Mathf.Atan2(Direction.x, Direction.z) * Mathf.Rad2Deg);
-        transform.localEulerAngles = new Vector3(0f, angle, 0f);
-    }
+
+
     public void RunFromTarget()
     {
         Direction = target.position - transform.position;

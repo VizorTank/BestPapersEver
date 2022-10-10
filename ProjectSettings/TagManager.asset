@@ -6,6 +6,7 @@ TagManager:
   tags:
   - Item
   - UIItemSlot
+  - Enemy
   layers:
   - Default
   - TransparentFX
@@ -38,7 +39,7 @@ TagManager:
   - 
   - 
   - 
-  - 
+  - World
   m_SortingLayers:
   - name: Default
     uniqueID: 0

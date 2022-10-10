@@ -10,6 +10,7 @@ public class HitData
     public IHurtBox hurtbox;
     public IHitDetector hitDetector;
     public Transform Sourse;
+    public DamageTarget damageTarget;
 
     public bool Validate()
     {
@@ -53,4 +54,10 @@ public interface IHurtResponder
     
     public bool CheckHit(HitData data);
     public bool Rensponse(HitData data);
+}
+
+public enum DamageTarget
+{
+    Enemy,
+    Player
 }

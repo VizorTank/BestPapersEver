@@ -27,21 +27,21 @@ public class DragAndDropHandler : MonoBehaviour {
 
     private void Start() {
 
-        background = Tooltip.transform.Find("background").GetComponent<RectTransform>();
-        tooltipText = Tooltip.transform.Find("Text").GetComponent<Text>();
         player = GameObject.Find("Player").GetComponent<PlayerController>();
         playerInput = new PlayerInput();
         cursorItemSlot = new ItemSlot(cursorSlot);
         inventory = transform.GetComponent<Inventory>();
         playerInput.Enable();
+        background = Tooltip.transform.Find("background").GetComponent<RectTransform>();
+        tooltipText = Tooltip.transform.Find("Text").GetComponent<Text>();
         
     }
 
 
     private void Update() {
 
-        if (!player.inInventory)
-            return;
+       if (!player.inInventory)
+           return;
 
 
         cursorSlot.transform.position = playerInput.UI.Point.ReadValue<Vector2>();
@@ -62,11 +62,11 @@ public class DragAndDropHandler : MonoBehaviour {
         if (CheckForSlot() != null && CheckForSlot().itemSlot.HasItem)
         {
 
-            ShowTooltip(CheckForSlot().itemSlot.stack.Item.ItemName);
+            ShowTooltip(CheckForSlot().itemSlot.stack.Item);
         }
         else if(CheckForSlot() != null && CheckForSlot().itemSlot.Crrecipe!=null)
         {
-            ShowTooltip(ItemMenager.GetItem(CheckForSlot().itemSlot.Crrecipe.CraftedID).ItemName);
+            ShowTooltip(ItemMenager.GetItem(CheckForSlot().itemSlot.Crrecipe.ItemName));
         }
         else HideTooltip();
 
@@ -77,36 +77,51 @@ public class DragAndDropHandler : MonoBehaviour {
         if (clickedSlot == null)
             return;
 
-        if (!cursorSlot.HasItem && !clickedSlot.HasItem && !clickedSlot.itemSlot.isCrafting)
+        if (!cursorSlot.HasItem && !clickedSlot.HasItem && !(clickedSlot.itemSlot.slotType == UISlotType.Crafting))
             return;
-        if (clickedSlot.itemSlot.isOther)
+        if (clickedSlot.itemSlot.slotType == UISlotType.Other)
+            return;
+        if (clickedSlot.itemSlot.slotType == UISlotType.Helmet && cursorItemSlot.HasItem && !(((Armor)cursorItemSlot.stack.Item).ArmorType == ArmorType.Helmet))
+                return;
+        if (clickedSlot.itemSlot.slotType == UISlotType.Leggings && cursorItemSlot.HasItem && !(((Armor)cursorItemSlot.stack.Item).ArmorType == ArmorType.Leggings))
+            return;
+        if (clickedSlot.itemSlot.slotType == UISlotType.ChestPlate && cursorItemSlot.HasItem && !(((Armor)cursorItemSlot.stack.Item).ArmorType == ArmorType.ChestPlate))
+            return;
+        if (clickedSlot.itemSlot.slotType == UISlotType.Boots && cursorItemSlot.HasItem && !(((Armor)cursorItemSlot.stack.Item).ArmorType == ArmorType.Boots))
+            return;
+        if (clickedSlot.itemSlot.slotType == UISlotType.EqSlot && cursorItemSlot.HasItem && !(cursorItemSlot.stack.Item.itemtype == Itemtype.Equipable))
             return;
 
 
-        if (clickedSlot.itemSlot.isCrafting && clickedSlot.itemSlot.Crrecipe!=null)
+
+        if (clickedSlot.itemSlot.slotType == UISlotType.Crafting && clickedSlot.itemSlot.Crrecipe!=null)
         {
-            inventory.ChangeHighlightedCrafting(clickedSlot.itemSlot.Crrecipe.CraftedID); //zmienić na crafting id
-            /*
-            if(IsShift && clickedSlot.itemSlot.isCrafting && !cursorItemSlot.HasItem)
-            {
-                cursorItemSlot.InsertStack(inventory.CraftItem(clickedSlot.itemSlot.stack.Item));
-                inventory.CraftMax(cursorItemSlot.stack, clickedSlot.itemSlot.stack.Item);
-            }
-            else if(IsShift && clickedSlot.itemSlot.isCrafting && cursorItemSlot.HasItem && cursorItemSlot.stack.Item == clickedSlot.itemSlot.stack.Item)
-            {
-                inventory.CraftMax(cursorItemSlot.stack, clickedSlot.itemSlot.stack.Item);
-            }
+            inventory.ChangeHighlightedCrafting(clickedSlot.itemSlot.Crrecipe); //zmienić na crafting id
+        }
 
-            else if (clickedSlot.itemSlot.isCrafting && !cursorItemSlot.HasItem)
-            {
-                cursorItemSlot.InsertStack(inventory.CraftItem(clickedSlot.itemSlot.stack.Item));
-            }
-            else if (clickedSlot.itemSlot.isCrafting && cursorItemSlot.HasItem && cursorItemSlot.stack.Item == clickedSlot.itemSlot.stack.Item)
-            {
-                cursorItemSlot.stack.amount += inventory.CraftItem(clickedSlot.itemSlot.stack.Item).amount;
-            }
+        if (clickedSlot.itemSlot.slotType == UISlotType.CraftingPreviev && clickedSlot.itemSlot.HasItem)
+        {
+            Item item = ItemMenager.GetItem(inventory.SelectedCraft.ItemName);
+            if (inventory.isCraftable())
+                if (IsShift && !cursorItemSlot.HasItem)
+                {
+                    cursorItemSlot.InsertStack(inventory.CraftItem());
+                    inventory.CraftMax(cursorItemSlot.stack);
+                }
+                else if (IsShift && cursorItemSlot.HasItem && cursorItemSlot.stack.Item == item)
+                {
+                    inventory.CraftMax(cursorItemSlot.stack);
+                }
+
+                else if (!cursorItemSlot.HasItem)
+                {
+                    cursorItemSlot.InsertStack(inventory.CraftItem());
+                }
+                else if (cursorItemSlot.HasItem && cursorItemSlot.stack.Item == item)
+                {
+                    cursorItemSlot.stack.amount += inventory.CraftItem().amount;
+                }
             cursorItemSlot.UpdateSlot();
-            */
         }
 
         else
@@ -155,7 +170,7 @@ public class DragAndDropHandler : MonoBehaviour {
 
             }
             //Dostakowywanie
-            else if (cursorSlot.itemSlot.stack.Item == clickedSlot.itemSlot.stack.Item && clickedSlot.itemSlot.stack.amount < clickedSlot.itemSlot.stack.Item.maxstack)
+            else if (clickedSlot.itemSlot.slotType == UISlotType.Item && cursorSlot.itemSlot.stack.Item == clickedSlot.itemSlot.stack.Item && clickedSlot.itemSlot.stack.amount < clickedSlot.itemSlot.stack.Item.maxstack)
             {
                 if (cursorSlot.itemSlot.stack.amount <= clickedSlot.itemSlot.stack.Item.maxstack - clickedSlot.itemSlot.stack.amount)
                 {
@@ -201,25 +216,49 @@ public class DragAndDropHandler : MonoBehaviour {
         if (!cursorSlot.HasItem && !clickedSlot.HasItem)
             return;
 
-        if (clickedSlot.itemSlot.isOther)
+        if (clickedSlot.itemSlot.slotType == UISlotType.Other)
         {
             return;
         }
 
 
-        if (clickedSlot.itemSlot.isCrafting)
+        if (clickedSlot.itemSlot.slotType == UISlotType.Crafting)
         {
-            if (clickedSlot.itemSlot.isCrafting && !cursorItemSlot.HasItem)
+            if (clickedSlot.itemSlot.slotType == UISlotType.Crafting && !cursorItemSlot.HasItem)
             {
-                cursorItemSlot.InsertStack(inventory.CraftItem(clickedSlot.itemSlot.stack.Item));
+                cursorItemSlot.InsertStack(inventory.CraftItem());
             }
-            else if (clickedSlot.itemSlot.isCrafting && cursorItemSlot.HasItem && cursorItemSlot.stack.Item == clickedSlot.itemSlot.stack.Item)
+            else if (clickedSlot.itemSlot.slotType == UISlotType.Crafting && cursorItemSlot.HasItem && cursorItemSlot.stack.Item == clickedSlot.itemSlot.stack.Item)
             {
-                cursorItemSlot.stack.amount += inventory.CraftItem(clickedSlot.itemSlot.stack.Item).amount;
+                cursorItemSlot.stack.amount += inventory.CraftItem().amount;
             }
             cursorItemSlot.UpdateSlot();
         }
 
+        if (clickedSlot.itemSlot.slotType == UISlotType.CraftingPreviev && clickedSlot.itemSlot.HasItem)
+        {
+            Item item = ItemMenager.GetItem(inventory.SelectedCraft.ItemName);
+            if (inventory.isCraftable())
+                if (IsShift && !cursorItemSlot.HasItem)
+                {
+                    cursorItemSlot.InsertStack(inventory.CraftItem());
+                    inventory.CraftMax(cursorItemSlot.stack);
+                }
+                else if (IsShift && cursorItemSlot.HasItem && cursorItemSlot.stack.Item == item)
+                {
+                    inventory.CraftMax(cursorItemSlot.stack);
+                }
+
+                else if (!cursorItemSlot.HasItem)
+                {
+                    cursorItemSlot.InsertStack(inventory.CraftItem());
+                }
+                else if (cursorItemSlot.HasItem && cursorItemSlot.stack.Item == item)
+                {
+                    cursorItemSlot.stack.amount += inventory.CraftItem().amount;
+                }
+            cursorItemSlot.UpdateSlot();
+        }
         //na pusty slot
         else if (cursorSlot.HasItem && !clickedSlot.HasItem) {
 
@@ -295,25 +334,25 @@ public class DragAndDropHandler : MonoBehaviour {
 
     public void CraftItem()
     {
-        Item item = ItemMenager.GetItem(inventory.SelectedCraft);
-        if(inventory.isCraftable(item))
+        Item item = ItemMenager.GetItem(inventory.SelectedCraft.ItemName);
+        if(inventory.isCraftable())
             if (IsShift && !cursorItemSlot.HasItem)
             {
-                cursorItemSlot.InsertStack(inventory.CraftItem(item));
-                inventory.CraftMax(cursorItemSlot.stack, item);
+                cursorItemSlot.InsertStack(inventory.CraftItem());
+                inventory.CraftMax(cursorItemSlot.stack);
             }
             else if(IsShift &&  cursorItemSlot.HasItem && cursorItemSlot.stack.Item == item)
             {
-                inventory.CraftMax(cursorItemSlot.stack, item);
+                inventory.CraftMax(cursorItemSlot.stack);
             }
 
             else if ( !cursorItemSlot.HasItem)
             {
-                cursorItemSlot.InsertStack(inventory.CraftItem(item));
+                cursorItemSlot.InsertStack(inventory.CraftItem());
             }
             else if (cursorItemSlot.HasItem && cursorItemSlot.stack.Item == item)
             {
-                cursorItemSlot.stack.amount += inventory.CraftItem(item).amount;
+                cursorItemSlot.stack.amount += inventory.CraftItem().amount;
             }
             cursorItemSlot.UpdateSlot();
             
@@ -336,12 +375,19 @@ public class DragAndDropHandler : MonoBehaviour {
 
     }
 
-    private void ShowTooltip(string tooltipstring)
+    private void ShowTooltip(Item tooltipstring)
     {
         Tooltip.SetActive(true);
+        string ExitString = tooltipstring.ItemName;
+        if(tooltipstring is Equipable)
+        {
+            foreach(Stats stat in ((Equipable)tooltipstring).ItemStats)
+            {
+                ExitString += "\n" + stat.ToString();
+            }
+        }
 
-        tooltipText.text = tooltipstring;
-
+        tooltipText.text = ExitString;
         float textpaddingsize = 4f;
 
         Vector2 backgroundSize = new Vector2(tooltipText.preferredWidth + textpaddingsize * 2f, tooltipText.preferredHeight + textpaddingsize * 2f);

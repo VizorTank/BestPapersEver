@@ -3,42 +3,74 @@ using System.Collections.Generic;
 using UnityEngine;
 
 [CreateAssetMenu(fileName = "New Recipe", menuName = "Inventory/CraftingRecipe")]
-public class CraftingRecipe : ScriptableObject
+[System.Serializable]
+public class CraftingRecipe
 {
-    public int CraftingID;
-    public int CraftedID;
+    public string name;
+    public string ItemName;
     public int AmountCrafted;
+    public CraftingLevel CraftingLevel = CraftingLevel.None;
     public List<CraftinReci> CraftinRecipe;
 }
 
 [System.Serializable]
 public class CraftinReci
 {
-    public int ID;
+    public string ItemName;
     public int Amount;
+
+
+    public CraftinReci(string ItemName, int Amount)
+    {
+        this.ItemName = ItemName;
+        this.Amount = Amount;
+    }
 }
+
 
 public class RecipeMenager
 {
     static List<CraftingRecipe> Recipes = new List<CraftingRecipe>();
-
-    static RecipeMenager()
+    static RecipeMenager _instance;
+    public static RecipeMenager GetInstance()
     {
-        Object[] items = Resources.LoadAll("Recipes", typeof(CraftingRecipe));
-        foreach (CraftingRecipe item in items)
+        if(_instance == null)
         {
-            Recipes.Add(item);
+            _instance = new RecipeMenager();
+        }
+        return _instance;
+    }
+
+
+    private RecipeMenager()
+    {
+        Recipes.Clear();
+        Object[] items = Resources.LoadAll("Recipes");
+        foreach (CraftingList item in items)
+        {
+            foreach (CraftingRecipe recipe in item.Recipes)
+            {
+                
+                Recipes.Add(recipe);
+                
+            }
+
         }
     }
 
-    public static CraftingRecipe GetRecipe(int ItemID)
+    public static void Destroy()
     {
-        foreach (CraftingRecipe item in Recipes)
-        {
-            if (item.CraftedID == ItemID)
-                return item;
-        }
-        return null;
+        _instance = null;
+    }
+
+    ~RecipeMenager()
+    {
+        Recipes.Clear();
+    }
+
+    public static CraftingRecipe GetRecipe(string RecName)
+    {
+       return Recipes.Find(x => x.ItemName == RecName);
     }
 
 
@@ -50,4 +82,15 @@ public class RecipeMenager
     {
         return Recipes;
     }
+}
+
+public enum CraftingLevel
+{
+    None,
+    CraftingLV1,
+    CraftingLV2,
+    FurnaceLV1,
+    FurnaceLV2,
+    AnvilLV1,
+    AnvilLV2
 }

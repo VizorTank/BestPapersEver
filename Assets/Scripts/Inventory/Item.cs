@@ -1,55 +1,74 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-[CreateAssetMenu(fileName = "New Item", menuName = "Inventory/Item")]
+
+
+[CreateAssetMenu(fileName = "New Item", menuName = "Inventory/Item/Material")]
 public class Item : ScriptableObject
 {
-    //public string name;
-    public int id;
+    public string NameID;
     public int maxstack;
     public string ItemName;
     public Sprite image;
-    public bool isPlaceable;
-    public Itemtype itemtype;
+    public Itemtype itemtype = Itemtype.Material;
 }
 
+public enum ArmorType
+{
+    Helmet,
+    ChestPlate,
+    Leggings,
+    Boots
+}
 
-
-
+public enum ToolType
+{
+    Pickaxe,
+    Axe,
+    Shovel, //???
+    Hoe
+}
 
 
 public class ItemMenager
 {
     static List<Item> Items = new List<Item>();
-    
-    static ItemMenager()
+
+
+    static ItemMenager _instance;
+    public static ItemMenager GetInstance()
     {
-        Object[] items = Resources.LoadAll("Items", typeof(Item));
+        if (_instance == null)
+        {
+            _instance = new ItemMenager();
+        }
+        return _instance;
+    }
+    private ItemMenager()
+    {
+        Items.Clear();
+        UnityEngine.Object[] items = Resources.LoadAll("Items", typeof(Item));
         foreach (Item item in items)
         {
             Items.Add(item);
         }
+
+        
     }
     
-    public static Item GetItem(string ItemName)
+    public static void Destroy()
     {
-        foreach (Item item in Items)
-        {
-            if (item.name.CompareTo(ItemName) == 0)
-                return item;
-        }
-        return null;
+        _instance = null;
     }
 
-    public static Item GetItem(int ItemID)
+    public static Item GetItem(string ItemName)
     {
-        foreach (Item item in Items)
-        {
-            if (item.id == ItemID)
-                return item;
-        }
-        return null;
+
+        return Items.Find(x => x.NameID == ItemName);
+
     }
+
     public static int AmountofItems()
     {
         return Items.Count;
@@ -59,3 +78,15 @@ public class ItemMenager
         return Items;
     }
 }
+
+
+public enum Itemtype
+{
+    Building,
+    Useable,
+    Tool,
+    Weapon,
+    Equipable,
+    Material,
+    None
+};
