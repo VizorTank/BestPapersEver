@@ -32,7 +32,7 @@ public class ChunkGenerator2
             blocksId.Dispose();
 
             CreateTrees();
-
+            // Debug.Log("Finished Generating");
             return true;
         }
 
@@ -50,7 +50,7 @@ public class ChunkGenerator2
         blocksId = new NativeArray<int>(size, Allocator.Persistent);
 
         int3 chunkPos = _chunk.GetChunkCoordinates();
-        _chunkGeneraionBiomes = _world.GetChunkGeneraionBiomes(chunkPos);
+        // _chunkGeneraionBiomes = _world.GetChunkGeneraionBiomes(chunkPos);
 
         GenerateBlockIdJob generateBlockIdJob = new GenerateBlockIdJob
         {
@@ -65,9 +65,11 @@ public class ChunkGenerator2
             // Lodes = _world.GetLodes(chunkPos),
 
             chunkSize = VoxelData.ChunkSize,
-            chunkPosition = _chunk.GetChunkPosition(),
+            chunkPosition = new int3(_chunk.GetChunkPosition()),
 
-            ChunkGeneraionBiomes = _chunkGeneraionBiomes,
+            // ChunkGeneraionBiomes = _chunkGeneraionBiomes
+            ChunkGeneraionBiomes = _world.GetChunkGeneraionBiomes(chunkPos),
+            HeightMap = _world.GetHeightMap(chunkPos)
         };
 
         _generatingBlockIdJobHandle = generateBlockIdJob.Schedule(size, 32); 
@@ -100,6 +102,7 @@ public class ChunkGenerator2
             _world.CreateStructure(new int3(x - 2, y + 1, z - 2), 0);
             // Debug.Log("Created tree");
         }
+        // generationBiome.Destroy();
     }
 
     private bool FinishJob()
@@ -107,7 +110,7 @@ public class ChunkGenerator2
         if (State != ChunkGeneratorStates.CreatedJob || !_generatingBlockIdJobHandle.IsCompleted) return false;
         State = ChunkGeneratorStates.Ready;
         _generatingBlockIdJobHandle.Complete();
-        _chunkGeneraionBiomes.Destroy();
+        // _chunkGeneraionBiomes.Destroy();
         return true;
     }
 }

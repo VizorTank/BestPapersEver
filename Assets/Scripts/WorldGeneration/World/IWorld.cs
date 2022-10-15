@@ -14,11 +14,13 @@ public interface IWorld
     public bool TryGetBlocks(Vector3 position, NativeArray<int> blockIds);
     public bool TrySetBlock(Vector3 position, int blockID, ref int replacedBlockId);
 
-    public BiomeAttributesStruct GetBiome(int3 chunkCoordinates);
+    public WorldBiomesList GetWorldBiomesList();
+    // public BiomeAttributesStruct GetBiome(int3 chunkCoordinates);
     public BiomeAttributesStruct GetBiome(int index);
-    public int GetBiomeIndex(int3 chunkCoordinates);
-    public NativeArray<LodeStruct> GetLodes(int3 ChunkCoord);
     public ChunkGeneraionBiomes GetChunkGeneraionBiomes(int3 ChunkCoord);
+    public NativeArray<int> GetHeightMap(int3 ChunkCoord);
+    public int GetBiomeIndex(int3 chunkCoordinates);
+    // public NativeArray<LodeStruct> GetLodes(int3 ChunkCoord);
     public IChunk GetChunk(int3 chunkCoordinates);
     public IChunk GetOrCreateChunk(int3 coordinates);
     // public ChunkNeighbours GetNeighbours(int3 chunkCoordinates);

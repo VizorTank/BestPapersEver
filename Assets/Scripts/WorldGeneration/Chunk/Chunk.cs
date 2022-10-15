@@ -100,11 +100,13 @@ public class Chunk : IChunk
 
     public void Render()
     {
+        // Debug.Log("1");
         // Profiler.BeginSample("Check and generate blocks");
         if (_isDestroyed || _manipulator == null) return;
         _manipulator.GenerateBlocks();
         if (!CanAccess()) return;
         // Profiler.EndSample();
+        // Debug.Log("2");
 
         // Profiler.BeginSample("Create structures");
         _manipulator.CreateStructures(StructuresToLoad);
@@ -113,6 +115,7 @@ public class Chunk : IChunk
         if (!_renderer.RequireProcessing()) return;
         if (!_renderer.CanAccess()) return;
 
+        // Debug.Log("3");
 
         Profiler.BeginSample("Render chunk");
         Profiler.BeginSample("Get N");
@@ -123,9 +126,10 @@ public class Chunk : IChunk
 
         if (canRender)
         {
-            // Profiler.BeginSample("Render chunk");
+            // Debug.Log("4");
+            Profiler.BeginSample("Render");
             _renderer.Render(_neighbours);
-            // Profiler.EndSample();
+            Profiler.EndSample();
         }
         else
         {

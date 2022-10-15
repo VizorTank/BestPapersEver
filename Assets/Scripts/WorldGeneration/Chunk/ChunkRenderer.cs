@@ -58,11 +58,11 @@ public class ChunkRenderer : IChunkRenderer
     
     public void Render(ChunkNeighbours neighbours)
     {
-        Profiler.BeginSample("Render");
         if (_requireUpdate && _stateMachine.Init(_chunk, _world))
         {
             _requireUpdate = false;
             _processing = true;
+            // Debug.Log("Started render");
         }
         _stateMachine.CopyBlocks();
         _stateMachine.CreateClusters();
@@ -71,13 +71,11 @@ public class ChunkRenderer : IChunkRenderer
         if (_stateMachine.CreateMesh(out Mesh mesh))
         {
             if (_meshFilter == null)
-                Debug.Log("A");
+                Debug.Log("Missing Mesh Filter");
             _meshFilter.mesh = mesh;
             isHidden = false;
             _processing = false;
         }
-
-        Profiler.EndSample();
     }
 
 

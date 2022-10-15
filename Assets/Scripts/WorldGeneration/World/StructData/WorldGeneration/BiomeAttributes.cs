@@ -26,6 +26,7 @@ public class BiomeAttributes : ScriptableObject
 
     public List<Lode> lodes;
     private NativeArray<LodeStruct> _lodeStructs;
+    private bool _lodeStructsCreated = false;
 
     public BiomeAttributesStruct GetBiomeStruct(float seed = 0)
     {
@@ -53,14 +54,19 @@ public class BiomeAttributes : ScriptableObject
 
     public NativeArray<LodeStruct> GetBiomeLodes()
     {
-        if (_lodeStructs == null || _lodeStructs.Length != lodes.Count)
+        if (!_lodeStructs.IsCreated)
+        // if (!_lodeStructsCreated)
         {
+            // _lodeStructsCreated = true;
             _lodeStructs = new NativeArray<LodeStruct>(lodes.Count, Allocator.Persistent);
             for (int i = 0; i < lodes.Count; i++)
             {
                 _lodeStructs[i] = lodes[i].GetLodeStruct();
             }
         }
+        if (_lodeStructs == null || _lodeStructs.Length <= 0)
+            Debug.Log("DADADADW");
+
         return _lodeStructs;
     }
 

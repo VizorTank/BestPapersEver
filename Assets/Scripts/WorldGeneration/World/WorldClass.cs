@@ -34,6 +34,11 @@ public class WorldClass : MonoBehaviour, IWorld
     public List<Structure> Structures = new List<Structure>();
 
     public WorldBiomesList WorldBiomes;
+    public WorldBiomesList GetWorldBiomesList()
+    {
+        return WorldBiomes;
+    }
+    public Dictionary<int2, ChunkColumnData> ChunkColumnDatas = new Dictionary<int2, ChunkColumnData>();
     // public List<BiomeAttributes> BiomeAttributes;
     // private List<BiomeAttributesStruct> BiomeAttributesStruct = new List<BiomeAttributesStruct>();
 
@@ -71,13 +76,7 @@ public class WorldClass : MonoBehaviour, IWorld
     void Start()
     {
         Cursor.lockState = CursorLockMode.Locked;
-
-
-
-        // foreach (var biome in BiomeAttributes)
-        // {
-        //     BiomeAttributesStruct.Add(biome.GetBiomeStruct());
-        // }
+        
         blockTypesList.ProcessData();
 
         CreateTreeStructure();
@@ -89,15 +88,21 @@ public class WorldClass : MonoBehaviour, IWorld
                 VoxelData.ChunkSize.y * WorldSizeInChunks.y / 2, 
                 0);
         }
-
-        //GenerateWorld();
-        //LinkChunks();
-        // CreateActiveChunkArray();
     }
 
-    public BiomeAttributesStruct GetBiome(int3 chunkCoordinates)
+    // public BiomeAttributesStruct GetBiome(int3 chunkCoordinates)
+    // {
+    //     return WorldBiomes.GetBiomeStruct(chunkCoordinates);
+    // }
+
+    private ChunkColumnData GetChunkColumnData(int3 chunkCoordinates)
     {
-        return WorldBiomes.GetBiomeStruct(chunkCoordinates);
+        int2 key = new int2(chunkCoordinates.x, chunkCoordinates.z);
+        if (!ChunkColumnDatas.ContainsKey(key))
+        {
+            ChunkColumnDatas.Add(key, new ChunkColumnData(this, chunkCoordinates));
+        }
+        return ChunkColumnDatas[key];
     }
 
     public BiomeAttributesStruct GetBiome(int index)
@@ -107,17 +112,24 @@ public class WorldClass : MonoBehaviour, IWorld
 
     public int GetBiomeIndex(int3 chunkCoordinates)
     {
-        return WorldBiomes.GetBiomeIndex(chunkCoordinates);
+        // return WorldBiomes.GetBiomeIndex(chunkCoordinates);
+        return GetChunkColumnData(chunkCoordinates).BiomeIndex;
     }
 
-    public NativeArray<LodeStruct> GetLodes(int3 chunkCoordinates)
-    {
-        return WorldBiomes.GetBiomeLodes(chunkCoordinates);
-    }
+    // public NativeArray<LodeStruct> GetLodes(int3 chunkCoordinates)
+    // {
+    //     return WorldBiomes.GetBiomeLodes(chunkCoordinates);
+    // }
 
     public ChunkGeneraionBiomes GetChunkGeneraionBiomes(int3 chunkCoordinates)
     {
-        return WorldBiomes.GetChunkGeneraionBiomes(this, chunkCoordinates);
+        // return WorldBiomes.GetChunkGeneraionBiomes(this, chunkCoordinates);
+        return GetChunkColumnData(chunkCoordinates).ChunkGeneraionBiomes;
+    }
+
+    public NativeArray<int> GetHeightMap(int3 chunkCoordinates)
+    {
+        return GetChunkColumnData(chunkCoordinates).HeightMap;
     }
 
     public void CreateTreeStructure()
@@ -188,9 +200,9 @@ public class WorldClass : MonoBehaviour, IWorld
         _saveManager.Run();
         Profiler.EndSample();
 
-        // Profiler.BeginSample("DrawChunks");
+        Profiler.BeginSample("DrawChunks");
         DrawChunks();
-        // Profiler.EndSample();
+        Profiler.EndSample();
         // Debug.Log(activeChunksList.Count);
     }
 
@@ -235,7 +247,6 @@ public class WorldClass : MonoBehaviour, IWorld
 
     public void DrawChunks()
     {
-        Profiler.BeginSample("Draw Chunks");
         int i = 0;
         foreach (var item in activeChunksList)
         {
@@ -247,7 +258,6 @@ public class WorldClass : MonoBehaviour, IWorld
                 i++;
             //     Debug.LogWarning("Missing Chunk");
         }
-        Profiler.EndSample();
         if (i > 0)
             Debug.LogWarning($"Missing {i} out of {activeChunksList.Count}");
     }
@@ -256,6 +266,11 @@ public class WorldClass : MonoBehaviour, IWorld
     {
         SaveWorld();
         blockTypesList.Destroy();
+
+        foreach (var item in ChunkColumnDatas)
+        {
+            item.Value.Destroy();
+        }
         // foreach (var biome in BiomeAttributesStruct)
         // {
         //     biome.lodes.Dispose();
@@ -263,6 +278,7 @@ public class WorldClass : MonoBehaviour, IWorld
         WorldBiomes.Destroy();
         // BiomeAttributesStruct.lodes.Dispose();
         SaveManager.Destroy();
+        ChunkRendererConst.Destroy();
     }
 
     private void SaveWorld()

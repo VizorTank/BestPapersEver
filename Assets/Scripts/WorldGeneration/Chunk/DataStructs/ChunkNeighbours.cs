@@ -65,12 +65,23 @@ public class ChunkNeighbours
 
     public bool GetData(out ChunkNeighbourData neighbourData)
     {
+        // neighbourData = new ChunkNeighbourData();
+        // if (!IsValid()) return false;
+        // for (int i = 0; i < 6; i++)
+        // {
+        //     if (!this[i].CanAccess()) return false;
+        //     neighbourData.ChunkNeighbourDataArray[i] = this[i].GetSharedData();
+        // }
+        // return true;
+
         neighbourData = new ChunkNeighbourData();
-        if (!IsValid()) return false;
+        // if (!IsValid()) return false;
         for (int i = 0; i < 6; i++)
         {
-            if (!this[i].CanAccess()) return false;
-            neighbourData.ChunkNeighbourDataArray[i] = this[i].GetSharedData();
+            if (this[i] != null && !this[i].IsDestroyed() && this[i].CanAccess())
+                neighbourData.ChunkNeighbourDataArray[i] = this[i].GetSharedData();
+            else
+                neighbourData.ChunkNeighbourDataArray[i] = ChunkRendererConst.voidChunkBlockId;
         }
         return true;
     }

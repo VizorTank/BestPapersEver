@@ -39,6 +39,7 @@ public class ChunkManipulator
         if (_chunkGenerator.GenerateBlocks(_chunk, _world, out NativeArray<int> generatedBlocks))
         {
             _blocksId = generatedBlocks;
+            // Debug.Log("Created");
             _chunk.Update();
         }
     }

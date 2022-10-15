@@ -75,7 +75,6 @@ public class ChunkRendererStateMachine
     {
         if (_state != ChunkRendererStates.Ready) return;
         
-
         _state = ChunkRendererStates.CopyingBlocks;
         // Debug.Log("Init");
         _chunk.GetBlocks().CopyTo(blocksForMeshGeneration);
@@ -204,6 +203,8 @@ public class ChunkRendererStateMachine
         // mesh.RecalculateNormals();
         mesh.RecalculateBounds();
 
+        // Debug.Log("Created Mesh");
+
         return true;
     }
 }
@@ -233,6 +234,22 @@ public static class ChunkRendererConst
     public static NativeArray<VertexAttributeDescriptor> layout = new NativeArray<VertexAttributeDescriptor>(VoxelData.layoutVertex, Allocator.Persistent);
  
     public static NativeArray<int3> clusterSides = new NativeArray<int3>(VoxelData.clusterSidesArray, Allocator.Persistent);
+    public static NativeArray<int> voidChunkBlockId = new NativeArray<int>(VoxelData.ChunkSize.x * VoxelData.ChunkSize.y * VoxelData.ChunkSize.z, Allocator.Persistent);
+
+
+    public static void Init()
+    {
+        axisArray = new NativeArray<int3>(VoxelData.axisArray, Allocator.Persistent);
+        voxelNeighbours = new NativeArray<int3>(VoxelData.voxelNeighbours, Allocator.Persistent);
+        voxelVerts = new NativeArray<float3>(VoxelData.voxelVerts, Allocator.Persistent);
+        voxelTrisSize = VoxelData.voxelTrisSize;
+        voxelTris = new NativeArray<int>(VoxelData.voxelTris, Allocator.Persistent);
+        voxelUvs = new NativeArray<float2>(VoxelData.voxelUvs, Allocator.Persistent);
+        triangleOrder = new NativeArray<int>(VoxelData.triangleOrder, Allocator.Persistent);
+        layout = new NativeArray<VertexAttributeDescriptor>(VoxelData.layoutVertex, Allocator.Persistent);
+        clusterSides = new NativeArray<int3>(VoxelData.clusterSidesArray, Allocator.Persistent);
+        voidChunkBlockId = new NativeArray<int>(VoxelData.ChunkSize.x * VoxelData.ChunkSize.y * VoxelData.ChunkSize.z, Allocator.Persistent);
+    }
 
     public static void Destroy()
     {
@@ -240,11 +257,13 @@ public static class ChunkRendererConst
 
         try { voxelNeighbours.Dispose(); } catch { }
         try { voxelVerts.Dispose(); } catch { }
-        try { voxelUvs.Dispose(); } catch { }
         try { voxelTris.Dispose(); } catch { }
+        try { voxelUvs.Dispose(); } catch { }
         try { triangleOrder.Dispose(); } catch { }
         try { layout.Dispose(); } catch { }
 
         try { clusterSides.Dispose(); } catch { }
+
+        try { voidChunkBlockId.Dispose(); } catch { }
     }
 } 

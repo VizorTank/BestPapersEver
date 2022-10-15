@@ -4,13 +4,14 @@ Shader "Custom/BasicShader"
 	{
 		_Color ("Color", Color) = (.25, .5, .5, 1)
 		_MainTex ("Texture", 2D) = "White" { }
+		// _HaveTexture ("Have Texture", int) = 1 { } 
 	}
 
 	SubShader
 	{
 		Tags { "Queue" = "AlphaTest" "IgnoreProjector" = "True" "RenderType" = "TransparentCutout" }
-		LOD 100
-		Lighting Off
+		// LOD 100
+		// Lighting Off
 
 		Pass
 		{
@@ -56,9 +57,10 @@ Shader "Custom/BasicShader"
 				fixed4 col;
 				float localLightLevel = clamp(GlobalLightLevel, 0, 1);
 				col = tex2D(_MainTex, i.uv);
-				//clip(col.a - 1);
 				col = col * _Color;
-				col = lerp(col, float4(0, 0, 0, 1), localLightLevel);
+				// clip(col.a - 0.1);
+				// col = lerp(col, float4(0, 0, 0, 1), localLightLevel);
+				// col.a = _Color.a;
 
 				return col;
 			}

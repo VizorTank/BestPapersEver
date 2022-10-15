@@ -4,10 +4,10 @@ using Unity.Mathematics;
 public struct ChunkGeneraionBiomes
 {
     public int3 ChunkSize;
-    public int3 ChunkCoords;
+    // public int3 ChunkCoords;
 
     public int Center;
-    [DeallocateOnJobCompletion]
+    // [DeallocateOnJobCompletion]
     public NativeArray<int> NeighbourBiomeIds;
     public NativeArray<int3> BiomeNeighbours;
     public NativeArray<BiomeAttributesStruct> Biomes;
@@ -61,8 +61,14 @@ public struct ChunkGeneraionBiomes
         return math.max(math.abs(vector.x), math.abs(vector.z));
     }
 
-    public int GetBlock(float3 position)
+    public int GetBlock(int3 position)
     {
-        return Biomes[Center].GetBlock(position, CalculateTerrainHeight(new int3(position)), Lodes, WaterLevel);
+        // return Biomes[Center].GetBlock(position, CalculateTerrainHeight(new int3(position)), Lodes, WaterLevel);
+        return GetBlock(position, CalculateTerrainHeight(new int3(position)));
+    }
+
+    public int GetBlock(int3 position, int terrainHeight)
+    {
+        return Biomes[Center].GetBlock(position, terrainHeight, Lodes, WaterLevel);
     }
 }

@@ -69,7 +69,10 @@ public class WorldBiomesList
         Profiler.BeginSample("Find Biome");
         // float biomeHeight = CalcualteOceanHeight(ChunkCoord) * 0.7f + CalcualteBiomeHeight(ChunkCoord) * 0.3f;
         if (CalcualteOceanHeight(ChunkCoord) <= 0.5)
+        {
+            Profiler.EndSample();
             return 0;
+        }
         
         float biomeHeight = CalcualteBiomeHeight(ChunkCoord);
         Profiler.EndSample();
@@ -104,7 +107,7 @@ public class WorldBiomesList
         ChunkGeneraionBiomes chunkGeneraionBiomes = new ChunkGeneraionBiomes
         {
             ChunkSize = VoxelData.ChunkSize,
-            ChunkCoords = ChunkCoord,
+            // ChunkCoords = ChunkCoord,
             NeighbourBiomeIds = new NativeArray<int>(8, Allocator.Persistent),
             BiomeNeighbours = _biomeNeighbours,
             Biomes = GetBiomes(),
@@ -116,7 +119,7 @@ public class WorldBiomesList
 
         for (int i = 0; i < 8; i++)
         {
-            chunkGeneraionBiomes.NeighbourBiomeIds[i] = world.GetOrCreateChunk(ChunkCoord + VoxelData.BiomeNeighbours[i]).GetBiomeIndex();
+            chunkGeneraionBiomes.NeighbourBiomeIds[i] = GetBiomeIndex(ChunkCoord + VoxelData.BiomeNeighbours[i]);
         }
 
         return chunkGeneraionBiomes;
@@ -124,6 +127,7 @@ public class WorldBiomesList
 
     public void Destroy()
     {
+        Debug.Log("AAAAAAA");
         foreach (var item in Biomes)
         {
             item.Destroy();

@@ -14,7 +14,7 @@ public class SaveManager : ISaveManager
     // public Dictionary<int3, IChunk> LoadedChunks;
 
     #region Singleton
-    private static ISaveManager _instance;
+    // private static ISaveManager _instance;
     private static string _applicationPath;
     private SaveManager() 
     { 
@@ -23,13 +23,15 @@ public class SaveManager : ISaveManager
     }
     public static ISaveManager GetInstance()
     {
-        if (_instance == null)
-        {
-            _instance = new SaveManager();
-            _applicationPath = Application.persistentDataPath;
-        }
+        // if (_instance == null)
+        // {
+        //     _instance = new SaveManager();
+        //     _applicationPath = Application.persistentDataPath;
+        // }
+        _applicationPath = Application.persistentDataPath;
         
-        return _instance;
+        // return _instance;
+        return new SaveManager();
     }
     #endregion
 
@@ -228,6 +230,6 @@ public class SaveManager : ISaveManager
 
     public static void Destroy()
     {
-        _instance = null;
+        // _instance = null;
     }
 }
