@@ -1,0 +1,58 @@
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMain
+
+struct BlockSideData {
+    float3 position;
+    int rotation;
+    // float4 color;
+    int type;
+};
+
+int3 _ChunkSize;
+
+// RWStructuredBuffer<float4> BlockTypes;
+RWStructuredBuffer<int> _BlockIds;
+RWStructuredBuffer<BlockSideData> _BlockSideDatas;
+
+float3 _CameraPosition;
+
+static const int size = 6;
+
+void CreateSide(uint3 id, int index, int i, int a)
+{
+    BlockSideData data;
+    data.position = float3(id.x, id.y, id.z);
+    data.rotation = i;
+    // data.color = lerp(float4(1, 0, 0, 1), float4(0, 0, 1, 1), (float)i / 6);
+    data.type = _BlockIds[index];
+    _BlockSideDatas[index * size + a] = data;
+}
+
+[numthreads(8, 8, 8)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    
+    // int x = id % ChunkSize;
+    // int y = id / ChunkSize % ChunkSize;
+    // int z = id / ChunkSize / ChunkSize;
+    int index = id.x + (id.y + id.z * _ChunkSize.y) * _ChunkSize.x;
+    
+    float3 diff = (float3)id - _CameraPosition; 
+    int i = 0;
+    // if (diff.z > 0)
+        CreateSide(id, index, 0, i++);
+    // else
+        CreateSide(id, index, 1, i++);
+    
+    // if (diff.y < 0)
+        CreateSide(id, index, 2, i++);
+    // else
+        CreateSide(id, index, 3, i++);
+    // 
+    // if (diff.x > 0)
+        CreateSide(id, index, 4, i++);
+    // else
+        CreateSide(id, index, 5, i++);
+}
+
+
