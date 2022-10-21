@@ -37,6 +37,17 @@ public struct GenerateBlockIdJob : IJobParallelFor
         //     ChunkGeneraionBiomes.Lodes,
         //     ChunkGeneraionBiomes.WaterLevel);
         // blockIdDatas[index] = ChunkGeneraionBiomes.GetBlock(position);
+
+        // if (x == 0 || y == 0 || z == 0)
+        //     blockIdDatas[index] = 0;
+        // else
+        //     blockIdDatas[index] = y % 10;
+        
+        // if (y > x + z)
+        //     blockIdDatas[index] = 0;
+        // else
+        //     blockIdDatas[index] = y % 10;
+        
         blockIdDatas[index] = ChunkGeneraionBiomes.GetBlock(position, HeightMap[x + z * chunkSize.x]);
     }
 }

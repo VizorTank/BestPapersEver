@@ -123,4 +123,20 @@ MonoBehaviour:
     isGlowing: 0
     isGrowing: 0
     DropTable: 
-  BlockCount: 10
+  textures:
+  - {fileID: 0}
+  - {fileID: 2800000, guid: 0c8c66fedad3ac66e8ad72cf31ba7837, type: 3}
+  - {fileID: 2800000, guid: d033d87092c2b79f28381bbd79067d49, type: 3}
+  - {fileID: 2800000, guid: 1fa56a93349ec9575b2f6cfb19efdeb3, type: 3}
+  - {fileID: 2800000, guid: b6d4e7aacda2e6d9596695f5e5188c11, type: 3}
+  - {fileID: 2800000, guid: 7a486ee52c7063e4c98be2752b1442d6, type: 3}
+  - {fileID: 2800000, guid: 2ed55de8a021d1369a29d5ad73fe2135, type: 3}
+  - {fileID: 2800000, guid: d033d87092c2b79f28381bbd79067d49, type: 3}
+  - {fileID: 2800000, guid: 153955bfd31fa491096dce78c64c2d73, type: 3}
+  - {fileID: 2800000, guid: 9c66b54e9433fb415bdd61f05380781b, type: 3}
+  areTransparentInt: 01000000000000000000000000000000000000000000000001000000000000000000000000000000
+  BlockCount: 6
+  TextureArray: {fileID: 0}
+  Material: {fileID: 2100000, guid: 73db65a1ca221d743a283d61debf851c, type: 2}
+  Blocks: {fileID: 7200000, guid: 7459bcfbe47571c42a8e7ee86a9091e2, type: 3}
+  Culling: {fileID: 7200000, guid: e1617a3d24c098a309d0564d52696338, type: 3}

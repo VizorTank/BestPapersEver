@@ -10,6 +10,7 @@ public class WorldClass : MonoBehaviour, IWorld
 {
     public bool Load = false;
     public bool Save = false;
+    public RenderType RenderType = 0;
     public WorldStaticData data;
     public GameObject Player;
 
@@ -224,6 +225,7 @@ public class WorldClass : MonoBehaviour, IWorld
         {
             var newActiveChunksList = new Dictionary<int3, IChunk>();
             int renderDistanceSize = renderDistance * 2 + 1;
+            // int renderDistanceSize = renderDistance;
             for (int x = 0; x < renderDistanceSize; x++)
             {
                 for (int z = 0; z < renderDistanceSize; z++)
@@ -319,7 +321,7 @@ public class WorldClass : MonoBehaviour, IWorld
         // if (!IsInWorld(position)) return false;
         int3 chunkPos = GetChunkCoords(position);
         if (GetChunk(chunkPos) == null) return false;
-        int3 p =GetLocalPos(position);
+        int3 p = GetLocalPos(position);
         bool result = GetChunk(chunkPos).TrySetBlock(p, blockID, out int retBlockId);
         replacedBlockId = retBlockId;
         Debug.Log($"Placed block: {p.x}, {p.y}, {p.z} Pos: {position.x}, {position.y}, {position.z}");
@@ -443,5 +445,21 @@ public class WorldClass : MonoBehaviour, IWorld
     {
         return Structures[structureId];
     }
+
+    public Vector3 GetPlayerPosition()
+    {
+        return Player.transform.position;
+    }
+
+    public RenderType GetRenderType()
+    {
+        return RenderType;
+    }
+}
+
+public enum RenderType
+{
+    GreedyMeshing,
+    Instancing
 }
 

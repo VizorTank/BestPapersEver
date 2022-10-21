@@ -127,7 +127,6 @@ public class WorldBiomesList
 
     public void Destroy()
     {
-        Debug.Log("AAAAAAA");
         foreach (var item in Biomes)
         {
             item.Destroy();

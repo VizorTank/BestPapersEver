@@ -609,6 +609,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Load: 0
   Save: 0
+  RenderType: 1
   data:
     RenderDistance: 16
     WorldSizeInChunks:
@@ -620,7 +621,7 @@ MonoBehaviour:
     BiomeAttributes: []
     WaterLevel: 64
   Player: {fileID: 1316108400}
-  renderDistance: 8
+  renderDistance: 4
   WorldSizeInChunks:
     x: 64
     y: 12

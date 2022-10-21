@@ -92,7 +92,7 @@ void Vote(uint3 id : SV_DispatchThreadID) {
     //     _VoteBuffer[id.x * 6 + i] = inView * withinDistance;
     // }
     // if (!_BlockIdsBuffer[GetIndex(_BlockSideDataBuffer[id.x].position.xyz)]) return;
-    
+    _VoteBuffer[id.x] = 0;
     if (!_BlockSideDataBuffer[id.x].type) return;
     int3 position = _BlockSideDataBuffer[id.x].position.xyz + neighbours[_BlockSideDataBuffer[id.x].rotation];
     // _VoteBuffer[id.x] = _BlockTypesBuffer[GetIndex(position)].isSolid;

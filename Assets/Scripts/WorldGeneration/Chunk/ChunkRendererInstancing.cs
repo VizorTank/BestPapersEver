@@ -1,19 +1,20 @@
-﻿using System.Collections;
+using System;
+using System.Collections;
 using System.Collections.Generic;
-using UnityEditor;
+using Unity.Mathematics;
 using UnityEngine;
 
-public class DrawMeshInstancedIndirectDemo : MonoBehaviour {
-    public int chunkSize;
-    [Range(0, 1)]
-    public float AmbientOcclusionIntensity = 0.5f;
-    public Color AmbientOcclusionColor;
+public class ChunkRendererInstancing : IChunkRenderer
+{
+    private IWorld _world;
+    private IChunk _chunk;
 
-    public Material material;
-    public ComputeShader compute;
-    public Transform pusher;
-    public Transform Camera;
-    public List<Texture2D> Textures;
+    private int3 chunkSize = VoxelData.ChunkSize;
+
+    private float AmbientOcclusionIntensity = 0.5f;
+    private Color AmbientOcclusionColor;
+
+    private ComputeShader blocks;
     private ComputeBuffer argsBuffer;
 
     public ComputeShader culling;
@@ -22,46 +23,55 @@ public class DrawMeshInstancedIndirectDemo : MonoBehaviour {
     private ComputeBuffer groupSumArrayBuffer;
     private ComputeBuffer scannedGroupSumBuffer;
     private ComputeBuffer culledPositionsBuffer;
-    public Texture2DArray Texture2DArray;
+    private Texture2DArray Texture2DArray;
+
+    ComputeBuffer blocksIdsBuffer;
+    ComputeBuffer blocksIsTransparentBuffer;
+    ComputeBuffer blocksSideDatas;
 
     private Mesh mesh;
+    private Material material;
     private Bounds bounds;
 
-    private int numThreadGroups, numVoteThreadGroups, numGroupScanThreadGroups;
+    private int numThreadGroups;
+    private int numVoteThreadGroups;
+    private int numGroupScanThreadGroups;
 
-    // Mesh Properties struct to be read from the GPU.
-    // Size() is a convenience funciton which returns the stride of the struct.
+    int[] blocksId;
+    int[] blockIsTransparent;
+
     private struct MeshProperties {
-        // public Matrix4x4 mat;
         public Vector3 position;
         public int rotation;
         public Vector4 color;
 
         public static int Size() {
             return
-                // sizeof(float) * 4 * 4 + // matrix;
                 sizeof(float) * 3 + 
                 sizeof(int) +
-                // sizeof(float) * 4;      // color;
-                sizeof(int);               // color;
+                sizeof(int);
         }
     }
 
-    int[,,] blocksId;
-    ComputeBuffer blocksIdsBuffer;
-    int[] blockIsTransparent;
-    ComputeBuffer blocksIsTransparentBuffer;
-    
-    ComputeBuffer blocksSideDatas;
-    
+    public ChunkRendererInstancing(IChunk chunk, IWorld world)
+    {
+        _world = world;
+        _chunk = chunk;
+    }
+
+    private int size;
 
     private void Setup() {
         Mesh mesh = CreateQuad();
         this.mesh = mesh;
 
+        material = new Material(_world.GetBlockTypesList().Material);
+        blocks = _world.GetBlockTypesList().Blocks;
+        culling = _world.GetBlockTypesList().Culling;
+
         // Boundary surrounding the meshes we will be drawing.  Used for occlusion.
-        bounds = new Bounds(transform.position, Vector3.one * chunkSize * 2);
-        int size = chunkSize * chunkSize * chunkSize * 6;
+        bounds = new Bounds(_chunk.GetChunkPosition() + new float3(0.5f, 0.5f, 0.5f), Vector3.one * chunkSize.x * 2);
+        size = GetChunkVolume() * 3;
 
         numThreadGroups = Mathf.CeilToInt(size / 128.0f);
         if (numThreadGroups > 128) {
@@ -76,45 +86,46 @@ public class DrawMeshInstancedIndirectDemo : MonoBehaviour {
         }
         numVoteThreadGroups = Mathf.CeilToInt(size / 128.0f);
         numGroupScanThreadGroups = Mathf.CeilToInt(size / 1024.0f);
-
-        Debug.Log(numThreadGroups);
-
         
-        CreateBlocks();
+        // CreateBlocks();
         CreateArgs(size);
         InitializeBuffers(size);
-        CreateCompute(size);
         CreateTextureArray();
         CreateBlockBuffers();
     }
 
+    int GetChunkVolume()
+    {
+        return chunkSize.x * chunkSize.y * chunkSize.z;
+    }
+
     void CreateTextureArray()
     {
-        if (Textures.Count <= 0) return;
-        Texture2D text = Textures[0];
-        Texture2DArray = new Texture2DArray(text.width, text.height, Textures.Count, text.format, false);
-        Texture2DArray.filterMode = FilterMode.Point;
-        for (int i = 0; i < Textures.Count; i++)
-        {
-            Texture2DArray.SetPixels(Textures[i].GetPixels(), i);
-        }
-        Texture2DArray.Apply();
+        Texture2DArray = _world.GetBlockTypesList().TextureArray;
+        // if (Textures.Count <= 0) return;
+        // Texture2D text = Textures[0];
+        // Texture2DArray = new Texture2DArray(text.width, text.height, Textures.Count, text.format, false);
+        // Texture2DArray.filterMode = FilterMode.Point;
+        // for (int i = 0; i < Textures.Count; i++)
+        // {
+        //     Texture2DArray.SetPixels(Textures[i].GetPixels(), i);
+        // }
+        // Texture2DArray.Apply();
+        // AssetDatabase.CreateAsset(Texture2DArray, "Assets/Texture2DArray.png");
     }
 
     void CreateBlockBuffers()
     {
-        blockIsTransparent = new int[Textures.Count];
+        blocksIsTransparentBuffer = _world.GetBlockTypesList().BlocksIsTransparentBuffer;
+        // blockIsTransparent = _world.GetBlockTypesList().areTransparentInt;
 
-        blockIsTransparent[0] = 1;
-
-        blocksIsTransparentBuffer = new ComputeBuffer(Textures.Count, sizeof(int));
-        blocksIsTransparentBuffer.SetData(blockIsTransparent);
+        // blocksIsTransparentBuffer = new ComputeBuffer(blockIsTransparent.Length, sizeof(int));
+        // blocksIsTransparentBuffer.SetData(blockIsTransparent);
     }
 
     private void InitializeBuffers(int size)
     {
-        blocksIdsBuffer = new ComputeBuffer(blocksId.Length, sizeof(int));
-        blocksIdsBuffer.SetData(blocksId);
+        blocksIdsBuffer = new ComputeBuffer(GetChunkVolume(), sizeof(int));
         
         blocksSideDatas = new ComputeBuffer(size, MeshProperties.Size());
         culledPositionsBuffer = new ComputeBuffer(size, MeshProperties.Size());
@@ -136,23 +147,6 @@ public class DrawMeshInstancedIndirectDemo : MonoBehaviour {
         argsBuffer.SetData(args);
     }
 
-    void CreateCompute(int size)
-    {
-        compute.SetInts("_ChunkSize", new int[] { chunkSize, chunkSize, chunkSize });
-        compute.SetBuffer(0, "_BlockIds", blocksIdsBuffer);
-        compute.SetBuffer(0, "_BlockSideDatas", blocksSideDatas);
-    }
-
-    // string S(uint[] array)
-    // {
-    //     string r = "";
-    //     for (int i = 0; i < array.Length; i++)
-    //     {
-    //         r += array[i] + ", ";
-    //     }
-    //     return r;
-    // }
-
     void Culling()
     {
         culling.SetBuffer(4, "_ArgsBuffer", argsBuffer);
@@ -164,8 +158,8 @@ public class DrawMeshInstancedIndirectDemo : MonoBehaviour {
         culling.SetBuffer(0, "_BlockIsTransparentBuffer", blocksIsTransparentBuffer);
         culling.SetBuffer(0, "_BlockSideDataBuffer", blocksSideDatas);
         culling.SetBuffer(0, "_VoteBuffer", voteBuffer);
-        culling.SetVector("_CameraPosition", Camera.position);
-        culling.SetInts("_ChunkSize", new int[] { chunkSize, chunkSize, chunkSize });
+        // culling.SetVector("_CameraPosition", _world.GetPlayerPosition());
+        culling.SetInts("_ChunkSize", new int[] { chunkSize.x, chunkSize.y, chunkSize.z });
         culling.Dispatch(0, numVoteThreadGroups, 1, 1);
 
         // Scan Instances
@@ -192,34 +186,37 @@ public class DrawMeshInstancedIndirectDemo : MonoBehaviour {
 
     void RunCompute()
     {
-        Vector3 pos = Camera.position;
-        compute.SetFloats("_CameraPosition", new float[] { pos.x, pos.y, pos.z });
-        compute.Dispatch(0, chunkSize / 8, chunkSize / 8, chunkSize / 8);
+        Vector3 pos = _world.GetPlayerPosition();
+        blocks.SetInts("_ChunkSize", new int[] { chunkSize.x, chunkSize.y, chunkSize.z });
+        blocks.SetFloats("_CameraPosition", new float[] { pos.x, pos.y, pos.z });
+        blocks.SetBuffer(0, "_BlockIds", blocksIdsBuffer);
+        blocks.SetBuffer(0, "_BlockSideDatas", blocksSideDatas);
+        blocks.Dispatch(0, chunkSize.x / 8, chunkSize.y / 8, chunkSize.z / 8);
     }
 
-    
-
-    void CreateBlocks()
-    {
-        blocksId = new int[chunkSize, chunkSize, chunkSize];
-        for (int x = 0; x < chunkSize; x++)
-        {
-            for (int y = 0; y < chunkSize; y++)
-            {
-                for (int z = 0; z < chunkSize; z++)
-                {
-                    if (x == 0 || y == 0)
-                        blocksId[x, y, z] = 0;
-                    else if (y > x + z || 16 - y > x + z)
-                        blocksId[x, y, z] = 0;
-                    else if (y == x + z)
-                        blocksId[x, y, z] = 2;
-                    else
-                        blocksId[x, y, z] = 1;
-                }
-            }
-        }
-    }
+    // void CreateBlocks()
+    // {
+    //     blocksId = new int[GetChunkVolume()];
+    //     for (int x = 0; x < chunkSize.x; x++)
+    //     {
+    //         for (int y = 0; y < chunkSize.y; y++)
+    //         {
+    //             for (int z = 0; z < chunkSize.z; z++)
+    //             {
+    //                 int index = VoxelData.GetIndex(new int3(x, y, z));
+    //                 if (x == 0 || y == 0 || z == 0)
+    //                     blocksId[index] = 0;
+    //                 else
+    //                 {
+    //                     if (y > x + z)
+    //                         blocksId[index] = 0;
+    //                     else
+    //                         blocksId[index] = y % 10;
+    //                 }
+    //             }
+    //         }
+    //     }
+    // }
 
     private Mesh CreateQuad(float width = 1f, float height = 1f) {
         // Create a quad mesh.
@@ -263,10 +260,6 @@ public class DrawMeshInstancedIndirectDemo : MonoBehaviour {
         return mesh;
     }
 
-    private void Start() {
-        Setup();
-    }
-
     void SetMaterialBuffers()
     {
         material.SetBuffer("_BlockSideDataBuffer", culledPositionsBuffer);
@@ -280,15 +273,7 @@ public class DrawMeshInstancedIndirectDemo : MonoBehaviour {
         material.SetColor("AmbientOcclusionColor", AmbientOcclusionColor);
     }
 
-    private void Update() {
-        SetMaterialBuffers();
-
-        RunCompute();
-        Culling();
-        Graphics.DrawMeshInstancedIndirect(mesh, 0, material, bounds, argsBuffer);
-    }
-
-    private void OnDisable()
+    public void Destroy()
     {
         DisposeBuffer(ref blocksIdsBuffer);
         DisposeBuffer(ref blocksIsTransparentBuffer);
@@ -307,5 +292,83 @@ public class DrawMeshInstancedIndirectDemo : MonoBehaviour {
             buffer.Release();
         }
         buffer = null;
+    }
+
+    public void Render(ChunkNeighbours neighbours)
+    {
+        // throw new System.NotImplementedException();
+    }
+
+    public void Render()
+    {
+        throw new System.NotImplementedException();
+    }
+
+    private bool _isCreated = false;
+
+    private void Init()
+    {
+        Setup();
+        _isCreated = true;
+        Update();
+    }
+
+    public bool RequireProcessing()
+    {
+        if (!_isCreated) Init();
+
+        // blocksId = _chunk.GetBlocks().ToArray();
+        // Debug.Log(blocksId.Length);
+        
+        
+
+        SetMaterialBuffers();
+
+        RunCompute();
+        CreateBlockBuffers();
+        Culling();
+        Graphics.DrawMeshInstancedIndirect(mesh, 0, material, bounds, argsBuffer);
+
+        return false;
+    }
+
+    public bool CanAccess()
+    {
+        return true;
+    }
+
+    public void Update()
+    {
+        if (!_isCreated) return;
+        // blocksId = _chunk.GetBlocks().ToArray();
+        Test();
+        blocksIdsBuffer.SetData(blocksId);
+        // throw new System.NotImplementedException();
+    }
+
+    private void Test()
+    {
+        blocksId = new int[GetChunkVolume()];
+        blocksId = _chunk.GetBlocks().ToArray();
+        // blocksId = _chunk.Temp();
+        // int[] b = new int[GetChunkVolume()];
+        // Array.Copy(_chunk.GetBlocks().ToArray(), blocksId, GetChunkVolume());
+        // for (int x = 0; x < chunkSize.x; x++)
+        // {
+        //     for (int y = 0; y < chunkSize.y; y++)
+        //     {
+        //         for (int z = 0; z < chunkSize.z; z++)
+        //         {
+        //             int index = VoxelData.GetIndex(new int3(x, y, z));
+        //             if (b[index] != 0)
+        //                 blocksId[index] = (b[index] + 1) % 10;
+        //         }
+        //     }
+        // }
+    }
+
+    public void Unload()
+    {
+        // throw new System.NotImplementedException();
     }
 }

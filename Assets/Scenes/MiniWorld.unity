@@ -620,10 +620,10 @@ MonoBehaviour:
     BiomeAttributes: []
     WaterLevel: 64
   Player: {fileID: 1316108400}
-  renderDistance: 1
+  renderDistance: 8
   WorldSizeInChunks:
     x: 64
-    y: 2
+    y: 1
     z: 64
   blockTypesList: {fileID: 11400000, guid: 7d02ef2692f7d5a4c984e6f3f30b45a0, type: 2}
   Structures: []

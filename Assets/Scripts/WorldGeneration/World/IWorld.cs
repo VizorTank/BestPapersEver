@@ -26,6 +26,7 @@ public interface IWorld
     // public ChunkNeighbours GetNeighbours(int3 chunkCoordinates);
     public bool TryGetNeighbours(int3 chunkCoordinates, ref ChunkNeighbours neighbours);
     public Transform GetTransform();
+    public Vector3 GetPlayerPosition();
     public BlockTypesList GetBlockTypesList();
 
     public Structure GetStructure(int structureId);
@@ -33,4 +34,5 @@ public interface IWorld
     public void CreateStructure(int3 position, int structureId);
     public void CreateStructure(int3 chunkPos, int3 structurePos, int structureId);
     // public void CreateStructure(int3 position, Structure structure);
+    public RenderType GetRenderType();
 }

@@ -104,4 +104,9 @@ public class ChunkRenderer : IChunkRenderer
     {
         return _requireUpdate || _processing;
     }
+
+    public void Render()
+    {
+        
+    }
 }
