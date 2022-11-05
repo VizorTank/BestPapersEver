@@ -40,6 +40,7 @@ public class GoblinAi : EnemyAi
             if (Vector3.Distance(transform.position, target.position) < 2.5)
             {
                 Frigenned = true;
+                animator.SetBool("IsScared", true);
                 MoveController.jumprequest = true;
             }
         }
@@ -49,9 +50,9 @@ public class GoblinAi : EnemyAi
             {
                 State1 = State.Runing.ToString();
                 RunFromTarget();
-                WalkForward();
+                RunForward();
             }
-            else { Frigenned = false; }
+            else { Frigenned = false;  }
         }
         
         else
@@ -59,6 +60,7 @@ public class GoblinAi : EnemyAi
             if (Vector2.Distance(new Vector2(transform.position.x,transform.position.z), new Vector2(homePosition.x,homePosition.z)) > 2.5)
             {
                 LookAtHome();
+                animator.SetBool("IsScared", false);
                 State1 = State.GoingHome.ToString();
                 WalkForward();
             }

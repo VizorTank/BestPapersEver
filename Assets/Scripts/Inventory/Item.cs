@@ -8,6 +8,7 @@ using UnityEngine;
 public class Item : ScriptableObject
 {
     public string NameID;
+    public int IntID=0;
     public int maxstack;
     public string ItemName;
     public Sprite image;
@@ -35,6 +36,9 @@ public class ItemMenager
 {
     static List<Item> Items = new List<Item>();
 
+    //turn on after adding new item, nesseary for saving
+    bool setID = false;
+
 
     static ItemMenager _instance;
     public static ItemMenager GetInstance()
@@ -47,11 +51,17 @@ public class ItemMenager
     }
     private ItemMenager()
     {
+        int Setter = 1;
         Items.Clear();
         UnityEngine.Object[] items = Resources.LoadAll("Items", typeof(Item));
         foreach (Item item in items)
         {
             Items.Add(item);
+            if(setID)
+            {
+                item.IntID = Setter;
+                Setter++;
+            }
         }
 
         
@@ -66,6 +76,13 @@ public class ItemMenager
     {
 
         return Items.Find(x => x.NameID == ItemName);
+
+    }
+
+    public static Item GetItem(int ItemID)
+    {
+
+        return Items.Find(x => x.IntID == ItemID);
 
     }
 

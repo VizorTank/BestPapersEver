@@ -53,6 +53,8 @@ public class PlayerController : MonoBehaviour
     public GameObject AtackHitbox;
 
     bool placeStructure;
+
+    int[,] tab;
     //Inventory
 
     private void Awake()
@@ -85,6 +87,23 @@ public class PlayerController : MonoBehaviour
 
         playerInput.Player.PlaceStructure.started += PlaceStructure_started;
         playerInput.Player.EscapeMenu.started += EscapeMenuStarded;
+
+        playerInput.Player.TestKey1.started += TestKey1_started;
+        playerInput.Player.TestKey2.started += TestKey2_started;
+    }
+
+    private void TestKey2_started(UnityEngine.InputSystem.InputAction.CallbackContext obj)
+    {
+        testSaving();
+    }
+
+    /// <summary>
+    /// /
+    /// </summary>
+    /// <param name="obj"></param>
+    private void TestKey1_started(UnityEngine.InputSystem.InputAction.CallbackContext obj)
+    {
+        testLoading();
     }
 
     private void NoClip_started(UnityEngine.InputSystem.InputAction.CallbackContext obj) => noClip = !noClip;
@@ -121,6 +140,18 @@ public class PlayerController : MonoBehaviour
         barSystem.SetHealth(controller.CharacterStats.CurrentHealth);
         barSystem.SetStamina(controller.CharacterStats.CurrentStamina);
 
+    }
+
+
+    private void testSaving()
+    {
+        tab = inventory.GetItemsForSaving();
+        inventory.TempClearInventory();
+    }
+
+    private void testLoading()
+    {
+        inventory.LoadItems(tab);
     }
 
     private void FixedUpdate()

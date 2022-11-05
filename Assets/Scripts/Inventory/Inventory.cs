@@ -353,6 +353,54 @@ public class Inventory : MonoBehaviour {
 
         return output;
     }
+
+
+
+
+    public int[,] GetItemsForSaving()
+    {
+        int[,] output = new int[ItemMenager.AmountofItems(), 2];
+        int i = 0;
+        foreach(ItemSlot item in slots)
+        {
+
+            if (item.HasItem)
+            {
+                output[i, 0] = item.stack.Item.IntID;
+                output[i, 1] = item.stack.amount;
+            }
+            else
+            {
+                output[i, 0] = 0;
+                output[i, 1] = 0;
+            }
+            i++;
+        }
+
+        return output;
+    }
+
+    public void LoadItems(int[,] items)
+    {
+        int i = 0;
+
+        foreach(ItemSlot item in slots)
+        {
+
+            if(items[i, 0]!=0)
+            item.InsertStack(new ItemStack(ItemMenager.GetItem(items[i, 0]), items[i, 1]));
+            i++;
+        }
+    }
+
+    public void TempClearInventory()
+    {
+        foreach (ItemSlot item in slots)
+        {
+            item.EmptySlot();
+        }
+    }
+
 }
 
 [System.Serializable]

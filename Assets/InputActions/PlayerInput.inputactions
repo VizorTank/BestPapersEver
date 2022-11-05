@@ -116,6 +116,22 @@
                     "expectedControlType": "Button",
                     "processors": "",
                     "interactions": ""
+                },
+                {
+                    "name": "TestKey1",
+                    "type": "Button",
+                    "id": "422cf3fa-fe98-4496-afb5-69537d65fc91",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "TestKey2",
+                    "type": "Button",
+                    "id": "c1f67861-5e91-4237-908f-d3aea5d105df",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
                 }
             ],
             "bindings": [
@@ -490,6 +506,28 @@
                     "processors": "",
                     "groups": "",
                     "action": "EscapeMenu",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "8f1e2e31-b500-445f-bed1-5a56efd30800",
+                    "path": "<Keyboard>/period",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "TestKey1",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "22167201-4137-4058-8950-31d6ffb7c94b",
+                    "path": "<Keyboard>/comma",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "TestKey2",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

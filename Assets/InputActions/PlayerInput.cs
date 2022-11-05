@@ -129,6 +129,22 @@ public class @PlayerInput : IInputActionCollection, IDisposable
                     ""expectedControlType"": ""Button"",
                     ""processors"": """",
                     ""interactions"": """"
+                },
+                {
+                    ""name"": ""TestKey1"",
+                    ""type"": ""Button"",
+                    ""id"": ""422cf3fa-fe98-4496-afb5-69537d65fc91"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": """"
+                },
+                {
+                    ""name"": ""TestKey2"",
+                    ""type"": ""Button"",
+                    ""id"": ""c1f67861-5e91-4237-908f-d3aea5d105df"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": """"
                 }
             ],
             ""bindings"": [
@@ -503,6 +519,28 @@ public class @PlayerInput : IInputActionCollection, IDisposable
                     ""processors"": """",
                     ""groups"": """",
                     ""action"": ""EscapeMenu"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""8f1e2e31-b500-445f-bed1-5a56efd30800"",
+                    ""path"": ""<Keyboard>/period"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""TestKey1"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""22167201-4137-4058-8950-31d6ffb7c94b"",
+                    ""path"": ""<Keyboard>/comma"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""TestKey2"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 }
@@ -1094,6 +1132,8 @@ public class @PlayerInput : IInputActionCollection, IDisposable
         m_Player_Confirm = m_Player.FindAction("Confirm", throwIfNotFound: true);
         m_Player_PlaceStructure = m_Player.FindAction("PlaceStructure", throwIfNotFound: true);
         m_Player_EscapeMenu = m_Player.FindAction("EscapeMenu", throwIfNotFound: true);
+        m_Player_TestKey1 = m_Player.FindAction("TestKey1", throwIfNotFound: true);
+        m_Player_TestKey2 = m_Player.FindAction("TestKey2", throwIfNotFound: true);
         // UI
         m_UI = asset.FindActionMap("UI", throwIfNotFound: true);
         m_UI_Navigate = m_UI.FindAction("Navigate", throwIfNotFound: true);
@@ -1169,6 +1209,8 @@ public class @PlayerInput : IInputActionCollection, IDisposable
     private readonly InputAction m_Player_Confirm;
     private readonly InputAction m_Player_PlaceStructure;
     private readonly InputAction m_Player_EscapeMenu;
+    private readonly InputAction m_Player_TestKey1;
+    private readonly InputAction m_Player_TestKey2;
     public struct PlayerActions
     {
         private @PlayerInput m_Wrapper;
@@ -1187,6 +1229,8 @@ public class @PlayerInput : IInputActionCollection, IDisposable
         public InputAction @Confirm => m_Wrapper.m_Player_Confirm;
         public InputAction @PlaceStructure => m_Wrapper.m_Player_PlaceStructure;
         public InputAction @EscapeMenu => m_Wrapper.m_Player_EscapeMenu;
+        public InputAction @TestKey1 => m_Wrapper.m_Player_TestKey1;
+        public InputAction @TestKey2 => m_Wrapper.m_Player_TestKey2;
         public InputActionMap Get() { return m_Wrapper.m_Player; }
         public void Enable() { Get().Enable(); }
         public void Disable() { Get().Disable(); }
@@ -1238,6 +1282,12 @@ public class @PlayerInput : IInputActionCollection, IDisposable
                 @EscapeMenu.started -= m_Wrapper.m_PlayerActionsCallbackInterface.OnEscapeMenu;
                 @EscapeMenu.performed -= m_Wrapper.m_PlayerActionsCallbackInterface.OnEscapeMenu;
                 @EscapeMenu.canceled -= m_Wrapper.m_PlayerActionsCallbackInterface.OnEscapeMenu;
+                @TestKey1.started -= m_Wrapper.m_PlayerActionsCallbackInterface.OnTestKey1;
+                @TestKey1.performed -= m_Wrapper.m_PlayerActionsCallbackInterface.OnTestKey1;
+                @TestKey1.canceled -= m_Wrapper.m_PlayerActionsCallbackInterface.OnTestKey1;
+                @TestKey2.started -= m_Wrapper.m_PlayerActionsCallbackInterface.OnTestKey2;
+                @TestKey2.performed -= m_Wrapper.m_PlayerActionsCallbackInterface.OnTestKey2;
+                @TestKey2.canceled -= m_Wrapper.m_PlayerActionsCallbackInterface.OnTestKey2;
             }
             m_Wrapper.m_PlayerActionsCallbackInterface = instance;
             if (instance != null)
@@ -1284,6 +1334,12 @@ public class @PlayerInput : IInputActionCollection, IDisposable
                 @EscapeMenu.started += instance.OnEscapeMenu;
                 @EscapeMenu.performed += instance.OnEscapeMenu;
                 @EscapeMenu.canceled += instance.OnEscapeMenu;
+                @TestKey1.started += instance.OnTestKey1;
+                @TestKey1.performed += instance.OnTestKey1;
+                @TestKey1.canceled += instance.OnTestKey1;
+                @TestKey2.started += instance.OnTestKey2;
+                @TestKey2.performed += instance.OnTestKey2;
+                @TestKey2.canceled += instance.OnTestKey2;
             }
         }
     }
@@ -1454,6 +1510,8 @@ public class @PlayerInput : IInputActionCollection, IDisposable
         void OnConfirm(InputAction.CallbackContext context);
         void OnPlaceStructure(InputAction.CallbackContext context);
         void OnEscapeMenu(InputAction.CallbackContext context);
+        void OnTestKey1(InputAction.CallbackContext context);
+        void OnTestKey2(InputAction.CallbackContext context);
     }
     public interface IUIActions
     {
