@@ -418,8 +418,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   WorldName: World1
-  Load: 1
-  Save: 1
+  Load: 0
+  Save: 0
   RenderType: 0
   data:
     RenderDistance: 16
