@@ -15,4 +15,5 @@ public interface ISaveManager
     // public void RemoveUnusedChunks();
     public void UnloadChunks(IWorld world, Dictionary<int3, IChunk> chunksToUnload);
     public void UnloadChunk(IWorld world, IChunk chunk);
+    public void WaitForChunksToSave();
 }

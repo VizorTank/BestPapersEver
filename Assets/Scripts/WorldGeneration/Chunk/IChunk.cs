@@ -12,6 +12,8 @@ public interface IChunk
     public BiomeAttributesStruct GetBiome();
     public void Render();
     public void Update();
+    public void UpdateNeighbours();
+    public void UpdateNeighbourList();
     public void Hide();
     public bool TryGetBlock(int3 position, out int blockId);
     public bool TrySetBlock(int3 position, int placedBlockId, out int replacedBlockId);
@@ -19,6 +21,6 @@ public interface IChunk
     public NativeArray<int> GetSharedData();
     public void ReleaseSharedData();
     public bool CanAccess();
-
+    public bool CanBeSaved();
     public void CreateStructure(int3 structurePosition, int structureId);
 }

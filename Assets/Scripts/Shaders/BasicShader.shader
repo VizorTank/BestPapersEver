@@ -47,7 +47,7 @@ Shader "Custom/BasicShader"
 
 				o.vertex = UnityObjectToClipPos(v.vertex);
 				o.uv = v.uv;
-				o.color = v.color;
+				// o.color = v.color;
 
 				return o;
 			}
@@ -57,7 +57,7 @@ Shader "Custom/BasicShader"
 				fixed4 col;
 				float localLightLevel = clamp(GlobalLightLevel, 0, 1);
 				col = tex2D(_MainTex, i.uv);
-				col = col * _Color;
+				// col = col * _Color;
 				// clip(col.a - 0.1);
 				// col = lerp(col, float4(0, 0, 0, 1), localLightLevel);
 				// col.a = _Color.a;

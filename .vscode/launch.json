@@ -7,7 +7,7 @@
         {
             "name": "Unity Editor",
             "type": "unity",
-            "path": "/home/vizor/Git/BestPapersEver (copy)/Library/EditorInstance.json",
+            "path": "/home/vizor/Git/BestPapersEverV2/BestPapersEver/Library/EditorInstance.json",
             "request": "launch"
         },
         {

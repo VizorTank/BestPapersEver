@@ -8,6 +8,7 @@ using System;
 public class WorldData
 {
     public int[,] chunks;
+    public string[] test;
 
     public WorldData(Dictionary<int3, IChunk> createdChunk)
     {

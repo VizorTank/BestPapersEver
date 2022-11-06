@@ -51,9 +51,26 @@ public class ChunkRenderer : IChunkRenderer
             new Vector3(chunkCoordinates.x, chunkCoordinates.y, chunkCoordinates.z), 
             new Vector3(VoxelData.ChunkSize.x, VoxelData.ChunkSize.y, VoxelData.ChunkSize.z));
         _chunkObject.name = string.Format("Chunk {0}, {1}, {2}", chunkCoordinates.x, chunkCoordinates.y, chunkCoordinates.z);
+    }
 
-        if (_meshFilter == null)
-            Debug.Log("A");
+    public void Render()
+    {
+        // if (!RequireProcessing()) return;
+        // if (!CanAccess()) return;
+
+        // bool canRender = true;
+        // if (!_neighbours.IsValid())
+        //     canRender = TryGetNeigbours(ref _neighbours);
+
+        // if (canRender)
+        // {
+        //     Render(_neighbours);
+        // }
+        // else
+        // {
+        //     Unload();
+        //     Update();
+        // }
     }
     
     public void Render(ChunkNeighbours neighbours)
@@ -62,6 +79,7 @@ public class ChunkRenderer : IChunkRenderer
         {
             _requireUpdate = false;
             _processing = true;
+            // _chunkNeighbours = neighbours;
             // Debug.Log("Started render");
         }
         _stateMachine.CopyBlocks();
@@ -92,7 +110,7 @@ public class ChunkRenderer : IChunkRenderer
 
     public bool CanAccess()
     {
-        return _meshFilter != null && _meshRenderer != null;
+        return _meshFilter != null;
     }
 
     public void Update()
@@ -103,10 +121,5 @@ public class ChunkRenderer : IChunkRenderer
     public bool RequireProcessing()
     {
         return _requireUpdate || _processing;
-    }
-
-    public void Render()
-    {
-        
     }
 }

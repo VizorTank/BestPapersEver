@@ -200,7 +200,7 @@ public class ChunkRendererStateMachine
 
         Mesh.ApplyAndDisposeWritableMeshData(meshDataArray, mesh);
 
-        // mesh.RecalculateNormals();
+        mesh.RecalculateNormals();
         mesh.RecalculateBounds();
 
         // Debug.Log("Created Mesh");
@@ -222,19 +222,19 @@ public enum ChunkRendererStates
 
 public static class ChunkRendererConst
 {
-    public static NativeArray<int3> axisArray = new NativeArray<int3>(VoxelData.axisArray, Allocator.Persistent);
+    public static NativeArray<int3> axisArray;// = new NativeArray<int3>(VoxelData.axisArray, Allocator.Persistent);
     
-    public static NativeArray<int3> voxelNeighbours = new NativeArray<int3>(VoxelData.voxelNeighbours, Allocator.Persistent);
-    public static NativeArray<float3> voxelVerts = new NativeArray<float3>(VoxelData.voxelVerts, Allocator.Persistent);
-    public static int voxelTrisSize = VoxelData.voxelTrisSize;
-    public static NativeArray<int> voxelTris = new NativeArray<int>(VoxelData.voxelTris, Allocator.Persistent);
-    public static NativeArray<float2> voxelUvs = new NativeArray<float2>(VoxelData.voxelUvs, Allocator.Persistent);
-    public static NativeArray<int> triangleOrder = new NativeArray<int>(VoxelData.triangleOrder, Allocator.Persistent);
+    public static NativeArray<int3> voxelNeighbours;// = new NativeArray<int3>(VoxelData.voxelNeighbours, Allocator.Persistent);
+    public static NativeArray<float3> voxelVerts;// = new NativeArray<float3>(VoxelData.voxelVerts, Allocator.Persistent);
+    public static int voxelTrisSize;// = VoxelData.voxelTrisSize;
+    public static NativeArray<int> voxelTris;// = new NativeArray<int>(VoxelData.voxelTris, Allocator.Persistent);
+    public static NativeArray<float2> voxelUvs;// = new NativeArray<float2>(VoxelData.voxelUvs, Allocator.Persistent);
+    public static NativeArray<int> triangleOrder;// = new NativeArray<int>(VoxelData.triangleOrder, Allocator.Persistent);
     
-    public static NativeArray<VertexAttributeDescriptor> layout = new NativeArray<VertexAttributeDescriptor>(VoxelData.layoutVertex, Allocator.Persistent);
+    public static NativeArray<VertexAttributeDescriptor> layout;// = new NativeArray<VertexAttributeDescriptor>(VoxelData.layoutVertex, Allocator.Persistent);
  
-    public static NativeArray<int3> clusterSides = new NativeArray<int3>(VoxelData.clusterSidesArray, Allocator.Persistent);
-    public static NativeArray<int> voidChunkBlockId = new NativeArray<int>(VoxelData.ChunkSize.x * VoxelData.ChunkSize.y * VoxelData.ChunkSize.z, Allocator.Persistent);
+    public static NativeArray<int3> clusterSides;// = new NativeArray<int3>(VoxelData.clusterSidesArray, Allocator.Persistent);
+    public static NativeArray<int> voidChunkBlockId;// = new NativeArray<int>(VoxelData.ChunkSize.x * VoxelData.ChunkSize.y * VoxelData.ChunkSize.z, Allocator.Persistent);
 
 
     public static void Init()

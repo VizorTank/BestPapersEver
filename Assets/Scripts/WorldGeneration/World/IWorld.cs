@@ -9,6 +9,7 @@ public interface IWorld
     // public void CreateNewChunk(int3 chunkCoordinates);
     // public void SetChunkActive(int3 chunkCoordinates);
     // public bool IsInWorld(int3 position);
+    public string GetWorldName();
     public bool TryGetBlock(float3 position, ref int blockID);
     public bool TryPlaceBlock(Vector3 position, int blockID, ref int replacedBlockId);
     public bool TryGetBlocks(Vector3 position, NativeArray<int> blockIds);
@@ -35,4 +36,5 @@ public interface IWorld
     public void CreateStructure(int3 chunkPos, int3 structurePos, int structureId);
     // public void CreateStructure(int3 position, Structure structure);
     public RenderType GetRenderType();
+    public void RemoveChunk(int3 chunkCoordinates);
 }

@@ -1,5 +1,6 @@
 
 using Unity.Mathematics;
+using UnityEngine;
 
 public class ChunkNeighbours
 {
@@ -79,9 +80,14 @@ public class ChunkNeighbours
         for (int i = 0; i < 6; i++)
         {
             if (this[i] != null && !this[i].IsDestroyed() && this[i].CanAccess())
+            {
                 neighbourData.ChunkNeighbourDataArray[i] = this[i].GetSharedData();
+            }
             else
+            {
                 neighbourData.ChunkNeighbourDataArray[i] = ChunkRendererConst.voidChunkBlockId;
+                // Debug.Log("This was not suposed to be used!");
+            }
         }
         return true;
     }
@@ -92,6 +98,40 @@ public class ChunkNeighbours
         {
             if (this[i] != null)
                 this[i].ReleaseSharedData();
+        }
+    }
+
+    public void UpdateNeighbours()
+    {
+        for (int i = 0; i < 6; i++)
+        {
+            if (this[i] != null && !this[i].IsDestroyed() && this[i].CanAccess())
+            {
+                this[i].Update();
+            }
+        }
+    }
+
+    public void FillMissingNeighbours(IWorld world, IChunk chunk)
+    {
+        for (int i = 0; i < 6; i++)
+        {
+            if (this[i] == null || this[i].IsDestroyed())
+            {
+                this[i] = world.GetChunk(chunk.GetChunkCoordinates() + VoxelData.voxelNeighbours[i]);
+            }
+        }
+    }
+
+    public void UpdateNeighboursNeighbourList()
+    {
+        for (int i = 0; i < 6; i++)
+        {
+            if (this[i] != null && !this[i].IsDestroyed() && this[i].CanAccess())
+            {
+                this[i].UpdateNeighbourList();
+                this[i].Update();
+            }
         }
     }
 }

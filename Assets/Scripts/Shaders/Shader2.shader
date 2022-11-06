@@ -1,12 +1,4 @@
-// Upgrade NOTE: replaced '_Object2World' with 'unity_ObjectToWorld'
-// Upgrade NOTE: replaced '_World2Object' with 'unity_WorldToObject'
-
-// Upgrade NOTE: replaced '_Object2World' with 'unity_ObjectToWorld'
-
-// Upgrade NOTE: replaced '_Object2World' with 'unity_ObjectToWorld'
-// Upgrade NOTE: replaced '_World2Object' with 'unity_WorldToObject'
-
-Shader "Custom/Hmm2"
+Shader "Custom/Shader2"
 {
     Properties
     {
@@ -22,7 +14,7 @@ Shader "Custom/Hmm2"
 
         CGPROGRAM
         // Physically based Standard lighting model, and enable shadows on all light types
-        #pragma surface surf Standard fullforwardshadows vertex:vert
+        #pragma surface surf Standard fullforwardshadows
 
         // Use shader model 3.0 target, to get nicer looking lighting
         #pragma target 3.0
@@ -44,21 +36,6 @@ Shader "Custom/Hmm2"
         UNITY_INSTANCING_BUFFER_START(Props)
             // put more per-instance properties here
         UNITY_INSTANCING_BUFFER_END(Props)
-
-        void vert (inout appdata_full v) {
-            float phase = _Time * 30.0;
-            float4 wpos = mul( unity_ObjectToWorld, v.vertex);
-            float offset = (wpos.x + (wpos.z * 0.2)) * 0.5;
-            float a = round(sin(phase + wpos.x) * 2.0);
-            if (a < 0)
-                wpos.y = -1;
-            else
-                wpos.y = 1;
-            v.vertex = mul(unity_WorldToObject, wpos);
-
-            // v.vertex = floor(v.vertex + float4(0, -0.0000000, 0, 0));
-            // v.vertex = mul(v.vertex, unity_ObjectToWorld);
-        }
 
         void surf (Input IN, inout SurfaceOutputStandard o)
         {

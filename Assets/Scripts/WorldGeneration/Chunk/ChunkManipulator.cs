@@ -41,6 +41,7 @@ public class ChunkManipulator
             _blocksId = generatedBlocks;
             // Debug.Log("Created");
             _chunk.Update();
+            _chunk.UpdateNeighbours();
         }
     }
 

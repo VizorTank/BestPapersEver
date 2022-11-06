@@ -8,6 +8,7 @@ using UnityEngine.Profiling;
 
 public class WorldClass : MonoBehaviour, IWorld
 {
+    public string WorldName = "World1";
     public bool Load = false;
     public bool Save = false;
     public RenderType RenderType = 0;
@@ -20,6 +21,10 @@ public class WorldClass : MonoBehaviour, IWorld
     private static int3 ChunkSize { get => VoxelData.ChunkSize; }
 
     public BlockTypesList blockTypesList;
+    public string GetWorldName()
+    {
+        return WorldName;
+    }
     public BlockTypesList GetBlockTypesList()
     {
         return blockTypesList;
@@ -54,6 +59,12 @@ public class WorldClass : MonoBehaviour, IWorld
         return activeChunksList[chunkCoordinates];
     }
 
+    public void RemoveChunk(int3 chunkCoordinates)
+    {
+        bool contains = activeChunksList.ContainsKey(chunkCoordinates);
+        if (!contains) return;
+        activeChunksList.Remove(chunkCoordinates);
+    }
     
     // private Dictionary<int3, IChunk> activeChunks = new Dictionary<int3, IChunk>();
     private Dictionary<int3, IChunk> activeChunksList = new Dictionary<int3, IChunk>();
@@ -69,7 +80,8 @@ public class WorldClass : MonoBehaviour, IWorld
     void Awake()
     {
         // chunks = new IChunk[WorldSizeInChunks.x, WorldSizeInChunks.y, WorldSizeInChunks.z];
-        _saveManager = SaveManager.GetInstance();
+        ChunkRendererConst.Init();
+        _saveManager = SaveManager.GetInstance(this);
         if (Load)
             _saveManager.LoadWorld();
     }
@@ -286,8 +298,9 @@ public class WorldClass : MonoBehaviour, IWorld
     private void SaveWorld()
     {
         if (!Save) return;
-        _saveManager.SaveWorld();
         _saveManager.UnloadChunks(this, activeChunksList);
+        _saveManager.WaitForChunksToSave();
+        _saveManager.SaveWorld();
     }
 
     public bool IsCoordInWorld(int3 chunkCoordinates)
@@ -418,7 +431,8 @@ public class WorldClass : MonoBehaviour, IWorld
             {
                 // if (math.all(chunkCoordinates == playerLastChunkPos))
                 //     Debug.Log("Missing chunk " + i);
-                return false;
+                
+                // return false;
             }
         }
 

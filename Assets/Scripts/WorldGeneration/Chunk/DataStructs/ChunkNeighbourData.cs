@@ -15,7 +15,7 @@ public struct ChunkNeighbourData
     {
         for (int i = 0; i < 6; i++)
         {
-            // if (!ChunkNeighbourDataValid[i])
+            // if (ChunkNeighbourDataValid[i])
                 try { ChunkNeighbourDataArray[i].Dispose(); } catch { }
         }
     }

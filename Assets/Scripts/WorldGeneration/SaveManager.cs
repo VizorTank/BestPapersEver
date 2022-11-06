@@ -16,12 +16,20 @@ public class SaveManager : ISaveManager
     #region Singleton
     // private static ISaveManager _instance;
     private static string _applicationPath;
-    private SaveManager() 
+    private SaveManager(IWorld world)
     { 
         _generatedChunks = new Dictionary<int3, IChunk>();
         _generatedChunks.Clear();
+
+        _worldPath = _applicationPath + "/" + world.GetWorldName();
+        if(!System.IO.Directory.Exists(_worldPath))
+            System.IO.Directory.CreateDirectory(_worldPath);
+        
+        string chunksPath = _worldPath + "/Chunks";
+        if(!System.IO.Directory.Exists(chunksPath))
+            System.IO.Directory.CreateDirectory(chunksPath);
     }
-    public static ISaveManager GetInstance()
+    public static ISaveManager GetInstance(IWorld world)
     {
         // if (_instance == null)
         // {
@@ -31,13 +39,19 @@ public class SaveManager : ISaveManager
         _applicationPath = Application.persistentDataPath;
         
         // return _instance;
-        return new SaveManager();
+        return new SaveManager(world);
     }
     #endregion
+
+    // private bool _shouldSave = true;
+    // private bool _shouldLoad = true;
+
+    private string _worldPath;
 
     private Dictionary<int3, IChunk> _generatedChunks = new Dictionary<int3, IChunk>();
     private List<Task<ChunkData>> _chunksToLoad = new List<Task<ChunkData>>();
     private Dictionary<int3, IChunk> _chunksToSave = new Dictionary<int3, IChunk>();
+    private Dictionary<int3, IChunk> _chunksUnreadyToSave = new Dictionary<int3, IChunk>();
 
     public void Run()
     {
@@ -47,7 +61,7 @@ public class SaveManager : ISaveManager
 
     public void SaveWorld()
     {
-        string path = _applicationPath + "/world.world";
+        string path = _worldPath + "/world.world";
 
         BinaryFormatter formatter = new BinaryFormatter();
         WorldData data = new WorldData(_generatedChunks);
@@ -61,7 +75,7 @@ public class SaveManager : ISaveManager
 
     public void LoadWorld()
     {
-        string path = _applicationPath + "/world.world";
+        string path = _worldPath + "/world.world";
         if (File.Exists(path))
         {
             BinaryFormatter formatter = new BinaryFormatter();
@@ -84,7 +98,7 @@ public class SaveManager : ISaveManager
 
     public string GetChunkPath(int3 chunkCoords)
     {
-        return _applicationPath
+        return _worldPath
                       + "/Chunks/chunk"
                       + "_" + chunkCoords.x 
                       + "_" + chunkCoords.y
@@ -95,19 +109,42 @@ public class SaveManager : ISaveManager
     public void SavingChunks()
     {
         Dictionary<int3, IChunk> chunksToSave = new Dictionary<int3, IChunk>();
+        // Dictionary<int3, IChunk> chunksUnreadyToSave = new Dictionary<int3, IChunk>();
+
+        // foreach (var item in _chunksUnreadyToSave)
+        // {
+        //     if (!SaveChunk(item.Value))
+        //         chunksToSave.Add(item.Key, item.Value);
+        //     else
+        //         chunksUnreadyToSave.Add(item.Key, item.Value);
+        // }
+        // _chunksUnreadyToSave = chunksUnreadyToSave;
+
         foreach (var item in _chunksToSave)
         {
+            if (item.Value == null) continue;
             if (!SaveChunk(item.Value))
                 chunksToSave.Add(item.Key, item.Value);
             else
+            {
                 item.Value.Destroy();
+                // _chunksUnreadyToSave.Add(item.Key, item.Value);
+            }
         }
         _chunksToSave = chunksToSave;
     }
 
+    public void WaitForChunksToSave()
+    {
+        while (_chunksToSave.Count > 0)
+        {
+            SavingChunks();
+        }
+    }
+
     public bool SaveChunk(IChunk chunk)
     {
-        if (chunk == null || !chunk.CanAccess())
+        if (!chunk.CanBeSaved())
         {
             // Debug.Log("Cant access chunk");
             return false;
@@ -115,15 +152,15 @@ public class SaveManager : ISaveManager
 
         int3 chunkCoordinates = chunk.GetChunkCoordinates();
 
-        // BinaryFormatter formatter = new BinaryFormatter();
-        // ChunkData data = new ChunkData(chunk);
+        BinaryFormatter formatter = new BinaryFormatter();
+        ChunkData data = new ChunkData(chunk);
 
-        // string path = GetChunkPath(chunkCoordinates);
-        // //Debug.Log("Saved " + path);
+        string path = GetChunkPath(chunkCoordinates);
+        //Debug.Log("Saved " + path);
 
-        // FileStream stream = new FileStream(path, FileMode.Create);
-        // formatter.Serialize(stream, data);
-        // stream.Close();
+        FileStream stream = new FileStream(path, FileMode.Create);
+        formatter.Serialize(stream, data);
+        stream.Close();
 
         if (!_generatedChunks.ContainsKey(chunkCoordinates))
             _generatedChunks.Add(chunkCoordinates, null);
@@ -205,8 +242,8 @@ public class SaveManager : ISaveManager
 
         Profiler.BeginSample("CreateTask");
         Task<ChunkData> task = Task.Factory.StartNew<ChunkData>(() => {
-            // if (File.Exists(path))
-            if (false)
+            if (File.Exists(path))
+            // if (false)
             {
                 BinaryFormatter formatter = new BinaryFormatter();
                 FileStream stream = new FileStream(path, FileMode.Open);

@@ -10,13 +10,15 @@ public class Chunk : IChunk
 
     private IChunkRenderer _renderer = null;
     private ChunkManipulator _manipulator = null;
+    private ChunkNeighbours _neighbours = new ChunkNeighbours();
+
+    private ChunkState _state = ChunkState.Created;
 
     private int3 _chunkCoordinates;
     private bool _isDestroyed = false;
     private bool _isCreated = false;
     private List<StructureToLoad> StructuresToLoad = new List<StructureToLoad>();
 
-    private ChunkNeighbours _neighbours = new ChunkNeighbours();
     private int _biomeIndex = -1;
 
 
@@ -46,7 +48,11 @@ public class Chunk : IChunk
         // _renderer = new ChunkRenderer(this, _world);
         // _renderer = new ChunkRendererInstancing(this, _world);
         _manipulator = new ChunkManipulator(this, _world);
+        _state = ChunkState.Initialized;
         _isCreated = true;
+
+        UpdateNeighbourList();
+        _neighbours.UpdateNeighboursNeighbourList();
     }
 
     public void Init(ChunkData data)
@@ -58,8 +64,15 @@ public class Chunk : IChunk
     public void Destroy()
     {
         _isDestroyed = true;
+        _state = ChunkState.Destroyed;
         _renderer.Destroy();
         _manipulator.Destroy();
+        // UpdateNeighbours();
+
+        _world.RemoveChunk(GetChunkCoordinates());
+
+        UpdateNeighbourList();
+        _neighbours.UpdateNeighboursNeighbourList();
     }
 
     public bool IsDestroyed() 
@@ -105,7 +118,8 @@ public class Chunk : IChunk
 
     public void ReleaseSharedData()
     {
-        _manipulator.ReleaseSharedData();
+        if (_manipulator != null)
+            _manipulator.ReleaseSharedData();
     }
 
     private void LoadStructures()
@@ -116,35 +130,69 @@ public class Chunk : IChunk
 
     private bool AreBlocksGenerated()
     {
+        if (_manipulator == null)
+        {
+            Debug.LogError("What? ... How?");
+            return false;
+        }
         _manipulator.GenerateBlocks();
-        return CanAccess();
+        return _manipulator.CanAccess();
+    }
+
+    public bool IsFullyGenerated()
+    {
+        if (!AreBlocksGenerated()) return false;
+
+        LoadStructures();
+        if (!_renderer.RequireProcessing()) return false;
+        _state = ChunkState.FullyCreated;
+        return true;
     }
 
     public void Render()
     {
-        if (_isDestroyed || _manipulator == null) return;
-        if (!AreBlocksGenerated()) return;
+        // if (_isDestroyed || _manipulator == null) 
+        // {
+        //     // Hide();
+        //     return;
+        // }
+        // if (!AreBlocksGenerated()) return;
 
-        LoadStructures();
-        if (!_renderer.RequireProcessing()) return;
-        if (!_renderer.CanAccess()) return;
+        // LoadStructures();
+        // if (!_renderer.RequireProcessing()) return;
+        // // if (!_renderer.CanAccess()) return;
 
-        bool canRender = true;
-        if (!_neighbours.IsValid())
-            canRender = TryGetNeigbours(ref _neighbours);
+        // bool canRender = true;
+        // if (!_neighbours.IsValid())
+        //     canRender = TryGetNeigbours(ref _neighbours);
 
-        if (canRender)
+        // if (canRender)
+        // {
+        //     _renderer.Render(_neighbours);
+        // }
+        // else
+        // {
+        //     Hide();
+        //     Update();
+        // }
+        
+
+        if (_state == ChunkState.Destroyed || _state == ChunkState.Hidden || _state == ChunkState.Created) return;
+        if (_state == ChunkState.Initialized && !IsFullyGenerated()) return;
+        if (_state == ChunkState.FullyCreated)
         {
+            UpdateNeighbourList();
             _renderer.Render(_neighbours);
-        }
-        else
-        {
-            Hide();
-            Update();
         }
     }
 
-    
+    public void UpdateNeighbourList()
+    {
+        // if (!_neighbours.IsValid())
+        //     TryGetNeigbours(ref _neighbours);
+        
+        _neighbours.FillMissingNeighbours(_world, this);
+    }
 
     public bool TryGetBlock(int3 position, out int blockId)
     {
@@ -168,26 +216,27 @@ public class Chunk : IChunk
 
     public void UpdateNeighbourChunks(int3 blockPosition)
     {
-        if (!math.any(blockPosition == 0) || math.any(blockPosition == VoxelData.ChunkSize - 1)) return;
+        if (!math.any(blockPosition == 0) && !math.any(blockPosition == VoxelData.ChunkSize - 1)) return;
 
-        for (int i = 0; i < 3; i++)
-        {
-            int3 tmp = blockPosition * VoxelData.axisArray[i];
-            for (int j = 0; j < 2; j++)
-            {
-                int3 border = (VoxelData.axisArray[i] + VoxelData.voxelNeighbours[i * 2 + j])  * VoxelData.ChunkSize / 2;
-                if (math.all(tmp == border)) 
-                {
-                    IChunk chunk = _world.GetChunk(GetChunkCoordinates() + VoxelData.voxelNeighbours[i * 2 + j]);
-                    if (chunk != null)
-                    {
-                        chunk.Update();
-                    }
-                }
-            }
-        }
+        // for (int i = 0; i < 3; i++)
+        // {
+        //     int3 tmp = blockPosition * VoxelData.axisArray[i];
+        //     for (int j = 0; j < 2; j++)
+        //     {
+        //         int3 border = (VoxelData.axisArray[i] + VoxelData.voxelNeighbours[i * 2 + j])  * VoxelData.ChunkSize / 2;
+        //         if (math.all(tmp == border)) 
+        //         {
+        //             IChunk chunk = _world.GetChunk(GetChunkCoordinates() + VoxelData.voxelNeighbours[i * 2 + j]);
+        //             if (chunk != null)
+        //             {
+        //                 chunk.Update();
+        //             }
+        //         }
+        //     }
+        // }
 
-        if (blockPosition.x < 0) _world.GetChunk(GetChunkCoordinates() - new int3(1, 0, 0));
+        // if (blockPosition.x < 0) _world.GetChunk(GetChunkCoordinates() - new int3(1, 0, 0));
+        UpdateNeighbours();
     }
 
     public float3 GetChunkPosition()
@@ -199,6 +248,18 @@ public class Chunk : IChunk
     {
         _renderer.Update();
     }
+
+    public void UpdateNeighbours()
+    {
+        // ChunkNeighbours neighbours = new ChunkNeighbours();
+        // if (_world.TryGetNeighbours(GetChunkCoordinates(), ref neighbours))
+        // {
+        //     neighbours.UpdateNeighbours();
+        // }
+        UpdateNeighbourList();
+        _neighbours.UpdateNeighbours();
+    }
+
     public void Hide()
     {
         if (CanAccess())
@@ -208,6 +269,11 @@ public class Chunk : IChunk
     public bool CanAccess()
     {
         return _manipulator != null && _manipulator.CanAccess() && !_isDestroyed;
+    }
+
+    public bool CanBeSaved()
+    {
+        return _manipulator != null && _manipulator.CanAccess();
     }
 
     // public bool CanCreateStructure(int3 structurePosition, Structure structure)
@@ -266,4 +332,15 @@ public class Chunk : IChunk
             }
         }
     }
+}
+
+public enum ChunkState
+{
+    Created,
+    Initialized,
+    FullyCreated,
+    // RequireUpdate,
+    // Updated,
+    Hidden,
+    Destroyed
 }
