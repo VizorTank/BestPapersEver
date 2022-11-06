@@ -42,15 +42,6 @@
                     "initialStateCheck": false
                 },
                 {
-                    "name": "PlaceStructure",
-                    "type": "Button",
-                    "id": "fabcbb3b-7fb6-4052-b4ff-45a3985e9b6c",
-                    "expectedControlType": "Button",
-                    "processors": "",
-                    "interactions": "",
-                    "initialStateCheck": false
-                },
-                {
                     "name": "SelectHotbarSlot",
                     "type": "Value",
                     "id": "731faa39-2dc1-43c2-a242-c0fb8073711f",
@@ -83,8 +74,71 @@
                     "id": "829393f0-723a-41ca-a838-7bd8c610db93",
                     "expectedControlType": "Button",
                     "processors": "",
-                    "interactions": "",
-                    "initialStateCheck": false
+                    "interactions": ""
+                },
+                {
+                    "name": "Console",
+                    "type": "Button",
+                    "id": "34d68248-7b8a-4e2d-b186-a95c113321e8",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "Inventory",
+                    "type": "Button",
+                    "id": "c9f1f67a-dad4-489d-b5c0-72c429160a07",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "InventoryAdv",
+                    "type": "Button",
+                    "id": "4065bcb2-9b21-43fd-aae1-952116309ac6",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "Confirm",
+                    "type": "Button",
+                    "id": "d2c73c6e-2a3f-49bb-8e53-b2d29686d6cd",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "PlaceStructure",
+                    "type": "Button",
+                    "id": "b114ebd4-88a2-459c-9fb8-a992c7833f5a",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "EscapeMenu",
+                    "type": "Button",
+                    "id": "c316617b-7e5c-4a59-8716-c13b9e15d467",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "TestKey1",
+                    "type": "Button",
+                    "id": "422cf3fa-fe98-4496-afb5-69537d65fc91",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "TestKey2",
+                    "type": "Button",
+                    "id": "c1f67861-5e91-4237-908f-d3aea5d105df",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
                 }
             ],
             "bindings": [
@@ -453,12 +507,89 @@
                 },
                 {
                     "name": "",
-                    "id": "b6dc532b-f748-4ca4-bf03-6a61bd1ea43e",
-                    "path": "<Keyboard>/v",
+                    "id": "a022c942-d432-4b23-9a26-9ea92531e0ab",
+                    "path": "<Keyboard>/backquote",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Console",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "74b559e5-e9af-4c18-8718-a6ce7160dc0a",
+                    "path": "<Keyboard>/e",
                     "interactions": "",
                     "processors": "",
                     "groups": "Keyboard&Mouse",
+                    "action": "Inventory",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "db1e8f31-80f4-4f60-8512-d11603b84f72",
+                    "path": "<Keyboard>/shift",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "InventoryAdv",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "fd31fbd5-8716-4cb7-94e2-a62d5609b07d",
+                    "path": "<Keyboard>/enter",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Confirm",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "8491a1c2-b621-4dac-8b0c-c726ebef277f",
+                    "path": "<Keyboard>/v",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
                     "action": "PlaceStructure",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "c0e0c66c-6799-4083-8ca0-d7bcfc4b198d",
+                    "path": "<Keyboard>/escape",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "EscapeMenu",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "8f1e2e31-b500-445f-bed1-5a56efd30800",
+                    "path": "<Keyboard>/period",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "TestKey1",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "22167201-4137-4058-8950-31d6ffb7c94b",
+                    "path": "<Keyboard>/comma",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "TestKey2",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

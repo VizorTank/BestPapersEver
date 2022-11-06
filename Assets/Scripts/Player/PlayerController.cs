@@ -7,7 +7,7 @@ public class PlayerController : MonoBehaviour
 {
     // World
     public WorldClass worldClass;
-
+    public bool IsConsoleOpenned = false;
     // Player Input
     public PlayerInput playerInput;
     private Vector3 input;
@@ -29,7 +29,6 @@ public class PlayerController : MonoBehaviour
     // Input Flags
     public bool isGrounded;
     public bool placeBlock;
-    public bool placeStructure;
     public bool destroyBlock;
 
     // Camera management
@@ -47,65 +46,124 @@ public class PlayerController : MonoBehaviour
     public float reach = 8f;
     public int placingBlockID = 1;
 
+    public Player_HitResponder HitResponder;
+    public CharacterController controller;
+    public BarSystem barSystem;
+    public BuildingBlocked buildingBlocked;
+    public GameObject AtackHitbox;
+
+    bool placeStructure;
+
+    int[,] tab;
+    //Inventory
+
     private void Awake()
     {
         BindInput();
+        ItemMenager.GetInstance();
+        RecipeMenager.GetInstance();
+        EnemyMenager.GetInstance();
     }
-
+    private void Start()
+    {
+        HitResponder = transform.GetComponentInChildren<Player_HitResponder>();
+        controller = transform.GetComponent<CharacterController>();
+        inventory = InventorySys.GetComponent<Inventory>();
+        toolbar = inventory.Toolbar.GetComponent<Toolbar>();
+        Backpack = inventory.Backpack;
+        cursorSlot = inventory.cursorSlot;
+        toolbar.playerController = this;
+        barSystem.SetMaxStats(controller.CharacterStats.MaxHealth, controller.CharacterStats.MaxStamina);
+    }
     private void BindInput()
     {
         playerInput = new PlayerInput();
-        //playerInput.Player.Move.performed += Move_performed;
-        //playerInput.Player.Move.started += Move_performed;
-        //playerInput.Player.Move.canceled += Move_performed;
+
 
         playerInput.Player.PlaceBlock.started += PlaceBlock_started;
-        playerInput.Player.PlaceStructure.started += PlaceStructure_started;
         playerInput.Player.DestroyBlock.started += DestroyBlock_started;
         playerInput.Player.NoClip.started += NoClip_started;
+        playerInput.Player.Inventory.started += Inventory_started;
 
-        playerInput.Enable();
+        playerInput.Player.PlaceStructure.started += PlaceStructure_started;
+        playerInput.Player.EscapeMenu.started += EscapeMenuStarded;
+
+        playerInput.Player.TestKey1.started += TestKey1_started;
+        playerInput.Player.TestKey2.started += TestKey2_started;
+    }
+
+    private void TestKey2_started(UnityEngine.InputSystem.InputAction.CallbackContext obj)
+    {
+        testSaving();
+    }
+
+    /// <summary>
+    /// /
+    /// </summary>
+    /// <param name="obj"></param>
+    private void TestKey1_started(UnityEngine.InputSystem.InputAction.CallbackContext obj)
+    {
+        testLoading();
     }
 
     private void NoClip_started(UnityEngine.InputSystem.InputAction.CallbackContext obj) => noClip = !noClip;
+    private void Inventory_started(UnityEngine.InputSystem.InputAction.CallbackContext obj) => inInventory = !inInventory;
 
-    private void PlaceBlock_started(UnityEngine.InputSystem.InputAction.CallbackContext obj) => placeBlock = true;
+    private void PlaceBlock_started(UnityEngine.InputSystem.InputAction.CallbackContext obj) => UseItem();
+    private void DestroyBlock_started(UnityEngine.InputSystem.InputAction.CallbackContext obj) => HandleLeftClick();
+
+
     private void PlaceStructure_started(UnityEngine.InputSystem.InputAction.CallbackContext obj) => placeStructure = true;
-    private void DestroyBlock_started(UnityEngine.InputSystem.InputAction.CallbackContext obj) => destroyBlock = true;
 
+    private void EscapeMenuStarded(UnityEngine.InputSystem.InputAction.CallbackContext obj) => EscapeSys();
     private void OnEnable() => playerInput.Enable();
     private void OnDisable() => playerInput.Disable();
 
+    int atackdowdtime;
     void Update()
     {
-        PlaceCursorBlock();
-        GetInput();
-        SetRotation();
-        SelectBlock();
+        if(EscapeMenuGO.IsActive()||IsConsoleOpenned||inInventory)
+                {
+            Cursor.lockState = CursorLockMode.None;
+        }
+        else 
+        { 
+            
+            PlaceCursorBlock();
+            GetInput();
+            SetRotation();
+            SelectBlock();
+            Cursor.lockState = CursorLockMode.Locked;
+        }
+        controller.GetMovement(input, isSprinting);
+        SetArmor();
+        barSystem.SetHealth(controller.CharacterStats.CurrentHealth);
+        barSystem.SetStamina(controller.CharacterStats.CurrentStamina);
 
-        movement = (transform.forward * input.z + transform.right * input.x) * speed * Time.deltaTime;
-        if (isSprinting)
-            movement *= sprintSpeed;
-        // if (false)
-        // {
-        //     movement = CheckCollisionSides(movement);
-        //     velocity.y = CheckGround(velocity.y);
-        //     if (!isGrounded)
-        //     {
-        //         velocity += Vector3.up * gravity * Time.deltaTime / 1;
-        //     }
-        //     if (isGrounded)
-        //     {
-        //         velocity.y = Mathf.Clamp(input.y, 0, 1) * jumpHeight;
-        //     }
-        // }
-        // else
-        // {
-            movement += transform.up * input.y * speed * Time.deltaTime;
-            velocity.y = 0;
-        // }
+    }
 
-        transform.position += (velocity + movement);
+
+    private void testSaving()
+    {
+        tab = inventory.GetItemsForSaving();
+        inventory.TempClearInventory();
+    }
+
+    private void testLoading()
+    {
+        inventory.LoadItems(tab);
+    }
+
+    private void FixedUpdate()
+    {
+        if (HitResponder.Atack)
+        {
+            atackdowdtime++;
+        }
+        if (atackdowdtime >= 50)
+        {
+            HitResponder.Atack = false;
+        }
     }
     void GetInput()
     {
@@ -118,62 +176,33 @@ public class PlayerController : MonoBehaviour
         scroll = playerInput.Player.SelectHotbarSlot.ReadValue<float>();
 
         mouseInput = playerInput.Player.Look.ReadValue<Vector2>();
-    }
-
-    private Vector3 CheckCollisionSides(Vector3 move)
-    {
-        for (int i = -(int)(playerHeight / 2); i < (int)(playerHeight / 2); i++)
-        {
-            Vector3 block = new Vector3(transform.position.x, 
-                transform.position.y + i + 1, 
-                transform.position.z) + move;
-
-            for (int j = 0; j < 4; j++)
-            {
-                int blockId = 0;
-                if (worldClass.TryGetBlock(block + fourCorners[j] * playerWidth, ref blockId) 
-                    && blockId >= 0 
-                    && worldClass.blockTypesList.areSolid[blockId])
-                {
-                    return Vector3.zero;
-                }
-            }
-        }
-        return move;
-    }
-    Vector3[] fourCorners = new Vector3[] {
-        new Vector3(-1, 0, -1),
-        new Vector3(1,  0, -1),
-        new Vector3(1,  0,  1),
-        new Vector3(-1, 0,  1)
-    };
-    private float CheckGround(float upSpeed)
-    {
-        Vector3 downBlock = new Vector3(transform.position.x, transform.position.y + upSpeed - playerHeight / 2, transform.position.z);
         
-        for (int i = 0; i < 4; i++)
+    }
+
+    public void OnDestroy()
+    {
+        EnemyMenager.Destroy();
+        ItemMenager.Destroy();
+        RecipeMenager.Destroy();
+    }
+    private void HandleLeftClick()
+    {
+        if (SelectedItem is Weapon)
         {
-            if (worldClass.blockTypesList.areSolid[worldClass.GetBlock(downBlock + fourCorners[i] * playerWidth)])
-            {
-                isGrounded = true;
-                return 0;
-            }
+            AtackHitbox.SetActive(true);
+            HitResponder.Damage = ((Weapon)SelectedItem).AtackDamage;
+            HitResponder.Atack = true;
+            atackdowdtime = 0;
         }
-        isGrounded = false;
-        return upSpeed;
+        else
+        {
+            DestroyBlock();
+            AtackHitbox.SetActive(false);
+        }
     }
 
     private void SelectBlock()
     {
-        if (scroll != 0)
-        {
-            placingBlockID += scroll > 0 ? 1 : -1;
-            if (placingBlockID >= worldClass.Materials.Count) placingBlockID = 1;
-            if (placingBlockID <= 0) placingBlockID = worldClass.Materials.Count - 1;
-
-            BlockDisplay.text = "Selected: " + worldClass.blockTypesList.Names[placingBlockID];
-        }
-
         if (HighlightBlock.gameObject.activeSelf)
         {
             int a = 0;
@@ -195,6 +224,22 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    public void DestroyBlock()
+    {
+        if (!IsConsoleOpenned)
+            if (!inInventory)
+                if (HighlightBlock.gameObject.activeSelf)
+                {
+                    int blockDestroyed = 0;
+                    worldClass.TrySetBlock(HighlightBlock.position, 0, ref blockDestroyed);
+                }
+    }
+    public void PlaceBlock(int BlockID)
+    {
+        worldClass.TryPlaceBlock(HighlightPlaceBlock.position, BlockID);
+        placeBlock = false;
+    }
+
     private void PlaceCursorBlock()
     {
         float step = checkIncrement;
@@ -207,13 +252,18 @@ public class PlayerController : MonoBehaviour
             int blockId = 0;
             if (worldClass.TryGetBlock(pos, ref blockId) && blockId != 0)
             {
-                HighlightBlock.position = new Vector3(Mathf.Floor(pos.x), Mathf.Floor(pos.y), Mathf.Floor(pos.z));
-                HighlightBlock.gameObject.SetActive(true);
+                if (worldClass.blockTypesList.areSolid[worldClass.GetBlock(pos)])
+                {
+                    HighlightBlock.position = new Vector3(Mathf.Floor(pos.x), Mathf.Floor(pos.y), Mathf.Floor(pos.z));
+                    HighlightBlock.gameObject.SetActive(true);
 
-                HighlightPlaceBlock.position = new Vector3(Mathf.Floor(lastPos.x), Mathf.Floor(lastPos.y), Mathf.Floor(lastPos.z));
-                HighlightPlaceBlock.gameObject.SetActive(true);
+                    HighlightPlaceBlock.position = new Vector3(Mathf.Floor(lastPos.x), Mathf.Floor(lastPos.y), Mathf.Floor(lastPos.z));
+                    HighlightPlaceBlock.gameObject.SetActive(SelectedItem is Placeable);
+                    return;
 
-                return;
+                }
+
+                
             }
             lastPos = pos;
             step += checkIncrement;
@@ -232,4 +282,82 @@ public class PlayerController : MonoBehaviour
         Camera.localRotation = Quaternion.Euler(yRotation, 0f, 0f);
         //Camera.Rotate(Vector3.right * -mouseInput.y);
     }
+
+
+    [Header("InventoryUI")]
+    public GameObject itempickup;
+    public GameObject InventorySys;
+    private GameObject Backpack;
+    private GameObject cursorSlot;
+    private Toolbar toolbar;
+    public bool _inInventory = false;
+    public bool _inContainer = false;
+    public bool inContainer = false;
+    private Inventory inventory;
+    [SerializeField] private EscapeMenu EscapeMenuGO;
+
+
+    public void EscapeSys()
+    {
+        if (EscapeMenuGO.IsActive())
+        {
+            EscapeMenuGO.ExitMenu();
+        }
+        else EscapeMenuGO.EnterMenu();
+    }
+    public bool inInventory
+    {
+        get { return _inInventory; }
+
+        set
+        {
+            if (!IsConsoleOpenned)
+            {
+                _inInventory = value;
+                if (_inInventory)
+                {
+                    Cursor.lockState = CursorLockMode.None;
+                    inventory.OpenInventory();
+                }
+                else
+                {
+                    Cursor.lockState = CursorLockMode.Locked;
+                    inventory.CloseInventory();
+                }
+            }
+
+        }
+    }
+
+    public ItemStack PickUpItem(ItemStack item)
+    {
+        return inventory.PickUpItem(item);
+        
+    }
+    Item SelectedItem;
+    public Item SelectItem { set => SelectedItem = value; }
+    public void UseItem()
+    {
+        if (!IsConsoleOpenned&&!inInventory)
+        {
+            if(SelectedItem!=null)
+            if(SelectedItem.itemtype == Itemtype.Building)
+                    if(buildingBlocked.CheckBuilding())
+                        toolbar.UseItem(HighlightPlaceBlock.gameObject.activeSelf);
+        }
+    }
+    
+    public void SetArmor()
+    {
+        
+        Stats def = inventory.GetItemStats().Find(x => x.StatName == StatEnum.Armor);
+        if(def!=null)
+        controller.CharacterStats.SetArmor((int)def.Value);
+        else
+            controller.CharacterStats.SetArmor(0);
+    }
+
+
 }
+
+

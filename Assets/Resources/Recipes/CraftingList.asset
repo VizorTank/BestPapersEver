@@ -1,0 +1,122 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ccd255cbe5ec13b4f843ac16f09eff51, type: 3}
+  m_Name: CraftingList
+  m_EditorClassIdentifier: Assembly-CSharp::CraftingList
+  Recipes:
+  - name: Planks
+    ItemName: Planks
+    AmountCrafted: 4
+    CraftingLevel: 0
+    CraftinRecipe:
+    - ItemName: Wood
+      Amount: 1
+  - name: Woodhelmet
+    ItemName: Wood_Helmet
+    AmountCrafted: 1
+    CraftingLevel: 1
+    CraftinRecipe:
+    - ItemName: Planks
+      Amount: 5
+  - name: WoodChestPlate
+    ItemName: Wood_Chestplate
+    AmountCrafted: 1
+    CraftingLevel: 1
+    CraftinRecipe:
+    - ItemName: Planks
+      Amount: 10
+  - name: WoodLeggings
+    ItemName: Wood_Leggings
+    AmountCrafted: 1
+    CraftingLevel: 1
+    CraftinRecipe:
+    - ItemName: Planks
+      Amount: 7
+  - name: WoodBoots
+    ItemName: Wood_Boots
+    AmountCrafted: 1
+    CraftingLevel: 1
+    CraftinRecipe:
+    - ItemName: Planks
+      Amount: 4
+  - name: CopperBlock
+    ItemName: Copper_Block
+    AmountCrafted: 1
+    CraftingLevel: 3
+    CraftinRecipe:
+    - ItemName: Copper_Bar
+      Amount: 9
+  - name: IronBlock
+    ItemName: Iron_Block
+    AmountCrafted: 1
+    CraftingLevel: 3
+    CraftinRecipe:
+    - ItemName: Iron_Bar
+      Amount: 9
+  - name: CoalBlock
+    ItemName: Coal_Block
+    AmountCrafted: 1
+    CraftingLevel: 3
+    CraftinRecipe:
+    - ItemName: Coal
+      Amount: 9
+  - name: GoldBlock
+    ItemName: Gold_Block
+    AmountCrafted: 1
+    CraftingLevel: 3
+    CraftinRecipe:
+    - ItemName: Gold_Bar
+      Amount: 9
+  - name: CopperBar
+    ItemName: Copper_Bar
+    AmountCrafted: 1
+    CraftingLevel: 3
+    CraftinRecipe:
+    - ItemName: Copper_Ore
+      Amount: 5
+  - name: IronBar
+    ItemName: Iron_Bar
+    AmountCrafted: 1
+    CraftingLevel: 3
+    CraftinRecipe:
+    - ItemName: Iron_Ore
+      Amount: 5
+  - name: GoldBar
+    ItemName: Gold_Bar
+    AmountCrafted: 1
+    CraftingLevel: 3
+    CraftinRecipe:
+    - ItemName: Gold_Ore
+      Amount: 5
+  - name: Bizmuth_Crystal
+    ItemName: Bizmuth_Crystal
+    AmountCrafted: 1
+    CraftingLevel: 3
+    CraftinRecipe:
+    - ItemName: Bizmuth_Ore
+      Amount: 5
+  - name: TinBar
+    ItemName: Tin_Bar
+    AmountCrafted: 1
+    CraftingLevel: 3
+    CraftinRecipe:
+    - ItemName: Tin_Ore
+      Amount: 5
+  - name: BronzeBar
+    ItemName: Bronze_Bar
+    AmountCrafted: 3
+    CraftingLevel: 3
+    CraftinRecipe:
+    - ItemName: Tin_Bar
+      Amount: 1
+    - ItemName: Copper_Bar
+      Amount: 3
