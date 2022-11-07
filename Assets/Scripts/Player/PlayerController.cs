@@ -232,6 +232,18 @@ public class PlayerController : MonoBehaviour
                 {
                     int blockDestroyed = 0;
                     worldClass.TrySetBlock(HighlightBlock.position, 0, ref blockDestroyed);
+                    List<string> DropTable = worldClass.GetBlockTypesList().blockTypes[blockDestroyed].DropTable;
+                    foreach (string itemname in DropTable)
+                    {
+                        Item item = ItemMenager.GetItem(itemname);
+                        if (item != null)
+                        {
+                            GameObject a = Instantiate(itempickup) as GameObject;
+                            a.GetComponent<ItemFizician>().item = item;
+                            a.GetComponent<ItemFizician>().amount = 1;
+                            a.transform.position = HighlightBlock.position + new Vector3(0.5f,0.5f,0.5f);
+                        }
+                    }
                 }
     }
     public void PlaceBlock(int BlockID)

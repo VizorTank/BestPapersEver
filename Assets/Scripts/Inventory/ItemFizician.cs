@@ -47,7 +47,7 @@ public class ItemFizician : MonoBehaviour
         
         FindGroundBlock();
 
-        if (transform.position.y <= DownBlock.y + 1)
+        if (transform.position.y < DownBlock.y + 1)
         {
             transform.position = new Vector3(transform.position.x, DownBlock.y + 1, transform.position.z);
             isGrounded = true;
@@ -62,10 +62,11 @@ public class ItemFizician : MonoBehaviour
     {
 
         Vector3 pos = transform.position;
-
-        if (worldClass.GetBlock(pos) != 0)
+        int type = 0;
+        worldClass.TryGetBlock(pos, ref type);
+        if (type != 0)
         {
-            if (worldClass.blockTypesList.areSolid[worldClass.GetBlock(pos)])
+            if (worldClass.blockTypesList.areSolid[type])
             {
                 DownBlock = new Vector3(Mathf.Floor(pos.x), Mathf.Floor(pos.y-0.1f), Mathf.Floor(pos.z));
                 return;

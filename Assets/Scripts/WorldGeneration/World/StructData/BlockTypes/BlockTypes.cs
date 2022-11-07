@@ -17,5 +17,5 @@ public class BlockType
 
     public bool isGrowing;
 
-    public List<int> DropTable;
+    public List<string> DropTable;
 }

@@ -74,7 +74,8 @@
                     "id": "829393f0-723a-41ca-a838-7bd8c610db93",
                     "expectedControlType": "Button",
                     "processors": "",
-                    "interactions": ""
+                    "interactions": "",
+                    "initialStateCheck": false
                 },
                 {
                     "name": "Console",
@@ -82,7 +83,8 @@
                     "id": "34d68248-7b8a-4e2d-b186-a95c113321e8",
                     "expectedControlType": "Button",
                     "processors": "",
-                    "interactions": ""
+                    "interactions": "",
+                    "initialStateCheck": false
                 },
                 {
                     "name": "Inventory",
@@ -90,7 +92,8 @@
                     "id": "c9f1f67a-dad4-489d-b5c0-72c429160a07",
                     "expectedControlType": "Button",
                     "processors": "",
-                    "interactions": ""
+                    "interactions": "",
+                    "initialStateCheck": false
                 },
                 {
                     "name": "InventoryAdv",
@@ -98,7 +101,8 @@
                     "id": "4065bcb2-9b21-43fd-aae1-952116309ac6",
                     "expectedControlType": "Button",
                     "processors": "",
-                    "interactions": ""
+                    "interactions": "",
+                    "initialStateCheck": false
                 },
                 {
                     "name": "Confirm",
@@ -106,7 +110,8 @@
                     "id": "d2c73c6e-2a3f-49bb-8e53-b2d29686d6cd",
                     "expectedControlType": "Button",
                     "processors": "",
-                    "interactions": ""
+                    "interactions": "",
+                    "initialStateCheck": false
                 },
                 {
                     "name": "PlaceStructure",
@@ -114,7 +119,8 @@
                     "id": "b114ebd4-88a2-459c-9fb8-a992c7833f5a",
                     "expectedControlType": "Button",
                     "processors": "",
-                    "interactions": ""
+                    "interactions": "",
+                    "initialStateCheck": false
                 },
                 {
                     "name": "EscapeMenu",
@@ -122,7 +128,8 @@
                     "id": "c316617b-7e5c-4a59-8716-c13b9e15d467",
                     "expectedControlType": "Button",
                     "processors": "",
-                    "interactions": ""
+                    "interactions": "",
+                    "initialStateCheck": false
                 },
                 {
                     "name": "TestKey1",
@@ -130,7 +137,8 @@
                     "id": "422cf3fa-fe98-4496-afb5-69537d65fc91",
                     "expectedControlType": "Button",
                     "processors": "",
-                    "interactions": ""
+                    "interactions": "",
+                    "initialStateCheck": false
                 },
                 {
                     "name": "TestKey2",
@@ -138,7 +146,8 @@
                     "id": "c1f67861-5e91-4237-908f-d3aea5d105df",
                     "expectedControlType": "Button",
                     "processors": "",
-                    "interactions": ""
+                    "interactions": "",
+                    "initialStateCheck": false
                 }
             ],
             "bindings": [
@@ -454,17 +463,6 @@
                     "name": "positive",
                     "id": "8630606e-ce92-4782-8c2c-4e2b519ed77c",
                     "path": "<Keyboard>/space",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "Keyboard&Mouse",
-                    "action": "Jump",
-                    "isComposite": false,
-                    "isPartOfComposite": true
-                },
-                {
-                    "name": "negative",
-                    "id": "6e99fa64-8005-4146-bfa9-5266686de8c1",
-                    "path": "<Keyboard>/leftCtrl",
                     "interactions": "",
                     "processors": "",
                     "groups": "Keyboard&Mouse",

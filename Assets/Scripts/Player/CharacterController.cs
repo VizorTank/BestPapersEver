@@ -195,10 +195,11 @@ public class CharacterController : MonoBehaviour
     {
 
             Vector3 pos = transform.position -new Vector3(0f,(CharacterStats.height/2) *1.1f,0f);
-            
-            if (worldClass.GetBlock(pos) != 0)
+        int type = 0;
+        worldClass.TryGetBlock(pos, ref type);
+            if (type != 0)
             {
-                if (worldClass.blockTypesList.areSolid[worldClass.GetBlock(pos)])
+                if (worldClass.blockTypesList.areSolid[type])
                 {
                     DownBlock = new Vector3(Mathf.Floor(pos.x), Mathf.Floor(pos.y), Mathf.Floor(pos.z));
                     return;
@@ -217,10 +218,11 @@ public class CharacterController : MonoBehaviour
     {
 
         Vector3 pos = transform.position + new Vector3(0f, (CharacterStats.height / 2) * 1.1f, 0f);
-
-        if (worldClass.GetBlock(pos) != 0)
+        int type = 0;
+        worldClass.TryGetBlock(pos, ref type);
+        if (type != 0)
         {
-            if (worldClass.blockTypesList.areSolid[worldClass.GetBlock(pos)])
+            if (worldClass.blockTypesList.areSolid[type])
             {
                 UpBlock = new Vector3(Mathf.Floor(pos.x), Mathf.Floor(pos.y), Mathf.Floor(pos.z));
                 return;
@@ -240,10 +242,11 @@ public class CharacterController : MonoBehaviour
         for (int i = 0; i < CharacterStats.height; i++)
         {
             Vector3 pos = transform.position + new Vector3(0,(-CharacterStats.height /4 + i) ,0) + Vector3.forward * CharacterStats.width * 1.1f;
-
-            if (worldClass.GetBlock(pos) != 0)
+            int type = 0;
+            worldClass.TryGetBlock(pos, ref type);
+            if (type != 0)
             {
-                if (worldClass.blockTypesList.areSolid[worldClass.GetBlock(pos)])
+                if (worldClass.blockTypesList.areSolid[type])
                 {
                     LimiterFront = (int)Mathf.Floor(pos.z);
                     return;
@@ -258,10 +261,11 @@ public class CharacterController : MonoBehaviour
         for (int i = 0; i < CharacterStats.height; i++)
         {
             Vector3 pos = transform.position + new Vector3(0, (-CharacterStats.height / 4 + i), 0) - Vector3.forward * CharacterStats.width * 1.1f;
-
-            if (worldClass.GetBlock(pos) != 0)
+            int type = 0;
+            worldClass.TryGetBlock(pos, ref type);
+            if (type != 0)
             {
-                if (worldClass.blockTypesList.areSolid[worldClass.GetBlock(pos)])
+                if (worldClass.blockTypesList.areSolid[type])
                 {
                     LimiterBack = (int)Mathf.Floor(pos.z) + 1;
                     return;
@@ -274,9 +278,11 @@ public class CharacterController : MonoBehaviour
     private void Findlegblock()
     {
         Vector3 pos = transform.position + new Vector3(0, (-CharacterStats.height / 4 ), 0);
-        if (worldClass.GetBlock(pos) != 0)
+        int type = 0;
+        worldClass.TryGetBlock(pos, ref type);
+        if (type != 0)
         {
-            if (worldClass.blockTypesList.areLiquid[worldClass.GetBlock(pos)])
+            if (worldClass.blockTypesList.areLiquid[type])
             {
                 inLiquid = true;
                 return;
@@ -291,9 +297,11 @@ public class CharacterController : MonoBehaviour
         {
             Vector3 pos = transform.position + new Vector3(0, (-CharacterStats.height / 4 + i), 0) + Vector3.right * CharacterStats.width * 1.1f;
 
-            if (worldClass.GetBlock(pos) != 0)
+            int type = 0;
+            worldClass.TryGetBlock(pos, ref type);
+            if (type != 0)
             {
-                if (worldClass.blockTypesList.areSolid[worldClass.GetBlock(pos)])
+                if (worldClass.blockTypesList.areSolid[type])
                 {
                     LimiterRight = (int)Mathf.Floor(pos.x);
                     return;
@@ -308,10 +316,11 @@ public class CharacterController : MonoBehaviour
         for (int i = 0; i < CharacterStats.height; i++)
         {
             Vector3 pos = transform.position + new Vector3(0, (-CharacterStats.height / 4 + i), 0) - Vector3.right * CharacterStats.width * 1.1f;
-
-            if (worldClass.GetBlock(pos) != 0)
+            int type = 0;
+            worldClass.TryGetBlock(pos, ref type);
+            if (type != 0)
             {
-                if (worldClass.blockTypesList.areSolid[worldClass.GetBlock(pos)])
+                if (worldClass.blockTypesList.areSolid[type])
                 {
                     LimiterLeft = (int)Mathf.Floor(pos.x) + 1;
                     return;
