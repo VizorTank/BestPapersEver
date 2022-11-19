@@ -42,6 +42,7 @@ public class BlockTypesList : ScriptableObject
         
         areInvisible = new NativeArray<bool>(blockTypes.Count, Allocator.Persistent);
         areReplacable = new NativeArray<bool>(blockTypes.Count, Allocator.Persistent);
+
         areLiquid = new NativeArray<bool>(blockTypes.Count, Allocator.Persistent);
         Texture texture = textures[1];
         TextureArray = new Texture2DArray(texture.width, texture.height, blockTypes.Count - 1, TextureFormat.RGBA32, false);

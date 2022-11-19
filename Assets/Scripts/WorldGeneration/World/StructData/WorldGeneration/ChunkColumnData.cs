@@ -45,4 +45,26 @@ public class ChunkColumnData
             }
         }
     }
+
+    public void GenerateTreesPosition()
+    {
+        float2 chunkPos = ColumnCoordinates * VoxelData.ChunkSideSize;
+        BiomeAttributesStruct biome = _world.GetBiome(BiomeIndex);
+        if (chunkPos.y + VoxelData.ChunkSize.y < biome.solidGroundHeight) return;
+
+        int treeCount = (int)(math.pow(0.5 + noise.snoise(chunkPos) / 2, 1 / biome.treeThreshold) * biome.treeMaxCount);
+
+        if (treeCount <= 0) return;
+        
+        var generationBiome = ChunkGeneraionBiomes;
+        // treeCount = 1;
+        for (int i = 0; i < treeCount; i++)
+        {
+            int x = (int)((0.5 + noise.snoise(new float2(chunkPos.x + i, chunkPos.y)) / 2) * VoxelData.ChunkSize.x) + (int)chunkPos.x;
+            int z = (int)((0.5 + noise.snoise(new float2(chunkPos.x, chunkPos.y + i)) / 2) * VoxelData.ChunkSize.z) + (int)chunkPos.y;
+            int y = generationBiome.CalculateTerrainHeight(new int3(x, 0, z));
+            if (y <= generationBiome.WaterLevel) continue;
+            _world.CreateStructure(new int3(x - 2, y + 1, z - 2), 0);
+        }
+    }
 }

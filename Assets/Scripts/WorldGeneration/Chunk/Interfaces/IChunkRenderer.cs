@@ -6,5 +6,6 @@ public interface IChunkRenderer
     public void Destroy();
     public bool CanAccess();
     public void Update();
+    public void UpdateData();
     public void Unload();
 }

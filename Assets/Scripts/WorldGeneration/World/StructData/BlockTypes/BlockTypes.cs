@@ -11,6 +11,7 @@ public class BlockType
     public bool isInvisible;
 
     public bool isReplaceable;
+    public bool isReplaceableByStructure;
 
     public bool isFalling;
     public bool isGlowing;

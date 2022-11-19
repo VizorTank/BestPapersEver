@@ -118,6 +118,8 @@ public class ChunkRenderer : IChunkRenderer
         _requireUpdate = true;
     }
 
+    public void UpdateData() => Update();
+
     public bool RequireProcessing()
     {
         return _requireUpdate || _processing;

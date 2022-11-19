@@ -94,6 +94,9 @@ void Vote(uint3 id : SV_DispatchThreadID) {
     // if (!_BlockIdsBuffer[GetIndex(_BlockSideDataBuffer[id.x].position.xyz)]) return;
     _VoteBuffer[id.x] = 0;
     if (!_BlockSideDataBuffer[id.x].type) return;
+    // TODO: REMOVEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
+    if (_BlockSideDataBuffer[id.x].type != 4) return;
+
     int3 position = _BlockSideDataBuffer[id.x].position.xyz + neighbours[_BlockSideDataBuffer[id.x].rotation];
     // _VoteBuffer[id.x] = _BlockTypesBuffer[GetIndex(position)].isSolid;
     if (position.x >= _ChunkSize.x || position.x < 0 ||

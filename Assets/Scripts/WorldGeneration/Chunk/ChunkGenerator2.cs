@@ -82,7 +82,7 @@ public class ChunkGenerator2
         BiomeAttributesStruct biome = _chunk.GetBiome();
         if (chunkPos.y + VoxelData.ChunkSize.y < biome.solidGroundHeight) return;
 
-        int treeCount = (int)(math.pow(0.5 + noise.snoise(chunkPos) / 2, 1 / biome.treeThreshold) * biome.treeMaxCount);
+        int treeCount = (int)(math.pow(0.5 + noise.snoise(new float2(chunkPos.x, chunkPos.z)) / 2, 1 / biome.treeThreshold) * biome.treeMaxCount);
 
         if (treeCount <= 0) return;
         

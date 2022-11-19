@@ -11,26 +11,19 @@ public struct CreateClustersJob : IJob
 
     // Output
     public NativeArray<int> blocksClusterIdDatas;
-
     public NativeList<ClusterCreationStruct> Clusters;
-    /*public NativeList<int> clusterBlockIdDatas;
-    public NativeList<int3> clusterSizeDatas;
-    public NativeList<int3> clusterPositionDatas;
-    public NativeList<ClusterSidesVisibility> clusterSidesVisibilityData;*/
 
     // Const
     [ReadOnly] public NativeArray<int3> axis;
     [ReadOnly] public int3 chunkSize;
+    
     public void Execute()
     {
         NativeArray<bool> blockChecked = new NativeArray<bool>(blockIdDatas.Length, Allocator.Temp);
-        for (int i = 0; i < blockChecked.Length; i++)
-        {
-            blockChecked[i] = false;
-        }
+        NativeArray<int> clusterSize = new NativeArray<int>(3, Allocator.Temp);
 
         int clusterSizeDatasIndex = 0;
-
+        // For each block
         for (int x = 0; x < chunkSize.x; x++)
         {
             for (int y = 0; y < chunkSize.y; y++)
@@ -38,22 +31,23 @@ public struct CreateClustersJob : IJob
                 for (int z = 0; z < chunkSize.z; z++)
                 {
                     int idx = x + (y + z * chunkSize.y) * chunkSize.x;
+                    // Check if block belongs to cluster
                     if (blockChecked[idx] || blockIdDatas[idx] == 0) continue;
-
-                    // Unnecessary
-                    blockChecked[idx] = true;
 
                     int blockId = blockIdDatas[idx];
                     int clusterId = clusterSizeDatasIndex;
-
-                    NativeArray<int> clusterSize = new NativeArray<int>(3, Allocator.Temp);
+                    
                     clusterSize[0] = 1;
                     clusterSize[1] = 1;
                     clusterSize[2] = 1;
 
+                    // For each axis (Z => Y => X)
                     for (int axisIndex = 0; axisIndex < 3; axisIndex++)
                     {
+                        // Length of cluster in axisIndex axis
                         int nextCount = 1;
+
+                        // While cluster can be bigger
                         while (true)
                         {
                             int3 shift = axis[axisIndex] * nextCount;
@@ -65,15 +59,16 @@ public struct CreateClustersJob : IJob
                             bool flag = true;
                             int blocksToAddIndex = 0;
                             NativeArray<int> blocksToAdd = new NativeArray<int>(clusterSize[0] * clusterSize[1], Allocator.Temp);
-                            // Check block/Line/Rectangle
-                            // Z
+                            // Check if can add to cluster block/Line/Rectangle
+                            // Z (Equals to 1 for checking Z axis)
                             for (int i = 0; i < clusterSize[0]; i++)
                             {
-                                // Y
+                                // Y (Equals to 1 for checking Z and Y axis)
                                 for (int j = 0; j < clusterSize[1]; j++)
                                 {
                                     int3 pos = new int3(x + shift.x, y + j + shift.y, z + i + shift.z);
                                     int index = pos.x + (pos.y + pos.z * chunkSize.y) * chunkSize.x;
+                                    // Check if block belongs to another cluster or is different type
                                     if (blockIdDatas[index] != blockId || blockChecked[index])
                                     {
                                         flag = false;
@@ -85,6 +80,7 @@ public struct CreateClustersJob : IJob
                             }
                             if (!flag) break;
 
+                            // Increase length of cluster in axisIndex axis
                             nextCount++;
                             // Add block to cluster
                             foreach (int blockIndex in blocksToAdd)
@@ -94,34 +90,24 @@ public struct CreateClustersJob : IJob
                             }
                             blocksToAdd.Dispose();
                         }
+                        // Set cluster size in axisIndex axis
                         clusterSize[axisIndex] = nextCount;
                     }
-
                     
-                    /*clusterSizeDatas.Add(new int3(clusterSize[2], clusterSize[1], clusterSize[0]));
-                    clusterPositionDatas.Add(new int3(x, y, z));
-                    clusterBlockIdDatas.Add(blockId);*/
-                    ClusterSidesVisibility clusterSidesVisibility = new ClusterSidesVisibility();
-                    for (int i = 0; i < 6; i++)
-                    {
-                        clusterSidesVisibility[i] = 0;
-                    }
-                    //clusterSidesVisibilityData.Add(clusterSidesVisibility);
+                    // Create and add cluster
                     var cluster = new ClusterCreationStruct()
                     {
                         BlockId = blockId,
                         Position = new int3(x, y, z),
                         Size = new int3(clusterSize[2], clusterSize[1], clusterSize[0]),
-                        Visibility = clusterSidesVisibility
+                        Visibility = new ClusterSidesVisibility()
                     };
                     Clusters.Add(cluster);
-                    
-                    clusterSize.Dispose();
-                    
                     clusterSizeDatasIndex = Clusters.Length;
                 }
             }
         }
+        clusterSize.Dispose();
         blockChecked.Dispose();
     }
 }

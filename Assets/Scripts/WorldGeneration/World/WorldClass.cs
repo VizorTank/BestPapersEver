@@ -266,7 +266,9 @@ public class WorldClass : MonoBehaviour, IWorld
         {
             if (item.Value != null)
             {
+                Profiler.BeginSample("Render");
                 item.Value.Render();
+                Profiler.EndSample();
             }
             else
                 i++;
@@ -337,7 +339,7 @@ public class WorldClass : MonoBehaviour, IWorld
         int3 p = GetLocalPos(position);
         bool result = GetChunk(chunkPos).TrySetBlock(p, blockID, out int retBlockId);
         replacedBlockId = retBlockId;
-        Debug.Log($"Placed block: {p.x}, {p.y}, {p.z} Pos: {position.x}, {position.y}, {position.z}");
+        // Debug.Log($"Placed block: {p.x}, {p.y}, {p.z} Pos: {position.x}, {position.y}, {position.z}");
         return result;
     }
 

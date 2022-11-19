@@ -40,7 +40,8 @@ public class ChunkManipulator
         {
             _blocksId = generatedBlocks;
             // Debug.Log("Created");
-            _chunk.Update();
+            _chunk.UpdateData();
+            // _chunk.Update();
             _chunk.UpdateNeighbours();
         }
     }
@@ -95,8 +96,9 @@ public class ChunkManipulator
         int x = p % VoxelData.ChunkSize.x;
         int y = p / VoxelData.ChunkSize.x % VoxelData.ChunkSize.y;
         int z = p / VoxelData.ChunkSize.x / VoxelData.ChunkSize.y;
-        Debug.Log($"P {p}, {x}, {y}, {z}");
-        _chunk.Update();
+        // Debug.Log($"P {p}, {x}, {y}, {z}");
+        _chunk.UpdateData();
+        // _chunk.Update();
     }
         
     #endregion
@@ -108,7 +110,8 @@ public class ChunkManipulator
         if (data.BlockIds != null)
         {
             _blocksId = new NativeArray<int>(data.BlockIds, Allocator.Persistent);
-            _chunk.Update();
+            // _chunk.Update();
+            _chunk.UpdateData();
         }
     }
 
@@ -123,7 +126,8 @@ public class ChunkManipulator
             {
                 PlaceStructure(structureToLoad.position, structureToLoad.id);
             }
-            _chunk.Update();
+            // _chunk.Update();
+            _chunk.UpdateData();
         }
     }
 
@@ -144,9 +148,8 @@ public class ChunkManipulator
                     int structureBlockId = structure.Blocks[sBlockPos.x][sBlockPos.y][sBlockPos.z];
                     if (_world.GetBlockTypesList().areReplacable[blockId] ||
                         !_world.GetBlockTypesList().areReplacable[structureBlockId])
-                    {
-                        _blocksId[VoxelData.GetIndex(new int3(x, y, z))] = structureBlockId;
-                    }
+                        if (_world.GetBlockTypesList().blockTypes[blockId].isReplaceableByStructure)
+                            _blocksId[VoxelData.GetIndex(new int3(x, y, z))] = structureBlockId;
                 }
             }
         }

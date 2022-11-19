@@ -1,8 +1,10 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.Profiling;
 
 public class ChunkRendererInstancing : IChunkRenderer
 {
@@ -38,7 +40,8 @@ public class ChunkRendererInstancing : IChunkRenderer
     private int numGroupScanThreadGroups;
 
     int[] blocksId;
-    int[] blockIsTransparent;
+
+    private JobHandle _fillDataJobHandle;
 
     private struct MeshProperties {
         public Vector3 position;
@@ -71,7 +74,7 @@ public class ChunkRendererInstancing : IChunkRenderer
 
         // Boundary surrounding the meshes we will be drawing.  Used for occlusion.
         bounds = new Bounds(_chunk.GetChunkPosition() + new float3(0.5f, 0.5f, 0.5f), Vector3.one * chunkSize.x * 2);
-        size = GetChunkVolume() * 3;
+        size = GetChunkVolume() * 6;
 
         numThreadGroups = Mathf.CeilToInt(size / 128.0f);
         if (numThreadGroups > 128) {
@@ -125,7 +128,8 @@ public class ChunkRendererInstancing : IChunkRenderer
 
     private void InitializeBuffers(int size)
     {
-        blocksIdsBuffer = new ComputeBuffer(GetChunkVolume(), sizeof(int));
+        Profiler.BeginSample("Creating Instancing Buffers");
+        blocksIdsBuffer = new ComputeBuffer(GetChunkVolume(), sizeof(int), ComputeBufferType.Default, ComputeBufferMode.SubUpdates);
         
         blocksSideDatas = new ComputeBuffer(size, MeshProperties.Size());
         culledPositionsBuffer = new ComputeBuffer(size, MeshProperties.Size());
@@ -134,6 +138,7 @@ public class ChunkRendererInstancing : IChunkRenderer
         scanBuffer = new ComputeBuffer(size, 4);
         groupSumArrayBuffer = new ComputeBuffer(numThreadGroups, 4);
         scannedGroupSumBuffer = new ComputeBuffer(numThreadGroups, 4);
+        Profiler.EndSample();
     }
 
     void CreateArgs(int size)
@@ -194,30 +199,6 @@ public class ChunkRendererInstancing : IChunkRenderer
         blocks.Dispatch(0, chunkSize.x / 8, chunkSize.y / 8, chunkSize.z / 8);
     }
 
-    // void CreateBlocks()
-    // {
-    //     blocksId = new int[GetChunkVolume()];
-    //     for (int x = 0; x < chunkSize.x; x++)
-    //     {
-    //         for (int y = 0; y < chunkSize.y; y++)
-    //         {
-    //             for (int z = 0; z < chunkSize.z; z++)
-    //             {
-    //                 int index = VoxelData.GetIndex(new int3(x, y, z));
-    //                 if (x == 0 || y == 0 || z == 0)
-    //                     blocksId[index] = 0;
-    //                 else
-    //                 {
-    //                     if (y > x + z)
-    //                         blocksId[index] = 0;
-    //                     else
-    //                         blocksId[index] = y % 10;
-    //                 }
-    //             }
-    //         }
-    //     }
-    // }
-
     private Mesh CreateQuad(float width = 1f, float height = 1f) {
         // Create a quad mesh.
         var mesh = new Mesh();
@@ -264,39 +245,13 @@ public class ChunkRendererInstancing : IChunkRenderer
     {
         material.SetBuffer("_BlockSideDataBuffer", culledPositionsBuffer);
 
-        material.SetBuffer("_BlockIdBuffer", blocksIdsBuffer);
-        material.SetBuffer("_BlockIsTransparentBuffer", blocksIsTransparentBuffer);
+        // material.SetBuffer("_BlockIdBuffer", blocksIdsBuffer);
+        // material.SetBuffer("_BlockIsTransparentBuffer", blocksIsTransparentBuffer);
 
-        material.SetTexture("_MainTexArray2", Texture2DArray);
+        // material.SetTexture("_MainTexArray2", Texture2DArray);
 
-        material.SetFloat("AmbientOcclusionIntensity", AmbientOcclusionIntensity);
-        material.SetColor("AmbientOcclusionColor", AmbientOcclusionColor);
-    }
-
-    public void Destroy()
-    {
-        DisposeBuffer(ref blocksIdsBuffer);
-        DisposeBuffer(ref blocksIsTransparentBuffer);
-        DisposeBuffer(ref blocksSideDatas);
-        DisposeBuffer(ref argsBuffer);
-        DisposeBuffer(ref voteBuffer);
-        DisposeBuffer(ref scanBuffer);
-        DisposeBuffer(ref groupSumArrayBuffer);
-        DisposeBuffer(ref scannedGroupSumBuffer);
-        DisposeBuffer(ref culledPositionsBuffer);
-    }
-
-    private void DisposeBuffer(ref ComputeBuffer buffer)
-    {
-        if (buffer != null) {
-            buffer.Release();
-        }
-        buffer = null;
-    }
-
-    public void Render(ChunkNeighbours neighbours)
-    {
-        // throw new System.NotImplementedException();
+        // material.SetFloat("AmbientOcclusionIntensity", AmbientOcclusionIntensity);
+        // material.SetColor("AmbientOcclusionColor", AmbientOcclusionColor);
     }
 
     public void Render()
@@ -310,26 +265,65 @@ public class ChunkRendererInstancing : IChunkRenderer
     {
         Setup();
         _isCreated = true;
-        Update();
+        // Update();
+        UpdateData();
     }
 
     public bool RequireProcessing()
     {
         if (!_isCreated) Init();
-
-        // blocksId = _chunk.GetBlocks().ToArray();
-        // Debug.Log(blocksId.Length);
         
-        
+        // if (_updated)
+        // {
+        //     _updated = false;
+        //     // _fillDataJobHandle.Complete();
+        //     blocksIdsBuffer.EndWrite<int>(GetChunkVolume());
+        //     UpdateData();
+        // }
 
+        return true;
+    }
+
+    private void UpdateShaderData()
+    {
+        Profiler.BeginSample("Updating Instancing");
+        
+        Profiler.BeginSample("Setting Data");
+        // blocksIdsBuffer.BeginWrite<int>(0, GetChunkVolume());
+        blocksIdsBuffer.SetData(_chunk.GetBlocks());
+        // blocksIdsBuffer.EndWrite<int>(GetChunkVolume());
+        Profiler.EndSample();
+
+        Profiler.BeginSample("Setting Material");
         SetMaterialBuffers();
+        Profiler.EndSample();
 
+        Profiler.BeginSample("Run Compute");
         RunCompute();
-        CreateBlockBuffers();
-        Culling();
-        Graphics.DrawMeshInstancedIndirect(mesh, 0, material, bounds, argsBuffer);
+        Profiler.EndSample();
 
-        return false;
+        Profiler.BeginSample("Creating BlockBuffers");
+        CreateBlockBuffers();
+        Profiler.EndSample();
+
+        Profiler.BeginSample("Culling");
+        Culling();
+        Profiler.EndSample();
+
+        Profiler.EndSample();
+    }
+
+    public void Render(ChunkNeighbours neighbours)
+    {
+        if (_updated)
+        {
+            // if (_updatedData)
+            //     blocksIdsBuffer.EndWrite<int>(GetChunkVolume());
+            // _updatedData = false;
+            _updated = false;
+            UpdateShaderData();
+        }
+        Graphics.DrawMeshInstancedIndirect(mesh, 0, material, bounds, argsBuffer);
     }
 
     public bool CanAccess()
@@ -337,13 +331,45 @@ public class ChunkRendererInstancing : IChunkRenderer
         return true;
     }
 
+    private bool _updatedData = false;
+    private bool _updated = false;
+
     public void Update()
     {
         if (!_isCreated) return;
         // blocksId = _chunk.GetBlocks().ToArray();
-        Test();
-        blocksIdsBuffer.SetData(blocksId);
-        // throw new System.NotImplementedException();
+        // UpdateShaderData();
+        _updated = true;
+        // CreateJob();
+    }
+
+    public void UpdateData()
+    {
+        if (!_isCreated) return;
+        // if (!_updatedData)
+        // {
+        //     _updatedData = true;
+        //     _updated = true;
+        //     blocksIdsBuffer.BeginWrite<int>(0, GetChunkVolume());
+        //     blocksIdsBuffer.SetData(_chunk.GetBlocks());
+        // }
+        // else
+        // {
+        //     _updated = true;
+        //     blocksIdsBuffer.SetData(_chunk.GetBlocks());
+        // }
+        Update();
+    }
+
+    public void CreateJob()
+    {
+        // InstancingFillBuffer job = new InstancingFillBuffer
+        // {
+        //     BlockIds = _chunk.GetBlocks(),
+        //     Buffer = blocksIdsBuffer
+        // };
+        // blocksIdsBuffer.BeginWrite<int>(0, GetChunkVolume());
+        // _fillDataJobHandle = job.Schedule();
     }
 
     private void Test()
@@ -370,5 +396,28 @@ public class ChunkRendererInstancing : IChunkRenderer
     public void Unload()
     {
         // throw new System.NotImplementedException();
+    }
+
+    public void Destroy()
+    {
+        Profiler.BeginSample("Destroying Instancing Buffers");
+        DisposeBuffer(ref blocksIdsBuffer);
+        // DisposeBuffer(ref blocksIsTransparentBuffer);
+        DisposeBuffer(ref blocksSideDatas);
+        DisposeBuffer(ref argsBuffer);
+        DisposeBuffer(ref voteBuffer);
+        DisposeBuffer(ref scanBuffer);
+        DisposeBuffer(ref groupSumArrayBuffer);
+        DisposeBuffer(ref scannedGroupSumBuffer);
+        DisposeBuffer(ref culledPositionsBuffer);
+        Profiler.EndSample();
+    }
+
+    private void DisposeBuffer(ref ComputeBuffer buffer)
+    {
+        if (buffer != null) {
+            buffer.Release();
+        }
+        buffer = null;
     }
 }

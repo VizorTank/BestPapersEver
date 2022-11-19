@@ -13,6 +13,7 @@ public class ChunkRendererStateMachine
     private NativeArray<int> blocksForMeshGeneration;
     
     private NativeList<ClusterCreationStruct> ClusterData;
+    private NativeList<ClusterSidesDataStruct> ClusterSidesData;
     private NativeArray<int> blocksClusterIdDatas;
     
     private JobHandle generatingBlockIdJobHandle;
@@ -29,6 +30,11 @@ public class ChunkRendererStateMachine
     {
         ClusterData = new NativeList<ClusterCreationStruct>(Allocator.Persistent);
 
+        ClusterSidesData = new NativeList<ClusterSidesDataStruct>(
+            VoxelData.ChunkSize.x * VoxelData.ChunkSize.y * VoxelData.ChunkSize.z * 6, 
+            Allocator.Persistent
+        );
+
         blocksForMeshGeneration = new NativeArray<int>(
             VoxelData.ChunkSize.x * VoxelData.ChunkSize.y * VoxelData.ChunkSize.z, 
             Allocator.Persistent);
@@ -42,6 +48,7 @@ public class ChunkRendererStateMachine
     {
         _isDestroyed = true;
         try { ClusterData.Dispose(); } catch { }
+        try { ClusterSidesData.Dispose(); } catch { }
         try { blocksForMeshGeneration.Dispose(); } catch { }
         try { blocksClusterIdDatas.Dispose(); } catch { }
     }
@@ -120,7 +127,9 @@ public class ChunkRendererStateMachine
         _state = ChunkRendererStates.CheckingVisibility;
 
         generatingClustersJobHandle.Complete();
-        
+
+        ClusterSidesData.Clear();
+        NativeList<ClusterSidesDataStruct>.ParallelWriter writer = ClusterSidesData.AsParallelWriter();
         
         // Debug.Log("CheckClusterVisibility");
         CheckClusterVisibilityJob checkClusterVisibilityJob = new CheckClusterVisibilityJob
@@ -135,9 +144,45 @@ public class ChunkRendererStateMachine
 
             neighbours = ChunkRendererConst.voxelNeighbours,
             clusterSides = ChunkRendererConst.clusterSides,
-            chunkSize = VoxelData.ChunkSize
+            chunkSize = VoxelData.ChunkSize,
+
+            Writer = writer
         };
         checkingVisibilityJobHandle = checkClusterVisibilityJob.Schedule(ClusterData.Length, 16);
+    }
+
+    public void CheckClusterVisibility2(ChunkNeighbours neighbours)
+    {
+        
+        if (_state != ChunkRendererStates.CreatingClusters || !generatingClustersJobHandle.IsCompleted) return;
+        if (!neighbours.GetData(out ChunkNeighbourData data)) return;
+        _state = ChunkRendererStates.CheckingVisibility;
+
+        generatingClustersJobHandle.Complete();
+
+        ClusterSidesData.Clear();
+        NativeList<ClusterSidesDataStruct>.ParallelWriter writer = ClusterSidesData.AsParallelWriter();
+        
+        // Debug.Log("CheckClusterVisibility");
+        CheckClusterVisibilitySidesJob checkClusterVisibilityJob = new CheckClusterVisibilitySidesJob
+        {
+            blockIdDatas = blocksForMeshGeneration,
+            
+            ClusterData = ClusterData,
+            ClusterSidesData = ClusterSidesData,
+
+            blockTypesIsTransparent = _world.GetBlockTypesList().areTransparent,
+
+            chunkNeighbourData = data,
+
+            neighbours = ChunkRendererConst.voxelNeighbours,
+            clusterSides = ChunkRendererConst.clusterSides,
+            chunkSize = VoxelData.ChunkSize,
+
+            ClusterDataLength = ClusterData.Length,
+            Writer = writer
+        };
+        checkingVisibilityJobHandle = checkClusterVisibilityJob.Schedule();
     }
 
     public void CreateMeshDataWithClusters(ChunkNeighbours neighbours)
@@ -155,6 +200,7 @@ public class ChunkRendererStateMachine
         CreateMeshWithClustersJob createMeshWithClustersJob = new CreateMeshWithClustersJob
         {
             ClusterData = ClusterData,
+            ClusterSidesData = ClusterSidesData,
             
             // Const
             neighbours = ChunkRendererConst.voxelNeighbours,

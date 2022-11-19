@@ -12,6 +12,7 @@ public interface IChunk
     public BiomeAttributesStruct GetBiome();
     public void Render();
     public void Update();
+    public void UpdateData();
     public void UpdateNeighbours();
     public void UpdateNeighbourList();
     public void Hide();

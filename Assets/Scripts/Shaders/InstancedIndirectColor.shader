@@ -25,16 +25,13 @@
 
             struct v2f {
                 float4 vertex   : SV_POSITION;
-                // float2 uv : TEXCOORD0;
                 float3 uv : TEXCOORD0;
                 fixed4 color    : COLOR;
             }; 
 
             struct BlockSideData {
-                // float4x4 mat;
                 float3 position;
                 int rotation;
-                // float4 color;
                 int type;
             };
 

@@ -143,7 +143,10 @@ public class Chunk : IChunk
     {
         if (!AreBlocksGenerated()) return false;
 
+        Profiler.BeginSample("Loading structures");
         LoadStructures();
+        Profiler.EndSample();
+        
         if (!_renderer.RequireProcessing()) return false;
         _state = ChunkState.FullyCreated;
         return true;
@@ -151,39 +154,29 @@ public class Chunk : IChunk
 
     public void Render()
     {
-        // if (_isDestroyed || _manipulator == null) 
-        // {
-        //     // Hide();
-        //     return;
-        // }
-        // if (!AreBlocksGenerated()) return;
-
-        // LoadStructures();
-        // if (!_renderer.RequireProcessing()) return;
-        // // if (!_renderer.CanAccess()) return;
-
-        // bool canRender = true;
-        // if (!_neighbours.IsValid())
-        //     canRender = TryGetNeigbours(ref _neighbours);
-
-        // if (canRender)
-        // {
-        //     _renderer.Render(_neighbours);
-        // }
-        // else
-        // {
-        //     Hide();
-        //     Update();
-        // }
         
-
-        if (_state == ChunkState.Destroyed || _state == ChunkState.Hidden || _state == ChunkState.Created) return;
-        if (_state == ChunkState.Initialized && !IsFullyGenerated()) return;
+        Profiler.BeginSample("Check if chunk exists");
+        if (_state == ChunkState.Destroyed || _state == ChunkState.Hidden || _state == ChunkState.Created) { Profiler.EndSample(); return; }
+        Profiler.EndSample();
+        Profiler.BeginSample("Check if chunk data is created");
+        if (_state == ChunkState.Initialized && !IsFullyGenerated()) { Profiler.EndSample(); return; }
+        Profiler.EndSample();
+        
         if (_state == ChunkState.FullyCreated)
         {
+            Profiler.BeginSample("Rendering");
+
+            Profiler.BeginSample("Update neighbour list");
             UpdateNeighbourList();
+            Profiler.EndSample();
+
+            Profiler.BeginSample("Renderer");
             _renderer.Render(_neighbours);
+            Profiler.EndSample();
+            
+            Profiler.EndSample();
         }
+        
     }
 
     public void UpdateNeighbourList()
@@ -207,7 +200,7 @@ public class Chunk : IChunk
         replacedBlockId = 0;
         if (!CanAccess()) return false;
         replacedBlockId = _manipulator.GetBlock(position);
-        Debug.Log($"Placed: {position.x}, {position.y}, {position.z}");
+        // Debug.Log($"Placed: {position.x}, {position.y}, {position.z}");
         _manipulator.SetBlock(position, placedBlockId);
         UpdateNeighbourChunks(position);
         Update();
@@ -247,6 +240,11 @@ public class Chunk : IChunk
     public void Update()
     {
         _renderer.Update();
+    }
+
+    public void UpdateData()
+    {
+        _renderer.UpdateData();
     }
 
     public void UpdateNeighbours()

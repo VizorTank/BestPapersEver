@@ -20,6 +20,7 @@ MonoBehaviour:
     isLiquid: 0
     isInvisible: 0
     isReplaceable: 1
+    isReplaceableByStructure: 1
     isFalling: 0
     isGlowing: 0
     isGrowing: 0
@@ -31,6 +32,7 @@ MonoBehaviour:
     isLiquid: 0
     isInvisible: 0
     isReplaceable: 0
+    isReplaceableByStructure: 0
     isFalling: 0
     isGlowing: 0
     isGrowing: 0
@@ -42,6 +44,7 @@ MonoBehaviour:
     isLiquid: 0
     isInvisible: 0
     isReplaceable: 0
+    isReplaceableByStructure: 0
     isFalling: 0
     isGlowing: 0
     isGrowing: 0
@@ -55,6 +58,7 @@ MonoBehaviour:
     isLiquid: 0
     isInvisible: 0
     isReplaceable: 0
+    isReplaceableByStructure: 0
     isFalling: 0
     isGlowing: 0
     isGrowing: 0
@@ -67,6 +71,7 @@ MonoBehaviour:
     isLiquid: 0
     isInvisible: 0
     isReplaceable: 0
+    isReplaceableByStructure: 0
     isFalling: 0
     isGlowing: 0
     isGrowing: 0
@@ -79,6 +84,7 @@ MonoBehaviour:
     isLiquid: 0
     isInvisible: 0
     isReplaceable: 0
+    isReplaceableByStructure: 0
     isFalling: 0
     isGlowing: 0
     isGrowing: 0
@@ -90,6 +96,7 @@ MonoBehaviour:
     isLiquid: 1
     isInvisible: 0
     isReplaceable: 1
+    isReplaceableByStructure: 1
     isFalling: 0
     isGlowing: 0
     isGrowing: 0
@@ -101,6 +108,7 @@ MonoBehaviour:
     isLiquid: 1
     isInvisible: 0
     isReplaceable: 1
+    isReplaceableByStructure: 1
     isFalling: 0
     isGlowing: 0
     isGrowing: 0
@@ -112,6 +120,7 @@ MonoBehaviour:
     isLiquid: 0
     isInvisible: 0
     isReplaceable: 0
+    isReplaceableByStructure: 0
     isFalling: 0
     isGlowing: 0
     isGrowing: 0
@@ -124,6 +133,7 @@ MonoBehaviour:
     isLiquid: 0
     isInvisible: 0
     isReplaceable: 0
+    isReplaceableByStructure: 1
     isFalling: 0
     isGlowing: 0
     isGrowing: 0
@@ -142,6 +152,6 @@ MonoBehaviour:
   areTransparentInt: 01000000000000000000000000000000000000000000000001000000010000000000000001000000
   BlockCount: 10
   TextureArray: {fileID: 0}
-  Material: {fileID: 2100000, guid: 73db65a1ca221d743a283d61debf851c, type: 2}
+  Material: {fileID: 2100000, guid: 1a30b8d09238558e59ce221633e7fb74, type: 2}
   Blocks: {fileID: 7200000, guid: 7459bcfbe47571c42a8e7ee86a9091e2, type: 3}
   Culling: {fileID: 7200000, guid: e1617a3d24c098a309d0564d52696338, type: 3}

@@ -16,7 +16,7 @@ RWStructuredBuffer<BlockSideData> _BlockSideDatas;
 
 float3 _CameraPosition;
 
-static const int size = 3;
+static const int size = 6;
 
 void CreateSide(uint3 id, int index, int i, int a)
 {
@@ -39,19 +39,19 @@ void CSMain (uint3 id : SV_DispatchThreadID)
     
     float3 diff = (float3)id - _CameraPosition; 
     int i = 0;
-    if (diff.z > 0)
+    // if (diff.z > 0)
         CreateSide(id, index, 0, i++);
-    else
+    // else
         CreateSide(id, index, 1, i++);
     
-    if (diff.y < 0)
+    // if (diff.y < 0)
         CreateSide(id, index, 2, i++);
-    else
+    // else
         CreateSide(id, index, 3, i++);
     
-    if (diff.x > 0)
+    // if (diff.x > 0)
         CreateSide(id, index, 4, i++);
-    else
+    // else
         CreateSide(id, index, 5, i++);
 }
 

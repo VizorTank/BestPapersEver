@@ -6,28 +6,23 @@ using Unity.Mathematics;
 [BurstCompile]
 public struct CheckClusterVisibilityJob : IJobParallelFor
 {
+    // Input
     [ReadOnly] public NativeArray<int> blockIdDatas;
+    [ReadOnly] public ChunkNeighbourData chunkNeighbourData;
 
-    /*[ReadOnly] public NativeArray<int> clusterBlockIdDatas;
-    [ReadOnly] public NativeArray<int3> clusterSizeDatas;
-    [ReadOnly] public NativeArray<int3> clusterPositionDatas;*/
+    // Output
+    public NativeArray<ClusterCreationStruct> ClusterData;
+    public NativeList<ClusterSidesDataStruct>.ParallelWriter Writer;
 
+    // Const
     [ReadOnly] public NativeArray<int3> neighbours;
     [ReadOnly] public NativeArray<int3> clusterSides;
     [ReadOnly] public int3 chunkSize;
-
     [ReadOnly] public NativeArray<bool> blockTypesIsTransparent;
-
-    [ReadOnly] public ChunkNeighbourData chunkNeighbourData;
-
-    //public NativeArray<ClusterSidesVisibility> clusterSidesVisibilityData;
-    public NativeArray<ClusterCreationStruct> ClusterData;
 
     public void Execute(int index)
     {
         var cluster = ClusterData[index];
-        /*int3 clusterSize = clusterSizeDatas[index];
-        int blockId = clusterBlockIdDatas[index];*/
         var clusterSize = cluster.Size;
         var blockId = cluster.BlockId;
 
@@ -51,8 +46,8 @@ public struct CheckClusterVisibilityJob : IJobParallelFor
 
         for (int i = 0; i < 6; i++)
         {
-            //int3 startPosition = clusterPositionDatas[index] + axis[i];
             int3 startPosition = cluster.Position + axis[i];
+            bool isVisible = false;
             for (int x = 0; x < clusterSideSizes[i].x; x++)
             {
                 for (int y = 0; y < clusterSideSizes[i].y; y++)
@@ -67,12 +62,8 @@ public struct CheckClusterVisibilityJob : IJobParallelFor
                             // if (!chunkNeighbourData.ChunkNeighbourDataValid[i]) continue;
                             int3 blockPos = (startPosition % chunkSize + chunkSize) % chunkSize + new int3(x, y, z);
                             int idx = blockPos.x + (blockPos.y + blockPos.z * chunkSize.y) * chunkSize.x;
-                            
 
                             neighbourBlockId = chunkNeighbourData.ChunkNeighbourDataArray[i][idx];
-                            // // Add when block hides side
-                            // if (!blockTypesIsTransparent[chunkNeighbourData.ChunkNeighbourDataArray[i][idx]] || blockId == chunkNeighbourData.ChunkNeighbourDataArray[i][idx]) 
-                            //     clusterSidesVisibility[i]++;
                         }
                         else
                         {
@@ -80,16 +71,24 @@ public struct CheckClusterVisibilityJob : IJobParallelFor
                             int idx = blockPos.x + (blockPos.y + blockPos.z * chunkSize.y) * chunkSize.x;
 
                             neighbourBlockId = blockIdDatas[idx];
-                            // // Add when block hides side
-                            // if (!blockTypesIsTransparent[blockIdDatas[idx]] || blockId == blockIdDatas[idx])
-                            //     clusterSidesVisibility[i]++;
                         }
                         // Add when block hides side
                         if (!blockTypesIsTransparent[neighbourBlockId] || blockId == neighbourBlockId)
                             clusterSidesVisibility[i]++;
+                        else
+                            isVisible = true;
                     }
                 }
             }
+            var data = new ClusterSidesDataStruct {
+                    BlockId = cluster.BlockId,
+                    Position = cluster.Position,
+                    Rotation = i,
+                    Size = cluster.Size,
+                    Visibility = clusterSidesVisibility[i]
+            };
+            if (isVisible)
+                Writer.AddNoResize(data);
         }
         
         cluster.Visibility = clusterSidesVisibility;
