@@ -6,5 +6,4 @@ public struct ClusterSidesDataStruct
     public int3 Size;
     public int3 Position;
     public int Rotation;
-    public int Visibility;
 }

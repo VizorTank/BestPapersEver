@@ -254,11 +254,6 @@ public class ChunkRendererInstancing : IChunkRenderer
         // material.SetColor("AmbientOcclusionColor", AmbientOcclusionColor);
     }
 
-    public void Render()
-    {
-        throw new System.NotImplementedException();
-    }
-
     private bool _isCreated = false;
 
     private void Init()
@@ -324,11 +319,6 @@ public class ChunkRendererInstancing : IChunkRenderer
             UpdateShaderData();
         }
         Graphics.DrawMeshInstancedIndirect(mesh, 0, material, bounds, argsBuffer);
-    }
-
-    public bool CanAccess()
-    {
-        return true;
     }
 
     private bool _updatedData = false;

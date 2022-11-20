@@ -9,12 +9,6 @@ using UnityEngine.Rendering;
 public struct CreateMeshWithClustersJob : IJob
 {
     // Input data
-    /*[ReadOnly] public NativeArray<int> clusterBlockIdDatas;
-    [ReadOnly] public NativeArray<int3> clusterSizeDatas;
-    [ReadOnly] public NativeArray<int3> clusterPositionDatas;
-    [ReadOnly] public NativeArray<ClusterSidesVisibility> clusterSidesVisibilityData;*/
-
-    [ReadOnly] public NativeArray<ClusterCreationStruct> ClusterData;
     [ReadOnly] public NativeArray<ClusterSidesDataStruct> ClusterSidesData;
 
     // Static values
@@ -55,27 +49,8 @@ public struct CreateMeshWithClustersJob : IJob
             var cluster = ClusterSidesData[index];
             if (!blockTypesIsInvisible[cluster.BlockId])
             {
-                // for (int j = 0; j < 6; j++)
-                // {
-                    int j = cluster.Rotation;
-                    int3 actualSize = cluster.Size;
-                    switch (j)
-                    {
-                        case 0: perfectSize.x = actualSize.x; perfectSize.y = actualSize.y; break;
-                        case 1: perfectSize.x = actualSize.x; perfectSize.y = actualSize.y; break;
-                        case 2: perfectSize.x = actualSize.x; perfectSize.y = actualSize.z; break;
-                        case 3: perfectSize.x = actualSize.x; perfectSize.y = actualSize.z; break;
-                        case 4: perfectSize.x = actualSize.z; perfectSize.y = actualSize.y; break;
-                        case 5: perfectSize.x = actualSize.z; perfectSize.y = actualSize.y; break;
-                        default: break;
-                    }
-
-                    // if (cluster.Visibility[j] >= perfectSize.x * perfectSize.y) continue;
-                    if (cluster.Visibility >= perfectSize.x * perfectSize.y) continue;
-
-                    sidesCount++;
-                    sidesCountPerType[cluster.BlockId]++;
-                // }
+                sidesCount++;
+                sidesCountPerType[cluster.BlockId]++;
             }
         }
 
@@ -110,40 +85,35 @@ public struct CreateMeshWithClustersJob : IJob
             var cluster = ClusterSidesData[index];
             if (!blockTypesIsInvisible[cluster.BlockId])
             {
-                // for (int j = 0; j < 6; j++)
-                // {
-                    int j = cluster.Rotation;
-                    int3 actualSize = cluster.Size;
-                    switch (j)
-                    {
-                        case 0: perfectSize.x = actualSize.x; perfectSize.y = actualSize.y; break;
-                        case 1: perfectSize.x = actualSize.x; perfectSize.y = actualSize.y; break;
-                        case 2: perfectSize.x = actualSize.x; perfectSize.y = actualSize.z; break;
-                        case 3: perfectSize.x = actualSize.x; perfectSize.y = actualSize.z; break;
-                        case 4: perfectSize.x = actualSize.z; perfectSize.y = actualSize.y; break;
-                        case 5: perfectSize.x = actualSize.z; perfectSize.y = actualSize.y; break;
-                        default: break;
-                    }
-                    // if (cluster.Visibility[j] >= perfectSize.x * perfectSize.y) continue;
-                    if (cluster.Visibility >= perfectSize.x * perfectSize.y) continue;
+                int j = cluster.Rotation;
+                int3 actualSize = cluster.Size;
+                switch (j)
+                {
+                    case 0: perfectSize.x = actualSize.x; perfectSize.y = actualSize.y; break;
+                    case 1: perfectSize.x = actualSize.x; perfectSize.y = actualSize.y; break;
+                    case 2: perfectSize.x = actualSize.x; perfectSize.y = actualSize.z; break;
+                    case 3: perfectSize.x = actualSize.x; perfectSize.y = actualSize.z; break;
+                    case 4: perfectSize.x = actualSize.z; perfectSize.y = actualSize.y; break;
+                    case 5: perfectSize.x = actualSize.z; perfectSize.y = actualSize.y; break;
+                    default: break;
+                }
+                
+                int blockID = cluster.BlockId;
+                float3 position = cluster.Position;
 
-                    int blockID = cluster.BlockId;
-                    float3 position = cluster.Position;
-
-                    for (int k = 0; k < 4; k++)
+                for (int k = 0; k < 4; k++)
+                {
+                    vertex[vertexIndex + k] = new VertexPositionUvStruct
                     {
-                        vertex[vertexIndex + k] = new VertexPositionUvStruct
-                        {
-                            pos = position + voxelVerts[voxelTris[j * voxelTrisSize + k]] * cluster.Size,
-                            uv = voxelUvs[k] * perfectSize
-                        };
-                    }
-                    for (int k = 0; k < 6; k++)
-                    {
-                        indexes[trianglesCountPerTypeSum[blockID] + triangleIndexes[blockID]++] = vertexIndex + triangleOrder[k];
-                    }
-                    vertexIndex += 4;
-                // }
+                        pos = position + voxelVerts[voxelTris[j * voxelTrisSize + k]] * cluster.Size,
+                        uv = voxelUvs[k] * perfectSize
+                    };
+                }
+                for (int k = 0; k < 6; k++)
+                {
+                    indexes[trianglesCountPerTypeSum[blockID] + triangleIndexes[blockID]++] = vertexIndex + triangleOrder[k];
+                }
+                vertexIndex += 4;
             }
         }
 

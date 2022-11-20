@@ -16,13 +16,11 @@ public class ChunkRendererStateMachine
     private NativeList<ClusterSidesDataStruct> ClusterSidesData;
     private NativeArray<int> blocksClusterIdDatas;
     
-    private JobHandle generatingBlockIdJobHandle;
     private JobHandle generatingClustersJobHandle;
     private JobHandle checkingVisibilityJobHandle;
     private JobHandle generatingMeshJobHandle;
     
     private Mesh.MeshDataArray meshDataArray;
-    private ChunkNeighbourData ChunkNeighbourData;
 
     private bool _isDestroyed = false;
 
@@ -66,18 +64,6 @@ public class ChunkRendererStateMachine
         return true;
     }
 
-    // public bool Render(IChunk chunk, IWorld world, out Mesh mesh)
-    // {
-    //     Init(chunk, world);
-    //     CopyBlocks();
-    //     CreateClusters();
-    //     CheckClusterVisibility();
-    //     CreateMeshDataWithClusters();
-    //     bool result = CreateMesh(out Mesh _mesh);
-    //     mesh = _mesh;
-    //     return result;
-    // }
-
     public void CopyBlocks()
     {
         if (_state != ChunkRendererStates.Ready) return;
@@ -89,8 +75,7 @@ public class ChunkRendererStateMachine
     
     public void CreateClusters()
     {
-
-        if (_state != ChunkRendererStates.CopyingBlocks || !generatingBlockIdJobHandle.IsCompleted) return;
+        if (_state != ChunkRendererStates.CopyingBlocks) return;
         _state = ChunkRendererStates.CreatingClusters;
         ClusterData.Clear();
         // Debug.Log("CreateClusters");
@@ -107,17 +92,6 @@ public class ChunkRendererStateMachine
         };
         generatingClustersJobHandle = createClustersJob.Schedule();
     }
-    
-
-    // private void GetNeighboursData()
-    // {
-    //     ChunkNeighbourData = _chunk.GetNeighbourData();
-    // }
-
-    // private void FreeNeighbourData()
-    // {
-    //     _chunk.ReleaseNeighbourData();
-    // }
     
     public void CheckClusterVisibility(ChunkNeighbours neighbours)
     {
@@ -143,46 +117,13 @@ public class ChunkRendererStateMachine
             chunkNeighbourData = data,
 
             neighbours = ChunkRendererConst.voxelNeighbours,
+            axis = ChunkRendererConst.axisArray,
             clusterSides = ChunkRendererConst.clusterSides,
             chunkSize = VoxelData.ChunkSize,
 
             Writer = writer
         };
         checkingVisibilityJobHandle = checkClusterVisibilityJob.Schedule(ClusterData.Length, 16);
-    }
-
-    public void CheckClusterVisibility2(ChunkNeighbours neighbours)
-    {
-        
-        if (_state != ChunkRendererStates.CreatingClusters || !generatingClustersJobHandle.IsCompleted) return;
-        if (!neighbours.GetData(out ChunkNeighbourData data)) return;
-        _state = ChunkRendererStates.CheckingVisibility;
-
-        generatingClustersJobHandle.Complete();
-
-        ClusterSidesData.Clear();
-        NativeList<ClusterSidesDataStruct>.ParallelWriter writer = ClusterSidesData.AsParallelWriter();
-        
-        // Debug.Log("CheckClusterVisibility");
-        CheckClusterVisibilitySidesJob checkClusterVisibilityJob = new CheckClusterVisibilitySidesJob
-        {
-            blockIdDatas = blocksForMeshGeneration,
-            
-            ClusterData = ClusterData,
-            ClusterSidesData = ClusterSidesData,
-
-            blockTypesIsTransparent = _world.GetBlockTypesList().areTransparent,
-
-            chunkNeighbourData = data,
-
-            neighbours = ChunkRendererConst.voxelNeighbours,
-            clusterSides = ChunkRendererConst.clusterSides,
-            chunkSize = VoxelData.ChunkSize,
-
-            ClusterDataLength = ClusterData.Length,
-            Writer = writer
-        };
-        checkingVisibilityJobHandle = checkClusterVisibilityJob.Schedule();
     }
 
     public void CreateMeshDataWithClusters(ChunkNeighbours neighbours)
@@ -199,7 +140,6 @@ public class ChunkRendererStateMachine
 
         CreateMeshWithClustersJob createMeshWithClustersJob = new CreateMeshWithClustersJob
         {
-            ClusterData = ClusterData,
             ClusterSidesData = ClusterSidesData,
             
             // Const
