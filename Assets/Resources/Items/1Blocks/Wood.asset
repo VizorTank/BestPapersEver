@@ -13,8 +13,9 @@ MonoBehaviour:
   m_Name: Wood
   m_EditorClassIdentifier: Assembly-CSharp::Placeable
   NameID: Wood
+  IntID: 0
   maxstack: 999
   ItemName: Wood
-  image: {fileID: 0}
+  image: {fileID: 21300000, guid: df6d3478b2b9e3944a6dfc356235efab, type: 3}
   itemtype: 0
   BlockID: 8

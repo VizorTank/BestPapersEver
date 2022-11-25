@@ -20,11 +20,11 @@ RenderSettings:
   m_FogDensity: 0.01
   m_LinearFogStart: 0
   m_LinearFogEnd: 300
-  m_AmbientSkyColor: {r: 0.212, g: 0.227, b: 0.259, a: 1}
+  m_AmbientSkyColor: {r: 0.1, g: 0.1, b: 0.1, a: 1}
   m_AmbientEquatorColor: {r: 0.114, g: 0.125, b: 0.133, a: 1}
   m_AmbientGroundColor: {r: 0.047, g: 0.043, b: 0.035, a: 1}
   m_AmbientIntensity: 1
-  m_AmbientMode: 0
+  m_AmbientMode: 4
   m_SubtractiveShadowColor: {r: 0.42, g: 0.478, b: 0.627, a: 1}
   m_SkyboxMaterial: {fileID: 10304, guid: 0000000000000000f000000000000000, type: 0}
   m_HaloStrength: 0.5
@@ -3437,7 +3437,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: 'FullScream:'
+  m_Text: 'FullScreen:'
 --- !u!222 &1203796821
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -4088,7 +4088,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: fuck go back
+  m_Text: Back
 --- !u!222 &1290890780
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -4481,6 +4481,14 @@ PrefabInstance:
       propertyPath: m_Layer
       value: 8
       objectReference: {fileID: 0}
+    - target: {fileID: 3551799761546714442, guid: 188064a7511e12a4ba9ca316d8ec3ee2, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0.0029879366
+      objectReference: {fileID: 0}
+    - target: {fileID: 3551799761546714442, guid: 188064a7511e12a4ba9ca316d8ec3ee2, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -0.0020368802
+      objectReference: {fileID: 0}
     - target: {fileID: 3817287356122947683, guid: 188064a7511e12a4ba9ca316d8ec3ee2, type: 3}
       propertyPath: m_RootOrder
       value: 1
@@ -4720,7 +4728,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: just do it
+  m_Text: Apply
 --- !u!222 &1387206051
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -9027,7 +9035,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &1704207367749819512
 MonoBehaviour:
   m_ObjectHideFlags: 0

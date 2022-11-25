@@ -13,8 +13,9 @@ MonoBehaviour:
   m_Name: CoalBlock
   m_EditorClassIdentifier: 
   NameID: Coal_Block
+  IntID: 0
   maxstack: 999
   ItemName: Block of Coal
-  image: {fileID: 0}
+  image: {fileID: 21300000, guid: bb4559fa0af1c6d4696191ab324458cb, type: 3}
   itemtype: 0
   BlockID: 0
