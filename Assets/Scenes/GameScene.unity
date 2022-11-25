@@ -6808,8 +6808,7 @@ GameObject:
   - component: {fileID: 1799201786}
   - component: {fileID: 1799201789}
   - component: {fileID: 1799201788}
-  - component: {fileID: 1799201787}
-  m_Layer: 8
+  m_Layer: 0
   m_Name: Cylinder
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -6830,20 +6829,6 @@ Transform:
   m_Father: {fileID: 7894782442601568415}
   m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 90, y: 0, z: 0}
---- !u!136 &1799201787
-CapsuleCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1799201785}
-  m_Material: {fileID: 0}
-  m_IsTrigger: 0
-  m_Enabled: 1
-  m_Radius: 0.5000001
-  m_Height: 2
-  m_Direction: 1
-  m_Center: {x: 0.000000059604645, y: 0, z: -0.00000008940697}
 --- !u!23 &1799201788
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -7817,6 +7802,10 @@ PrefabInstance:
     - target: {fileID: 5680718388364483949, guid: 8d45c8a09698c934cb1d6cc6d3496e5a, type: 3}
       propertyPath: renderDistance
       value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 5680718388364483949, guid: 8d45c8a09698c934cb1d6cc6d3496e5a, type: 3}
+      propertyPath: WorldBiomes.Seed
+      value: 312313
       objectReference: {fileID: 0}
     - target: {fileID: 5680718388364483949, guid: 8d45c8a09698c934cb1d6cc6d3496e5a, type: 3}
       propertyPath: WorldSizeInChunks.y

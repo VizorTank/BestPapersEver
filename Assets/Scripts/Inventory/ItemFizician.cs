@@ -49,7 +49,7 @@ public class ItemFizician : MonoBehaviour
 
         if (transform.position.y < DownBlock.y + 1)
         {
-            transform.position = new Vector3(transform.position.x, DownBlock.y + 1, transform.position.z);
+            transform.position = new Vector3(transform.position.x, DownBlock.y + 1 - 0.0001f, transform.position.z);
             isGrounded = true;
             VerticalMomentum = Vector3.zero;
         }

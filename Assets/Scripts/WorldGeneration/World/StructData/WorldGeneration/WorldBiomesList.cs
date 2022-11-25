@@ -11,6 +11,7 @@ public class WorldBiomesList
     public float BiomeDensity;
     public float OceanDensity;
     public int WaterLevel;
+    public int Seed = 0;
 
     // private NativeArray<BiomeAttributesStruct> _biomeStructs;
     private NativeArray<BiomeAttributesStruct> _biomeStructs;
@@ -44,7 +45,7 @@ public class WorldBiomesList
                 if (!lodes.Contains(lodeStruct))
                     lodes.Add(lodeStruct);
             }
-            _biomeStructs[i] = Biomes[i].GetBiomeStruct();
+            _biomeStructs[i] = Biomes[i].GetBiomeStruct(Seed);
         }
     }
 
@@ -92,12 +93,12 @@ public class WorldBiomesList
 
     private float CalcualteBiomeHeight(int3 ChunkCoord)
     {
-        return noise.cnoise(new float2(ChunkCoord.x, ChunkCoord.z) * BiomeDensity) / 2 + 0.5f;
+        return noise.cnoise(new float2(ChunkCoord.x + Seed, ChunkCoord.z + Seed) * BiomeDensity) / 2 + 0.5f;
     }
 
     private float CalcualteOceanHeight(int3 ChunkCoord)
     {
-        return noise.cnoise(new float2(ChunkCoord.x, ChunkCoord.z) * OceanDensity) / 2 + 0.5f;
+        return noise.cnoise(new float2(ChunkCoord.x + Seed, ChunkCoord.z + Seed) * OceanDensity) / 2 + 0.5f;
     }
 
     private NativeArray<int3> _biomeNeighbours;

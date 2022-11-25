@@ -100,7 +100,7 @@ public class RayCasting
                 collision = collisions[smallestAxis];
                 collision[smallestAxis] += displacement[smallestAxis];
                 result[smallestAxis] = true;
-                markers.Add(CreateGameObject(world, collision, 1, 0.1f, 0));
+                // markers.Add(CreateGameObject(world, collision, 1, 0.1f, 0));
                 return result;
             }
         }
@@ -110,9 +110,9 @@ public class RayCasting
 
     public static float3 CollideAndSlide(IWorld world, float3 position, float3 vector)
     {
-        foreach (GameObject item in markers)
-            MonoBehaviour.Destroy(item);
-        markers.Clear();
+        // foreach (GameObject item in markers)
+        //     MonoBehaviour.Destroy(item);
+        // markers.Clear();
         float3 collision = position;
         float3 result = vector;
         int i = 0;
@@ -132,6 +132,16 @@ public class RayCasting
         //     MonoBehaviour.Destroy(item);
         // markers.Clear();
 
+        blockBefore = 0;
+        collision = 0;
+
+        if (IsBlockSolid(world, (int3)math.floor(position)))
+        {
+            collision = position;
+            return new bool2(true, false);
+        }
+
+
         float3[] collisions = new float3[3];
         bool3 isLimited = false;
         int3 currentCheckedDistance = 1;
@@ -145,8 +155,7 @@ public class RayCasting
             else             collisions[i] = GetPointOnAxis(position, vectorNormalized, i, 1);
 
         bool2 result = false;
-        blockBefore = 0;
-        collision = 0;
+        
 
         while(math.any(!isLimited))
         {
@@ -273,15 +282,15 @@ public class RayCasting
     //     return false;
     // }
 
-    public static bool FindPosToDestroy(IWorld world, float3 position, float3 vector, out float3 blockPosition)
-    {
-        return FindCollision(world, position, vector, out blockPosition, out var t).x;
-    }
+    // public static bool FindPosToDestroy(IWorld world, float3 position, float3 vector, out float3 blockPosition)
+    // {
+    //     return FindCollision(world, position, vector, out blockPosition, out var t).x;
+    // }
 
-    public static bool FindPosToPlace(IWorld world, float3 position, float3 vector, out float3 blockPosition)
-    {
-        return FindCollision(world, position, vector, out var t, out blockPosition).y;
-    }
+    // public static bool FindPosToPlace(IWorld world, float3 position, float3 vector, out float3 blockPosition)
+    // {
+    //     return FindCollision(world, position, vector, out var t, out blockPosition).y;
+    // }
 
     private static bool IsBlockSolid(IWorld world, int3 position)
     {
