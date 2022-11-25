@@ -98,7 +98,7 @@ public class WorldClass : MonoBehaviour, IWorld
         if (Player != null)
         {
             Player.transform.position = new Vector3(0, 
-                VoxelData.ChunkSize.y * WorldSizeInChunks.y * 2, 
+                VoxelData.ChunkSize.y * WorldSizeInChunks.y, 
                 0);
         }
     }

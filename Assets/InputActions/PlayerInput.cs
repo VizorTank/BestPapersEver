@@ -461,6 +461,17 @@ public partial class @PlayerInput : IInputActionCollection2, IDisposable
                 },
                 {
                     ""name"": """",
+                    ""id"": ""f48367dd-a4af-4a49-980f-e441cd015b38"",
+                    ""path"": ""<Keyboard>/p"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Keyboard&Mouse"",
+                    ""action"": ""DestroyBlock"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
                     ""id"": ""337578fa-b6d4-41da-9945-38f81fab6bc6"",
                     ""path"": ""<Mouse>/rightButton"",
                     ""interactions"": """",

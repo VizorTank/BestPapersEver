@@ -28,6 +28,9 @@ public class BlockTypesList : ScriptableObject
     public ComputeShader Culling;
 
     public ComputeBuffer BlocksIsTransparentBuffer;
+    public Mesh Mesh;
+    public Material MTest;
+    public Material MTest2;
 
     public void ProcessData()
     {

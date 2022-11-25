@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -132,7 +133,7 @@ public class PlayerController : MonoBehaviour
             PlaceCursorBlock();
             GetInput();
             SetRotation();
-            SelectBlock();
+            // SelectBlock();
             Cursor.lockState = CursorLockMode.Locked;
         }
         controller.GetMovement(input, isSprinting);
@@ -201,28 +202,28 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    private void SelectBlock()
-    {
-        if (HighlightBlock.gameObject.activeSelf)
-        {
-            int a = 0;
-            if (destroyBlock)
-            {
-                worldClass.TrySetBlock(HighlightBlock.position, 0, ref a);
-                destroyBlock = false;
-            }
-            if (placeBlock)
-            {
-                worldClass.TrySetBlock(HighlightPlaceBlock.position, placingBlockID, ref a);
-                placeBlock = false;
-            }
-            if (placeStructure)
-            {
-                worldClass.CreateStructure(HighlightPlaceBlock.position - new Vector3(2, 0, 2), 0);
-                placeStructure = false;
-            }
-        }
-    }
+    // private void SelectBlock()
+    // {
+    //     if (HighlightBlock.gameObject.activeSelf)
+    //     {
+    //         int a = 0;
+    //         if (destroyBlock)
+    //         {
+    //             worldClass.TrySetBlock(HighlightBlock.position, 0, ref a);
+    //             destroyBlock = false;
+    //         }
+    //         if (placeBlock)
+    //         {
+    //             worldClass.TrySetBlock(HighlightPlaceBlock.position, placingBlockID, ref a);
+    //             placeBlock = false;
+    //         }
+    //         if (placeStructure)
+    //         {
+    //             worldClass.CreateStructure(HighlightPlaceBlock.position - new Vector3(2, 0, 2), 0);
+    //             placeStructure = false;
+    //         }
+    //     }
+    // }
 
     public void DestroyBlock()
     {
@@ -230,6 +231,7 @@ public class PlayerController : MonoBehaviour
             if (!inInventory)
                 if (HighlightBlock.gameObject.activeSelf)
                 {
+                    // CollisionTest();
                     int blockDestroyed = 0;
                     worldClass.TrySetBlock(HighlightBlock.position, 0, ref blockDestroyed);
                     List<string> DropTable = worldClass.GetBlockTypesList().blockTypes[blockDestroyed].DropTable;
@@ -254,36 +256,59 @@ public class PlayerController : MonoBehaviour
 
     private void PlaceCursorBlock()
     {
-        float step = checkIncrement;
+        // RayCasting.Collide(worldClass, Camera.position, Camera.forward * (reach + checkIncrement), out _);
+        RayCasting.CollideAndSlide(worldClass, Camera.position, Camera.forward * reach);
+        bool2 test = RayCasting.FindCollision(worldClass, Camera.position, Camera.forward * reach, out float3 blockDestroy, out float3 blockPlace);
 
-        Vector3 lastPos = Camera.position;
-
-        while (step < reach)
+        if (test.x)
         {
-            Vector3 pos = Camera.position + Camera.forward * step;
-            int blockId = 0;
-            if (worldClass.TryGetBlock(pos, ref blockId) && blockId != 0)
+            HighlightBlock.position = new Vector3(Mathf.Floor(blockDestroy.x), Mathf.Floor(blockDestroy.y), Mathf.Floor(blockDestroy.z));
+            HighlightBlock.gameObject.SetActive(true);
+            if (test.y)
             {
-                if (worldClass.blockTypesList.areSolid[worldClass.GetBlock(pos)])
-                {
-                    HighlightBlock.position = new Vector3(Mathf.Floor(pos.x), Mathf.Floor(pos.y), Mathf.Floor(pos.z));
-                    HighlightBlock.gameObject.SetActive(true);
+                HighlightPlaceBlock.position = new Vector3(Mathf.Floor(blockPlace.x), Mathf.Floor(blockPlace.y), Mathf.Floor(blockPlace.z));
+                HighlightPlaceBlock.gameObject.SetActive(SelectedItem is Placeable);
+            }
+            else
+            {
+                HighlightPlaceBlock.gameObject.SetActive(false);
+            }
+        }
+        else
+        {
+            HighlightBlock.gameObject.SetActive(false);
+            HighlightPlaceBlock.gameObject.SetActive(false);
+        }
+        // CollisionTest();
+        // float step = checkIncrement;
 
-                    HighlightPlaceBlock.position = new Vector3(Mathf.Floor(lastPos.x), Mathf.Floor(lastPos.y), Mathf.Floor(lastPos.z));
-                    HighlightPlaceBlock.gameObject.SetActive(SelectedItem is Placeable);
-                    return;
+        // Vector3 lastPos = Camera.position;
 
-                }
+        // while (step < reach)
+        // {
+        //     Vector3 pos = Camera.position + Camera.forward * step;
+        //     int blockId = 0;
+        //     if (worldClass.TryGetBlock(pos, ref blockId) && blockId != 0)
+        //     {
+        //         if (worldClass.blockTypesList.areSolid[worldClass.GetBlock(pos)])
+        //         {
+        //             // HighlightBlock.position = new Vector3(Mathf.Floor(pos.x), Mathf.Floor(pos.y), Mathf.Floor(pos.z));
+        //             // HighlightBlock.gameObject.SetActive(true);
+
+        //             HighlightPlaceBlock.position = new Vector3(Mathf.Floor(lastPos.x), Mathf.Floor(lastPos.y), Mathf.Floor(lastPos.z));
+        //             HighlightPlaceBlock.gameObject.SetActive(SelectedItem is Placeable);
+        //             return;
+
+        //         }
 
                 
-            }
-            lastPos = pos;
-            step += checkIncrement;
-        }
-        HighlightBlock.gameObject.SetActive(false); 
-        HighlightPlaceBlock.gameObject.SetActive(false);
+        //     }
+        //     lastPos = pos;
+        //     step += checkIncrement;
+        // }
+        // HighlightBlock.gameObject.SetActive(false); 
+        // HighlightPlaceBlock.gameObject.SetActive(false);
     }
-
 
     void SetRotation()
     {
