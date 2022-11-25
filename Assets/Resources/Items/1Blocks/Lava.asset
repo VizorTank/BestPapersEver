@@ -13,8 +13,9 @@ MonoBehaviour:
   m_Name: Lava
   m_EditorClassIdentifier: Assembly-CSharp::Placeable
   NameID: Lava_Block
+  IntID: 0
   maxstack: 999
   ItemName: Lava
-  image: {fileID: 0}
+  image: {fileID: 21300000, guid: 8bf49ad1bf4bba04586f95aeb60f7214, type: 3}
   itemtype: 0
   BlockID: 7

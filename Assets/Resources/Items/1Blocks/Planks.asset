@@ -13,8 +13,9 @@ MonoBehaviour:
   m_Name: Planks
   m_EditorClassIdentifier: 
   NameID: Planks
+  IntID: 0
   maxstack: 999
   ItemName: Planks
-  image: {fileID: 0}
+  image: {fileID: 21300000, guid: 2ef41c4a6fe10b7418fbf7675902809a, type: 3}
   itemtype: 0
   BlockID: 0

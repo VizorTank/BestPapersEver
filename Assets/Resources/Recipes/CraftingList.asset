@@ -48,6 +48,57 @@ MonoBehaviour:
     CraftinRecipe:
     - ItemName: Planks
       Amount: 4
+  - name: Woodsword
+    ItemName: Wood_Sword
+    AmountCrafted: 1
+    CraftingLevel: 3
+    CraftinRecipe:
+    - ItemName: Planks
+      Amount: 5
+  - name: CopperBar
+    ItemName: Copper_Bar
+    AmountCrafted: 1
+    CraftingLevel: 3
+    CraftinRecipe:
+    - ItemName: Copper_Ore
+      Amount: 5
+  - name: IronBar
+    ItemName: Iron_Bar
+    AmountCrafted: 1
+    CraftingLevel: 3
+    CraftinRecipe:
+    - ItemName: Iron_Ore
+      Amount: 5
+  - name: GoldBar
+    ItemName: Gold_Bar
+    AmountCrafted: 1
+    CraftingLevel: 3
+    CraftinRecipe:
+    - ItemName: Gold_Ore
+      Amount: 5
+  - name: TinBar
+    ItemName: Tin_Bar
+    AmountCrafted: 1
+    CraftingLevel: 3
+    CraftinRecipe:
+    - ItemName: Tin_Ore
+      Amount: 5
+  - name: BronzeBar
+    ItemName: Bronze_Bar
+    AmountCrafted: 3
+    CraftingLevel: 3
+    CraftinRecipe:
+    - ItemName: Tin_Bar
+      Amount: 1
+    - ItemName: Copper_Bar
+      Amount: 3
+  - name: Bizmuth_Crystal
+    ItemName: Bizmuth_Crystal
+    AmountCrafted: 1
+    CraftingLevel: 3
+    CraftinRecipe:
+    - ItemName: Bizmuth_Ore
+      Amount: 5
   - name: CopperBlock
     ItemName: Copper_Block
     AmountCrafted: 1
@@ -76,47 +127,3 @@ MonoBehaviour:
     CraftinRecipe:
     - ItemName: Gold_Bar
       Amount: 9
-  - name: CopperBar
-    ItemName: Copper_Bar
-    AmountCrafted: 1
-    CraftingLevel: 3
-    CraftinRecipe:
-    - ItemName: Copper_Ore
-      Amount: 5
-  - name: IronBar
-    ItemName: Iron_Bar
-    AmountCrafted: 1
-    CraftingLevel: 3
-    CraftinRecipe:
-    - ItemName: Iron_Ore
-      Amount: 5
-  - name: GoldBar
-    ItemName: Gold_Bar
-    AmountCrafted: 1
-    CraftingLevel: 3
-    CraftinRecipe:
-    - ItemName: Gold_Ore
-      Amount: 5
-  - name: Bizmuth_Crystal
-    ItemName: Bizmuth_Crystal
-    AmountCrafted: 1
-    CraftingLevel: 3
-    CraftinRecipe:
-    - ItemName: Bizmuth_Ore
-      Amount: 5
-  - name: TinBar
-    ItemName: Tin_Bar
-    AmountCrafted: 1
-    CraftingLevel: 3
-    CraftinRecipe:
-    - ItemName: Tin_Ore
-      Amount: 5
-  - name: BronzeBar
-    ItemName: Bronze_Bar
-    AmountCrafted: 3
-    CraftingLevel: 3
-    CraftinRecipe:
-    - ItemName: Tin_Bar
-      Amount: 1
-    - ItemName: Copper_Bar
-      Amount: 3

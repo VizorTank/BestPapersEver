@@ -13,8 +13,9 @@ MonoBehaviour:
   m_Name: Ironblock
   m_EditorClassIdentifier: 
   NameID: Iron_Block
+  IntID: 0
   maxstack: 999
   ItemName: Block of Iron
-  image: {fileID: 0}
+  image: {fileID: 21300000, guid: 07310ea15d5e77e4d9da2ffec7b8126c, type: 3}
   itemtype: 0
   BlockID: 0
