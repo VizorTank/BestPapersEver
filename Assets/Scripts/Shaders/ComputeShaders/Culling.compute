@@ -3,14 +3,9 @@
 #pragma kernel ScanGroupSums
 #pragma kernel Compact
 #pragma kernel ResetArgs
-#pragma kernel BitonicSort
 #pragma kernel FindStartValue
 
 #define NUM_THREAD_GROUPS_X 64
-
-// struct BlockType {
-//     int isSolid;
-// };
 
 struct BlockSideData {
     float3 position;
@@ -18,18 +13,8 @@ struct BlockSideData {
     int type;
 };
 
-
-// Position is id
-// RWStructuredBuffer<BlockType> _BlockTypesBuffer;
 RWStructuredBuffer<int> _BlockIdsBuffer;
 RWStructuredBuffer<int> _BlockIsTransparentBuffer;
-
-// int isValidFront;
-// int isValidBack;
-// int isValidBot;
-// int isValidTop;
-// int isValidRight;
-// int isValidLeft;
 
 StructuredBuffer<int> _BlockIdsBufferBack;
 StructuredBuffer<int> _BlockIdsBufferFront;
@@ -38,29 +23,22 @@ StructuredBuffer<int> _BlockIdsBufferBot;
 StructuredBuffer<int> _BlockIdsBufferLeft;
 StructuredBuffer<int> _BlockIdsBufferRight;
 
-
-// RWStructuredBuffer<GrassData> _GrassDataBuffer;
-// RWStructuredBuffer<GrassData> _CulledGrassOutputBuffer;
 RWStructuredBuffer<BlockSideData> _BlockSideDataBuffer;
 RWStructuredBuffer<BlockSideData> _CulledBlockSideDataOutputBuffer;
 
 RWStructuredBuffer<uint> _ArgsBuffer;
 RWStructuredBuffer<uint> _Size;
 
-// block count * 3 sides (only 3 sides can be visible)
 RWStructuredBuffer<uint> _VoteBuffer;
 RWStructuredBuffer<uint> _ScanBuffer;
 RWStructuredBuffer<uint> _GroupSumArray;
 RWStructuredBuffer<uint> _GroupSumArrayIn;
 RWStructuredBuffer<uint> _GroupSumArrayOut;
 
-float4x4 MATRIX_VP;
 int _NumOfGroups;
 groupshared uint temp[2 * NUM_THREAD_GROUPS_X];
 groupshared uint grouptemp[2 * 1024];
 
-// float _Distance;
-// float3 _CameraPosition;
 int3 _ChunkSize; 
 
 static const int3 neighbours[6] = {
@@ -237,39 +215,6 @@ void ResetArgs(uint3 id : SV_DISPATCHTHREADID) {
 }
 
 StructuredBuffer<uint> _SizeReadOnly;
-
-[numthreads(1024, 1, 1)]
-void BitonicSort(uint3 id : SV_DispatchThreadID)
-{
-    uint ArrayLength = _SizeReadOnly[0];
-
-    uint arraySizePowerOfTwo = 2 << firstbithigh(ArrayLength);
-    AllMemoryBarrierWithGroupSync();
-    for (uint bucketSize = 2; bucketSize <= arraySizePowerOfTwo; bucketSize *= 2)
-    {
-        uint bucketId = id.x / bucketSize;
-        uint direction = bucketId % 2;
-        for (uint compareShift = bucketSize >> 1; compareShift > 0; compareShift /= 2)
-        {
-            if (id.x < ArrayLength && id.x % (compareShift * 2) < compareShift)
-            {
-                uint index         = direction == 0 ?                id.x : id.x + compareShift;
-                uint swapElemIndex = direction == 0 ? id.x + compareShift :                id.x;
-                
-                if(swapElemIndex < ArrayLength && index < ArrayLength)
-                {
-                    if(_CulledBlockSideDataOutputBuffer[index].type > _CulledBlockSideDataOutputBuffer[swapElemIndex].type)
-                    {
-                        BlockSideData temp = _CulledBlockSideDataOutputBuffer[index];
-                        _CulledBlockSideDataOutputBuffer[index] = _CulledBlockSideDataOutputBuffer[swapElemIndex];
-                        _CulledBlockSideDataOutputBuffer[swapElemIndex] = temp;
-                    }
-                }
-            }
-            AllMemoryBarrierWithGroupSync();
-        }
-    }
-}
 RWStructuredBuffer<int> _ShiftValue;
 int _lookedValue;
 

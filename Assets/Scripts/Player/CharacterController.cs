@@ -196,16 +196,21 @@ public class CharacterController : MonoBehaviour
 
             Vector3 pos = transform.position -new Vector3(0f,(CharacterStats.height/2) *1.1f,0f);
         int type = 0;
-        worldClass.TryGetBlock(pos, ref type);
+        bool doesExists = worldClass.TryGetBlock(pos, ref type);
             if (type != 0)
             {
-                if (worldClass.blockTypesList.areSolid[type])
+                if (worldClass.GetBlockTypesList().areSolid[type])
                 {
                     DownBlock = new Vector3(Mathf.Floor(pos.x), Mathf.Floor(pos.y), Mathf.Floor(pos.z));
                     return;
                 }
             }
             
+        if (!doesExists)
+        {
+            DownBlock = new Vector3(Mathf.Floor(pos.x), Mathf.Floor(pos.y), Mathf.Floor(pos.z));
+            return;
+        }
            // step += checkIncrement;
         
         DownBlock = new Vector3(Mathf.Floor(transform.position.x), int.MinValue, transform.position.z);
@@ -222,7 +227,7 @@ public class CharacterController : MonoBehaviour
         worldClass.TryGetBlock(pos, ref type);
         if (type != 0)
         {
-            if (worldClass.blockTypesList.areSolid[type])
+            if (worldClass.GetBlockTypesList().areSolid[type])
             {
                 UpBlock = new Vector3(Mathf.Floor(pos.x), Mathf.Floor(pos.y), Mathf.Floor(pos.z));
                 return;
@@ -246,7 +251,7 @@ public class CharacterController : MonoBehaviour
             worldClass.TryGetBlock(pos, ref type);
             if (type != 0)
             {
-                if (worldClass.blockTypesList.areSolid[type])
+                if (worldClass.GetBlockTypesList().areSolid[type])
                 {
                     LimiterFront = (int)Mathf.Floor(pos.z);
                     return;
@@ -265,7 +270,7 @@ public class CharacterController : MonoBehaviour
             worldClass.TryGetBlock(pos, ref type);
             if (type != 0)
             {
-                if (worldClass.blockTypesList.areSolid[type])
+                if (worldClass.GetBlockTypesList().areSolid[type])
                 {
                     LimiterBack = (int)Mathf.Floor(pos.z) + 1;
                     return;
@@ -282,7 +287,7 @@ public class CharacterController : MonoBehaviour
         worldClass.TryGetBlock(pos, ref type);
         if (type != 0)
         {
-            if (worldClass.blockTypesList.areLiquid[type])
+            if (worldClass.GetBlockTypesList().areLiquid[type])
             {
                 inLiquid = true;
                 return;
@@ -301,7 +306,7 @@ public class CharacterController : MonoBehaviour
             worldClass.TryGetBlock(pos, ref type);
             if (type != 0)
             {
-                if (worldClass.blockTypesList.areSolid[type])
+                if (worldClass.GetBlockTypesList().areSolid[type])
                 {
                     LimiterRight = (int)Mathf.Floor(pos.x);
                     return;
@@ -320,7 +325,7 @@ public class CharacterController : MonoBehaviour
             worldClass.TryGetBlock(pos, ref type);
             if (type != 0)
             {
-                if (worldClass.blockTypesList.areSolid[type])
+                if (worldClass.GetBlockTypesList().areSolid[type])
                 {
                     LimiterLeft = (int)Mathf.Floor(pos.x) + 1;
                     return;

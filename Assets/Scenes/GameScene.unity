@@ -7058,7 +7058,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1799201786
 Transform:
   m_ObjectHideFlags: 0
@@ -8103,6 +8103,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5680718388364483949, guid: 8d45c8a09698c934cb1d6cc6d3496e5a, type: 3}
+      propertyPath: s
+      value: 
+      objectReference: {fileID: 11400000, guid: fe1b5bc811992f8bbb5431a033c722c3, type: 2}
+    - target: {fileID: 5680718388364483949, guid: 8d45c8a09698c934cb1d6cc6d3496e5a, type: 3}
       propertyPath: Load
       value: 0
       objectReference: {fileID: 0}
@@ -8132,6 +8136,10 @@ PrefabInstance:
       objectReference: {fileID: 11400000, guid: 3995175fb8f4be527a6f04750082b59b, type: 2}
     - target: {fileID: 5680718388364483949, guid: 8d45c8a09698c934cb1d6cc6d3496e5a, type: 3}
       propertyPath: renderDistance
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5680718388364483949, guid: 8d45c8a09698c934cb1d6cc6d3496e5a, type: 3}
+      propertyPath: GenerateNewWorld
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5680718388364483949, guid: 8d45c8a09698c934cb1d6cc6d3496e5a, type: 3}

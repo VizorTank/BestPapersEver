@@ -42,19 +42,6 @@ public class ChunkNeighbours
         }
     }
 
-    // public IChunk this[int3 pos]
-    // {
-    //     get
-    //     {
-    //         for (int i = 0; i < 6; i++)
-    //         {
-    //             if (math.all(pos == VoxelData.voxelNeighbours[i])) return this[i];
-    //         }
-
-    //         throw new System.Exception("Index out of bounds");
-    //     }
-    // }
-
     public ChunkNeighbourData GetData()
     {
         ChunkNeighbourData neighbourData = new ChunkNeighbourData();
@@ -92,7 +79,7 @@ public class ChunkNeighbours
     {
         for (int i = 0; i < 6; i++)
         {
-            if (this[i] != null)
+            if (this[i] != null && this[i].CanAccess())
                 this[i].ReleaseSharedData();
         }
     }

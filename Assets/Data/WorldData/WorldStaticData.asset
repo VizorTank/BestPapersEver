@@ -12,10 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 13c8633e1d0ca447eb399282640da280, type: 3}
   m_Name: WorldStaticData
   m_EditorClassIdentifier: 
-  RenderDistance: 4
   WorldHeightInChunks: 8
   BlockTypesList: {fileID: 11400000, guid: 3995175fb8f4be527a6f04750082b59b, type: 2}
-  Structures: []
+  Structures:
+  - {fileID: 11400000, guid: 1a3a10b732db207f48c320b007dea81a, type: 2}
   WorldBiomes:
     Biomes:
     - {fileID: 11400000, guid: 2e3ed30e8386f5944a41c2da90d9f6f6, type: 2}

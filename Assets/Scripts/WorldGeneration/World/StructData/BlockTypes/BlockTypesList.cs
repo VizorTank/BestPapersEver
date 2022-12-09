@@ -6,32 +6,25 @@ using UnityEngine;
 public class BlockTypesList : ScriptableObject
 {
     public List<BlockType> blockTypes;
-    public List<Texture2D> textures;
 
     public List<string> Names { get => names; }
     private List<string> names;
     public NativeArray<bool> areSolid;
     public NativeArray<bool> areTransparent;
-    public int[] areTransparentInt;
+
+    [HideInInspector] public int[] areTransparentInt;
     public NativeArray<bool> areInvisible;
     public NativeArray<bool> areReplacable;
     public NativeArray<bool> areLiquid;
 
-    public int BlockCount;
+    private int BlockCount;
     public List<Material> Materials { get => materials; }
     private List<Material> materials;
-
-    public Texture2DArray TextureArray;
-
-    public Material Material;
     public ComputeShader Blocks;
     public ComputeShader Culling;
     public ComputeShader Sorting;
 
     public ComputeBuffer BlocksIsTransparentBuffer;
-    public Mesh Mesh;
-    public Material MTest;
-    public Material MTest2;
 
     public void ProcessData()
     {
@@ -48,9 +41,6 @@ public class BlockTypesList : ScriptableObject
         areReplacable = new NativeArray<bool>(blockTypes.Count, Allocator.Persistent);
 
         areLiquid = new NativeArray<bool>(blockTypes.Count, Allocator.Persistent);
-        Texture texture = textures[1];
-        TextureArray = new Texture2DArray(texture.width, texture.height, blockTypes.Count - 1, TextureFormat.RGBA32, false);
-        TextureArray.filterMode = FilterMode.Point;
 
         BlockCount = 0;
         foreach (BlockType blockType in blockTypes)
@@ -64,12 +54,9 @@ public class BlockTypesList : ScriptableObject
             areInvisible[BlockCount] = blockType.isInvisible;
             areReplacable[BlockCount] = blockType.isReplaceable;
             areLiquid[BlockCount] = blockType.isLiquid;
-            if (BlockCount != 0)
-                TextureArray.SetPixels(textures[BlockCount].GetPixels(), BlockCount - 1);
 
             BlockCount++;
         }
-        TextureArray.Apply();
         BlocksIsTransparentBuffer.SetData(areTransparentInt);
     }
 

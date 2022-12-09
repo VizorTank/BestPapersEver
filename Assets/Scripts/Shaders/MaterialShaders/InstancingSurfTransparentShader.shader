@@ -14,7 +14,7 @@ Shader "Custom/InstancingSurfTransparentShader"
 
         CGPROGRAM
         // Physically based Standard lighting model, and enable shadows on all light types
-        #pragma surface surf Standard addshadow alpha:fade vertex:vert
+        #pragma surface surf Standard alpha:fade vertex:vert
         #pragma multi_compile_instancing
         #pragma instancing_options procedural:setup
 

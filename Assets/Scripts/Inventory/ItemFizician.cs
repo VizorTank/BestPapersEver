@@ -66,7 +66,7 @@ public class ItemFizician : MonoBehaviour
         worldClass.TryGetBlock(pos, ref type);
         if (type != 0)
         {
-            if (worldClass.blockTypesList.areSolid[type])
+            if (worldClass.GetBlockTypesList().areSolid[type])
             {
                 DownBlock = new Vector3(Mathf.Floor(pos.x), Mathf.Floor(pos.y-0.1f), Mathf.Floor(pos.z));
                 return;

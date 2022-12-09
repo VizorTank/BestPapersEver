@@ -39,8 +39,7 @@ public class Chunk : IChunk
                 _renderer = new ChunkRendererInstancing(this, _world);
                 break;
         }
-        // _renderer = new ChunkRenderer(this, _world);
-        // _renderer = new ChunkRendererInstancing(this, _world);
+
         _manipulator = new ChunkManipulator(this, _world);
         _state = ChunkState.Initialized;
         _isCreated = true;
@@ -61,7 +60,6 @@ public class Chunk : IChunk
         _state = ChunkState.Destroyed;
         _renderer.Destroy();
         _manipulator.Destroy();
-        // UpdateNeighbours();
 
         _world.RemoveChunk(GetChunkCoordinates());
 
@@ -69,52 +67,18 @@ public class Chunk : IChunk
         _neighbours.UpdateNeighboursNeighbourList();
     }
 
-    public bool IsDestroyed() 
-    {
-        return _isDestroyed;
-    }
-
-    public BiomeAttributesStruct GetBiome()
-    {
-        return _world.GetBiome(GetBiomeIndex());
-    }
-
-    public NativeArray<int> GetBlocks()
-    {
-        return _manipulator.GetBlocks();
-    }
-
-    public int GetBiomeIndex()
-    {
-        if (_biomeIndex < 0)
-            _biomeIndex = _world.GetBiomeIndex(GetChunkCoordinates());
-        
-        return _biomeIndex;
-    }
-
-    public int3 GetChunkCoordinates()
-    {
-        return _chunkCoordinates;
-    }
-
-    private bool TryGetNeigbours(ref ChunkNeighbours chunkNeighbours)
-    {
-        Profiler.BeginSample("Get Neighbours");
-        chunkNeighbours = _world.GetNeighbours(GetChunkCoordinates());
-        Profiler.EndSample();
-        return true;
-    }
-
-    public NativeArray<int> GetSharedData()
-    {
-        return _manipulator.GetSharedData();
-    }
-
-    public void ReleaseSharedData()
-    {
-        if (_manipulator != null)
-            _manipulator.ReleaseSharedData();
-    }
+    public bool IsDestroyed() => _isDestroyed;
+    public NativeArray<int> GetBlocks() => _manipulator.GetBlocks();
+    public int3 GetChunkCoordinates() => _chunkCoordinates;
+    public NativeArray<int> GetSharedData() => _manipulator.GetSharedData();
+    public void ReleaseSharedData() => _manipulator.ReleaseSharedData();
+    public void UpdateListOfNeighbours() => _neighbours.FillMissingNeighbours(_world, this);
+    public float3 GetChunkPosition() => new float3(GetChunkCoordinates()) * VoxelData.ChunkSize;
+    public bool CanAccess() => _manipulator != null && _manipulator.CanAccess() && !_isDestroyed;
+    public bool IsCreated() => _isCreated;
+    public bool CanBeSaved() => _manipulator != null && _manipulator.CanAccess();
+    public void Update() => _renderer.Update();
+    public ComputeBuffer GetBlocksBuffer() => _renderer.GetBlocksBuffer();
 
     private void LoadStructures()
     {
@@ -165,12 +129,6 @@ public class Chunk : IChunk
             
             Profiler.EndSample();
         }
-        
-    }
-
-    public void UpdateListOfNeighbours()
-    {
-        _neighbours.FillMissingNeighbours(_world, this);
     }
 
     public bool TryGetBlock(int3 position, out int blockId)
@@ -197,31 +155,11 @@ public class Chunk : IChunk
         UpdateNeighbours();
     }
 
-    public float3 GetChunkPosition()
-    {
-        return new float3(GetChunkCoordinates()) * VoxelData.ChunkSize;
-    }
-
-    public void Update()
-    {
-        _renderer.Update();
-    }
-
     public void UpdateNeighbours()
     {
         UpdateListOfNeighbours();
         _neighbours.UpdateNeighbours();
         Update();
-    }
-
-    public bool CanAccess()
-    {
-        return _manipulator != null && _manipulator.CanAccess() && !_isDestroyed;
-    }
-
-    public bool CanBeSaved()
-    {
-        return _manipulator != null && _manipulator.CanAccess();
     }
 
     public void CreateStructure(int3 structurePosition, int structureId)
@@ -237,7 +175,7 @@ public class Chunk : IChunk
     {
         Structure structure = _world.GetStructure(structureId);
 
-        int3 structureEndPosition = structure.Size3 + structurePosition;
+        int3 structureEndPosition = structure.Size + structurePosition;
         for (int i = 0; i < 3; i++)
         {
             if (math.any(structureEndPosition * VoxelData.axisArray[i] > VoxelData.ChunkSize))
@@ -246,11 +184,6 @@ public class Chunk : IChunk
             }
         }
     }
-
-    public ComputeBuffer GetBlocksBuffer()
-    {
-        return _renderer.GetBlocksBuffer();
-    }
 }
 
 public enum ChunkState
@@ -258,8 +191,6 @@ public enum ChunkState
     Created,
     Initialized,
     FullyCreated,
-    // RequireUpdate,
-    // Updated,
     Hidden,
     Destroyed
 }

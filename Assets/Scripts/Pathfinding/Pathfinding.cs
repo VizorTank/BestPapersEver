@@ -116,7 +116,7 @@ public class Pathfinding
     private PathNode CalculateNode(int x, int y, int z)
     {
 
-       if (!world.blockTypesList.areSolid[world.GetBlock(new Vector3(x, y, z))])
+       if (!world.GetBlockTypesList().areSolid[world.GetBlock(new Vector3(x, y, z))])
        {
            return new PathNode(x, y, z);
        }

@@ -5,7 +5,6 @@ using UnityEngine.Profiling;
 public class ChunkRenderer : IChunkRenderer
 {
     private IWorld _world;
-    
     private IChunk _chunk;
     
     private GameObject _chunkObject;
@@ -16,8 +15,6 @@ public class ChunkRenderer : IChunkRenderer
 
     private bool _requireUpdate;
     private bool _processing;
-
-    private bool isHidden = true;
 
     public ChunkRenderer(IChunk chunk, IWorld world)
     {
@@ -67,34 +64,13 @@ public class ChunkRenderer : IChunkRenderer
             if (_meshFilter == null)
                 Debug.Log("Missing Mesh Filter");
             _meshFilter.mesh = mesh;
-            isHidden = false;
             _processing = false;
         }
     }
 
-    // public void Unload()
-    // {
-    //     if (!isHidden)
-    //     {
-    //         _meshFilter.mesh = null;
-    //         isHidden = true;
-    //     }
-    // }
+    public void Update() => _requireUpdate = true;
 
-    public void Update()
-    {
-        _requireUpdate = true;
-    }
+    public bool RequireProcessing() => _requireUpdate || _processing;
 
-    // public void UpdateData() => Update();
-
-    public bool RequireProcessing()
-    {
-        return _requireUpdate || _processing;
-    }
-
-    public ComputeBuffer GetBlocksBuffer()
-    {
-        return ChunkRendererConst.voidChunkBlockIdBuffer;
-    }
+    public ComputeBuffer GetBlocksBuffer() => ChunkRendererConst.voidChunkBlockIdBuffer;
 }

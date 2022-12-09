@@ -69,7 +69,6 @@ public class ChunkRendererStateMachine
         if (_state != ChunkRendererStates.Ready) return;
         
         _state = ChunkRendererStates.CopyingBlocks;
-        // Debug.Log("Init");
         _chunk.GetBlocks().CopyTo(blocksForMeshGeneration);
     }
     
@@ -78,7 +77,7 @@ public class ChunkRendererStateMachine
         if (_state != ChunkRendererStates.CopyingBlocks) return;
         _state = ChunkRendererStates.CreatingClusters;
         ClusterData.Clear();
-        // Debug.Log("CreateClusters");
+        
         CreateClustersJob createClustersJob = new CreateClustersJob
         {
             blockIdDatas = blocksForMeshGeneration,
@@ -95,7 +94,6 @@ public class ChunkRendererStateMachine
     
     public void CheckClusterVisibility(ChunkNeighbours neighbours)
     {
-        
         if (_state != ChunkRendererStates.CreatingClusters || !generatingClustersJobHandle.IsCompleted) return;
         ChunkNeighbourData data = neighbours.GetData();
         _state = ChunkRendererStates.CheckingVisibility;
@@ -105,7 +103,6 @@ public class ChunkRendererStateMachine
         ClusterSidesData.Clear();
         NativeList<ClusterSidesDataStruct>.ParallelWriter writer = ClusterSidesData.AsParallelWriter();
         
-        // Debug.Log("CheckClusterVisibility");
         CheckClusterVisibilityJob checkClusterVisibilityJob = new CheckClusterVisibilityJob
         {
             blockIdDatas = blocksForMeshGeneration,
@@ -134,7 +131,7 @@ public class ChunkRendererStateMachine
 
         checkingVisibilityJobHandle.Complete();
         neighbours.ReleaseData();
-        // Debug.Log("CreateMeshDataWithClusters");
+        
         // Allocate mesh to create
         meshDataArray = Mesh.AllocateWritableMeshData(1);
 
@@ -152,7 +149,7 @@ public class ChunkRendererStateMachine
             triangleOrder = ChunkRendererConst.triangleOrder,
 
             // Block Types Count
-            blockTypesCount = _world.GetBlockTypesList().BlockCount,
+            blockTypesCount = _world.GetBlockTypesList().blockTypes.Count,
             blockTypesIsInvisible = _world.GetBlockTypesList().areInvisible,
 
             // How data is inserted to MeshData
@@ -189,8 +186,6 @@ public class ChunkRendererStateMachine
         mesh.RecalculateNormals();
         mesh.RecalculateBounds();
 
-        // Debug.Log("Created Mesh");
-
         return true;
     }
 }
@@ -202,25 +197,24 @@ public enum ChunkRendererStates
     CopyingBlocks,
     CreatingClusters,
     CheckingVisibility,
-    CreatingMeshData,
-    CreatingMesh
+    CreatingMeshData
 }
 
 public static class ChunkRendererConst
 {
-    public static NativeArray<int3> axisArray;// = new NativeArray<int3>(VoxelData.axisArray, Allocator.Persistent);
+    public static NativeArray<int3> axisArray;
     
-    public static NativeArray<int3> voxelNeighbours;// = new NativeArray<int3>(VoxelData.voxelNeighbours, Allocator.Persistent);
-    public static NativeArray<float3> voxelVerts;// = new NativeArray<float3>(VoxelData.voxelVerts, Allocator.Persistent);
-    public static int voxelTrisSize;// = VoxelData.voxelTrisSize;
-    public static NativeArray<int> voxelTris;// = new NativeArray<int>(VoxelData.voxelTris, Allocator.Persistent);
-    public static NativeArray<float2> voxelUvs;// = new NativeArray<float2>(VoxelData.voxelUvs, Allocator.Persistent);
-    public static NativeArray<int> triangleOrder;// = new NativeArray<int>(VoxelData.triangleOrder, Allocator.Persistent);
+    public static NativeArray<int3> voxelNeighbours;
+    public static NativeArray<float3> voxelVerts;
+    public static int voxelTrisSize;
+    public static NativeArray<int> voxelTris;
+    public static NativeArray<float2> voxelUvs;
+    public static NativeArray<int> triangleOrder;
     
-    public static NativeArray<VertexAttributeDescriptor> layout;// = new NativeArray<VertexAttributeDescriptor>(VoxelData.layoutVertex, Allocator.Persistent);
+    public static NativeArray<VertexAttributeDescriptor> layout;
  
-    public static NativeArray<int3> clusterSides;// = new NativeArray<int3>(VoxelData.clusterSidesArray, Allocator.Persistent);
-    public static NativeArray<int> voidChunkBlockId;// = new NativeArray<int>(VoxelData.ChunkSize.x * VoxelData.ChunkSize.y * VoxelData.ChunkSize.z, Allocator.Persistent);
+    public static NativeArray<int3> clusterSides;
+    public static NativeArray<int> voidChunkBlockId;
     public static ComputeBuffer voidChunkBlockIdBuffer;
 
     public static void Init()

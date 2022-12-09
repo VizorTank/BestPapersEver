@@ -267,14 +267,11 @@ public class ChunkRendererInstancing : IChunkRenderer
         culling.Dispatch(4, 1, 1, 1);
 
         culling.SetInt("_lookedValue", i + 1);
-        culling.SetBuffer(6, "_CulledBlockSideDataOutputBuffer", culledPositionsBuffer);
-        culling.SetBuffer(6, "_SizeReadOnly", sidesCountBuffer);
-        culling.SetBuffer(6, "_ShiftValue", ShiftsBuffers[i]);
-        culling.SetBuffer(6, "_ArgsBuffer", ArgsBuffers[i]);
-        culling.Dispatch(6, numGroupScanThreadGroups, 1, 1);
-
-        // Materials[i].SetBuffer("_BlockSideDataBuffer", culledPositionsBuffer);
-        // Materials[i].SetBuffer("_ShiftData", ShiftsBuffers[i]);
+        culling.SetBuffer(5, "_CulledBlockSideDataOutputBuffer", culledPositionsBuffer);
+        culling.SetBuffer(5, "_SizeReadOnly", sidesCountBuffer);
+        culling.SetBuffer(5, "_ShiftValue", ShiftsBuffers[i]);
+        culling.SetBuffer(5, "_ArgsBuffer", ArgsBuffers[i]);
+        culling.Dispatch(5, numGroupScanThreadGroups, 1, 1);
     }
 
     void SetMaterialBuffers()

@@ -86,6 +86,7 @@ public static class VoxelData
         return result;
     }
     public static int GetIndex(int3 position) => position.x + (position.y + position.z * ChunkSize.y) * ChunkSize.x;
+    
     public static int3 GetChunkCoordinates(float3 position)
     {
         int3 cPos = new int3(Mathf.FloorToInt(position.x / ChunkSize.x),

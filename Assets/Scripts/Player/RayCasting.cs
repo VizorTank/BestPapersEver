@@ -6,19 +6,13 @@ using System.Linq;
 
 public class RayCasting
 {
-    private static List<GameObject> markers = new List<GameObject>();
+    // private static List<GameObject> markers = new List<GameObject>();
 
     private static GameObject CreateGameObject(IWorld world, float3 pos, int a, float size = 1.01f, float displacement = 0.5f)
     {
         var result = new GameObject();
         var _meshFilter = result.AddComponent<MeshFilter>();
         var _meshRenderer = result.AddComponent<MeshRenderer>();
-
-        _meshFilter.mesh = world.GetBlockTypesList().Mesh;
-        if (a == 0)
-            _meshRenderer.material = world.GetBlockTypesList().MTest;
-        else
-            _meshRenderer.material = world.GetBlockTypesList().MTest2;
 
         result.transform.position = pos + new float3(displacement, displacement, displacement);
         result.transform.localScale = new Vector3(size, size, size);

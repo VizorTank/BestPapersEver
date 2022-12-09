@@ -16,8 +16,6 @@ public class ChunkManipulator
     
 
     private ChunkGenerator2 _chunkGenerator;
-
-    // private List<StructureToLoad> StructuresToLoad = new List<StructureToLoad>();
     
     public ChunkManipulator(IChunk chunk, IWorld world)
     {
@@ -43,14 +41,9 @@ public class ChunkManipulator
         }
     }
 
-    public bool CanAccess()
-    {
-        return _blocksId != null && _blocksId.Length != 0;
-    }
+    public bool CanAccess() => _blocksId != null && _blocksId.Length != 0;
 
     #region GetDataForNeighbours
-
-
     public NativeArray<int> GetSharedData()
     {
         if (_sharedCount <= 0)
@@ -70,21 +63,12 @@ public class ChunkManipulator
             try { _sharedData.Dispose(); } catch { }
         }
     }
-
     #endregion
 
 
     #region AccessChunk
-
-    public int GetBlock(int3 blockPosition)
-    {
-        return _blocksId[VoxelData.GetIndex(blockPosition)];
-    }
-
-    public NativeArray<int> GetBlocks()
-    {
-        return _blocksId;
-    }
+    public int GetBlock(int3 blockPosition) => _blocksId[VoxelData.GetIndex(blockPosition)];
+    public NativeArray<int> GetBlocks() => _blocksId;
 
     public void SetBlock(int3 blockPosition, int blockId)
     {
@@ -94,12 +78,10 @@ public class ChunkManipulator
         int y = p / VoxelData.ChunkSize.x % VoxelData.ChunkSize.y;
         int z = p / VoxelData.ChunkSize.x / VoxelData.ChunkSize.y;
         _chunk.Update();
-    }
-        
+    }  
     #endregion
 
     #region Save&Load
-
     public void Load(ChunkData data)
     {
         if (data.BlockIds != null)
@@ -108,7 +90,6 @@ public class ChunkManipulator
             _chunk.Update();
         }
     }
-
     #endregion
 
 
@@ -127,7 +108,7 @@ public class ChunkManipulator
     private void PlaceStructure(int3 structurePosition, int structureId)
     {
         Structure structure = _world.GetStructure(structureId);
-        int3 sSize = structure.Size3;
+        int3 sSize = structure.Size;
         int3 Size = VoxelData.ChunkSize;
 
         for (int x = math.max(structurePosition.x, 0); x < math.min(sSize.x + structurePosition.x, Size.x); x++)
@@ -138,7 +119,7 @@ public class ChunkManipulator
                 {
                     int3 sBlockPos = new int3(x, y, z) - structurePosition;
                     int blockId = _blocksId[VoxelData.GetIndex(new int3(x, y, z))];
-                    int structureBlockId = structure.Blocks[sBlockPos.x][sBlockPos.y][sBlockPos.z];
+                    int structureBlockId = structure.GetValue(new int3(sBlockPos.x, sBlockPos.y, sBlockPos.z));
                     if (_world.GetBlockTypesList().areReplacable[blockId] ||
                         !_world.GetBlockTypesList().areReplacable[structureBlockId])
                         if (_world.GetBlockTypesList().blockTypes[blockId].isReplaceableByStructure)

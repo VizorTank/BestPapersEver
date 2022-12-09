@@ -6,17 +6,13 @@ struct BlockSideData {
     int type;
 };
 
-// RWStructuredBuffer<int> Array;
 RWStructuredBuffer<BlockSideData> _CulledBlockSideDataOutputBuffer;
-// StructuredBuffer<uint> _SizeReadOnly;
 
 [numthreads(1024, 1, 1)]
 void BitonicSort(uint3 id : SV_DispatchThreadID)
 {
-    int ArrayLength = 32768;//_SizeReadOnly[0];
+    int ArrayLength = 32768;
     uint arraySizePowerOfTwo = 2 << (firstbithigh(ArrayLength));
-    // while (arraySizePowerOfTwo < ArrayLength)
-    //     arraySizePowerOfTwo <<= 1;
     
     AllMemoryBarrierWithGroupSync();
     for (uint bucketSize = 2; bucketSize <= arraySizePowerOfTwo; bucketSize *= 2)

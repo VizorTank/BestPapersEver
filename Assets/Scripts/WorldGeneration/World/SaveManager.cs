@@ -11,11 +11,14 @@ using UnityEngine.Profiling;
 
 public class SaveManager : ISaveManager
 {
-    // public Dictionary<int3, IChunk> LoadedChunks;
-
-    #region Singleton
-    // private static ISaveManager _instance;
     private static string _applicationPath;
+
+    private string _worldPath;
+
+    private Dictionary<int3, IChunk> _generatedChunks = new Dictionary<int3, IChunk>();
+    private List<Task<ChunkData>> _chunksToLoad = new List<Task<ChunkData>>();
+    private Dictionary<int3, IChunk> _chunksToSave = new Dictionary<int3, IChunk>();
+    
     private SaveManager(IWorld world)
     { 
         _generatedChunks = new Dictionary<int3, IChunk>();
@@ -31,31 +34,21 @@ public class SaveManager : ISaveManager
     }
     public static ISaveManager GetInstance(IWorld world)
     {
-        // if (_instance == null)
-        // {
-        //     _instance = new SaveManager();
-        //     _applicationPath = Application.persistentDataPath;
-        // }
         _applicationPath = Application.persistentDataPath;
         
-        // return _instance;
         return new SaveManager(world);
     }
-    #endregion
-
-    // private bool _shouldSave = true;
-    // private bool _shouldLoad = true;
-
-    private string _worldPath;
-
-    private Dictionary<int3, IChunk> _generatedChunks = new Dictionary<int3, IChunk>();
-    private List<Task<ChunkData>> _chunksToLoad = new List<Task<ChunkData>>();
-    private Dictionary<int3, IChunk> _chunksToSave = new Dictionary<int3, IChunk>();
 
     public void Run()
     {
         LoadingChunks();
         SavingChunks();
+    }
+
+    public void SaveWorld(IWorld world, Dictionary<int3, IChunk> chunksToUnload)
+    {
+        UnloadChunks(world, chunksToUnload);
+        SaveWorld();
     }
 
     public void SaveWorld()
@@ -84,7 +77,6 @@ public class SaveManager : ISaveManager
             WorldData data = formatter.Deserialize(stream) as WorldData;
 
             stream.Close();
-            //Debug.Log("Chunk loaded!");
             _generatedChunks = data.GetGeneratedChunks();
         }
         else
@@ -94,53 +86,36 @@ public class SaveManager : ISaveManager
         }
     }
 
-    
-
     public string GetChunkPath(int3 chunkCoords)
     {
         return _worldPath
-                      + "/Chunks/chunk"
-                      + "_" + chunkCoords.x 
-                      + "_" + chunkCoords.y
-                      + "_" + chunkCoords.z
-                      + ".chunk";
+            + "/Chunks/chunk"
+            + "_" + chunkCoords.x 
+            + "_" + chunkCoords.y
+            + "_" + chunkCoords.z
+            + ".chunk";
     }
 
     public void SavingChunks()
     {
-        // Dictionary<int3, IChunk> chunksToSave = new Dictionary<int3, IChunk>();
+        Dictionary<int3, IChunk> chunksToSave = new Dictionary<int3, IChunk>();
 
         foreach (var item in _chunksToSave)
         {
             if (item.Value == null) continue;
             if (SaveChunk(item.Value))
                 item.Value.Destroy();
-            // else
-            // {
-            //     chunksToSave.Add(item.Key, item.Value);
-                
-            // }
+            else
+                if (!item.Value.IsCreated())
+                    chunksToSave.Add(item.Key, item.Value);
         }
-        // _chunksToSave = chunksToSave;
+        _chunksToSave = chunksToSave;
     }
-
-    // public void WaitForChunksToSave()
-    // {
-    //     Debug.Log("Waiting for all chunks to save");
-    //     int i = 0;
-    //     while (_chunksToSave.Count > 0)
-    //     {
-    //         SavingChunks();
-    //         if (i++ > 1000) break;
-    //     }
-    //     Debug.Log("All Chunks saved");
-    // }
 
     public bool SaveChunk(IChunk chunk)
     {
         if (!chunk.CanBeSaved())
         {
-            // Debug.Log("Cant access chunk");
             return false;
         }
 
@@ -150,7 +125,6 @@ public class SaveManager : ISaveManager
         ChunkData data = new ChunkData(chunk);
 
         string path = GetChunkPath(chunkCoordinates);
-        //Debug.Log("Saved " + path);
 
         FileStream stream = new FileStream(path, FileMode.Create);
         formatter.Serialize(stream, data);
@@ -220,13 +194,7 @@ public class SaveManager : ISaveManager
         if (chunk == null || _chunksToSave.ContainsKey(chunk.GetChunkCoordinates())) return;
 
         _chunksToSave.Add(chunk.GetChunkCoordinates(), chunk);
-
-        // SaveChunk(chunk);
-        // // GeneratedChunks[chunk.GetChunkCoordinates()] = null;
-        // chunk.Destroy();
     }
-
-    
 
     private void LoadChunkFromFile(int3 chunkCoord)
     {
@@ -237,7 +205,6 @@ public class SaveManager : ISaveManager
         Profiler.BeginSample("CreateTask");
         Task<ChunkData> task = Task.Factory.StartNew<ChunkData>(() => {
             if (File.Exists(path))
-            // if (false)
             {
                 BinaryFormatter formatter = new BinaryFormatter();
                 FileStream stream = new FileStream(path, FileMode.Open);
@@ -245,22 +212,15 @@ public class SaveManager : ISaveManager
                 ChunkData data = formatter.Deserialize(stream) as ChunkData;
 
                 stream.Close();
-                //Debug.Log("Chunk loaded!");
                 return data;
             }
             else
             {
-                // Debug.LogWarning("File does not exists!");
                 return new ChunkData(chunkCoord);
             }
         });
         Profiler.EndSample();
 
         _chunksToLoad.Add(task);
-    }
-
-    public static void Destroy()
-    {
-        // _instance = null;
     }
 }
