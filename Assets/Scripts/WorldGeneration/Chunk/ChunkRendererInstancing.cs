@@ -10,43 +10,49 @@ public class ChunkRendererInstancing : IChunkRenderer
 {
     private IWorld _world;
     private IChunk _chunk;
-
     private int3 chunkSize = VoxelData.ChunkSize;
 
-    private float AmbientOcclusionIntensity = 0.5f;
-    private Color AmbientOcclusionColor;
+    private bool _isCreated = false;
+    private bool _updated = true;
+    private int size;
 
+
+    // Compute Shaders
     private ComputeShader blocks;
-    private ComputeBuffer argsBuffer;
-
+    private ComputeShader _sorting;
     public ComputeShader culling;
+
+    // Compute Buffers
+    private ComputeBuffer blocksIdsBuffer;
+    // Const
+    private ComputeBuffer blocksIsTransparentBuffer;
+    // Culling
     private ComputeBuffer voteBuffer;
     private ComputeBuffer scanBuffer;
     private ComputeBuffer groupSumArrayBuffer;
     private ComputeBuffer scannedGroupSumBuffer;
+    private ComputeBuffer blocksSideDatas;
+    // Result
     private ComputeBuffer culledPositionsBuffer;
-    private Texture2DArray Texture2DArray;
+    private ComputeBuffer sidesCountBuffer;
 
-    ComputeBuffer blocksIdsBuffer;
-    ComputeBuffer blocksIsTransparentBuffer;
-    ComputeBuffer blocksSideDatas;
+    // private Texture2DArray Texture2DArray;
+
+    private List<Material> Materials;
+    private List<ComputeBuffer> ShiftsBuffers;
+    private List<ComputeBuffer> ArgsBuffers;
 
     private Mesh mesh;
-    private Material material;
     private Bounds bounds;
 
     private int numThreadGroups;
     private int numVoteThreadGroups;
     private int numGroupScanThreadGroups;
 
-    int[] blocksId;
-
-    private JobHandle _fillDataJobHandle;
-
     private struct MeshProperties {
         public Vector3 position;
         public int rotation;
-        public Vector4 color;
+        public int type;
 
         public static int Size() {
             return
@@ -62,19 +68,25 @@ public class ChunkRendererInstancing : IChunkRenderer
         _chunk = chunk;
     }
 
-    private int size;
+    private void Init()
+    {
+        Setup();
+        _isCreated = true;
+        _chunk.UpdateNeighbours();
+        Update();
+    }
 
     private void Setup() {
         Mesh mesh = CreateQuad();
         this.mesh = mesh;
 
-        material = new Material(_world.GetBlockTypesList().Material);
         blocks = _world.GetBlockTypesList().Blocks;
+        _sorting = _world.GetBlockTypesList().Sorting;
         culling = _world.GetBlockTypesList().Culling;
 
         // Boundary surrounding the meshes we will be drawing.  Used for occlusion.
         bounds = new Bounds(_chunk.GetChunkPosition() + new float3(0.5f, 0.5f, 0.5f), Vector3.one * chunkSize.x * 2);
-        size = GetChunkVolume() * 6;
+        size = GetChunkVolume() * 8;
 
         numThreadGroups = Mathf.CeilToInt(size / 128.0f);
         if (numThreadGroups > 128) {
@@ -90,40 +102,14 @@ public class ChunkRendererInstancing : IChunkRenderer
         numVoteThreadGroups = Mathf.CeilToInt(size / 128.0f);
         numGroupScanThreadGroups = Mathf.CeilToInt(size / 1024.0f);
         
-        // CreateBlocks();
-        CreateArgs(size);
         InitializeBuffers(size);
-        CreateTextureArray();
-        CreateBlockBuffers();
+        InitializeMaterialBuffers();
+        // SetMaterialBuffers();
     }
 
     int GetChunkVolume()
     {
         return chunkSize.x * chunkSize.y * chunkSize.z;
-    }
-
-    void CreateTextureArray()
-    {
-        Texture2DArray = _world.GetBlockTypesList().TextureArray;
-        // if (Textures.Count <= 0) return;
-        // Texture2D text = Textures[0];
-        // Texture2DArray = new Texture2DArray(text.width, text.height, Textures.Count, text.format, false);
-        // Texture2DArray.filterMode = FilterMode.Point;
-        // for (int i = 0; i < Textures.Count; i++)
-        // {
-        //     Texture2DArray.SetPixels(Textures[i].GetPixels(), i);
-        // }
-        // Texture2DArray.Apply();
-        // AssetDatabase.CreateAsset(Texture2DArray, "Assets/Texture2DArray.png");
-    }
-
-    void CreateBlockBuffers()
-    {
-        blocksIsTransparentBuffer = _world.GetBlockTypesList().BlocksIsTransparentBuffer;
-        // blockIsTransparent = _world.GetBlockTypesList().areTransparentInt;
-
-        // blocksIsTransparentBuffer = new ComputeBuffer(blockIsTransparent.Length, sizeof(int));
-        // blocksIsTransparentBuffer.SetData(blockIsTransparent);
     }
 
     private void InitializeBuffers(int size)
@@ -138,32 +124,103 @@ public class ChunkRendererInstancing : IChunkRenderer
         scanBuffer = new ComputeBuffer(size, 4);
         groupSumArrayBuffer = new ComputeBuffer(numThreadGroups, 4);
         scannedGroupSumBuffer = new ComputeBuffer(numThreadGroups, 4);
+
+        sidesCountBuffer = new ComputeBuffer(1, sizeof(int));
+
+        blocksIsTransparentBuffer = _world.GetBlockTypesList().BlocksIsTransparentBuffer;
         Profiler.EndSample();
     }
 
-    void CreateArgs(int size)
+    public ComputeBuffer GetBlocksBuffer()
+    {
+        if (!_isCreated) 
+        {
+            Init();
+        }
+
+        return blocksIdsBuffer;
+    }
+
+    void InitializeMaterialBuffers()
+    {
+        Materials = new List<Material>();
+        ShiftsBuffers = new List<ComputeBuffer>();
+        ArgsBuffers = new List<ComputeBuffer>();
+        for (int i = 1; i < _world.GetBlockTypesList().blockTypes.Count; i++)
+        {
+            ShiftsBuffers.Add(new ComputeBuffer(1, sizeof(int)));
+            ArgsBuffers.Add(CreateArgsBuffer());
+            Materials.Add(new Material(_world.GetBlockTypesList().blockTypes[i].material));
+
+            Materials[i - 1].SetBuffer("_BlockSideDataBuffer", culledPositionsBuffer);
+            Materials[i - 1].SetBuffer("_ShiftData", ShiftsBuffers[i - 1]);
+        }
+    }
+
+    ComputeBuffer CreateArgsBuffer()
     {
         uint[] args = new uint[5] { 0, 0, 0, 0, 0 };
         args[0] = (uint)mesh.GetIndexCount(0);
-        args[1] = (uint)size;
+        args[1] = (uint)0;
         args[2] = (uint)mesh.GetIndexStart(0);
         args[3] = (uint)mesh.GetBaseVertex(0);
-        argsBuffer = new ComputeBuffer(1, args.Length * sizeof(uint), ComputeBufferType.IndirectArguments);
-        argsBuffer.SetData(args);
+        ComputeBuffer buffer = new ComputeBuffer(1, args.Length * sizeof(uint), ComputeBufferType.IndirectArguments);
+        buffer.SetData(args);
+        return buffer;
     }
 
-    void Culling()
+    private void UpdateShaderData(ChunkNeighbours neighbours)
     {
-        culling.SetBuffer(4, "_ArgsBuffer", argsBuffer);
-        culling.Dispatch(4, 1, 1, 1);
+        if (!_chunk.CanAccess()) return;
+        Profiler.BeginSample("Updating Instancing");
+        
+        Profiler.BeginSample("CreateBlockSides");
+        CreateBlockSides();
+        Profiler.EndSample();
+
+        blocksIsTransparentBuffer = _world.GetBlockTypesList().BlocksIsTransparentBuffer;
+
+        Profiler.BeginSample("Culling");
+        Culling(neighbours);
+        Profiler.EndSample();
+
+        Profiler.BeginSample("SortBlockSides");
+        SortBlockSides();
+        Profiler.EndSample();
+
+        Profiler.EndSample();
+    }
+
+    private void CreateBlockSides()
+    {
+        Profiler.BeginSample("Setting data");
+        blocksIdsBuffer.SetData(_chunk.GetBlocks());
+        Profiler.EndSample();
+
+        Vector3 pos = _world.GetPlayerPosition();
+        blocks.SetInts("_ChunkSize", new int[] { chunkSize.x, chunkSize.y, chunkSize.z });
+        blocks.SetFloats("_CameraPosition", new float[] { pos.x, pos.y, pos.z });
+        blocks.SetBuffer(0, "_BlockIds", blocksIdsBuffer);
+        blocks.SetBuffer(0, "_BlockSideDatas", blocksSideDatas);
+        blocks.Dispatch(0, chunkSize.x / 8, chunkSize.y / 8, chunkSize.z / 8);
+    }
+
+    private void Culling(ChunkNeighbours neighbours)
+    {
+        var buffers = neighbours.GetBufferData();
 
         // Vote
-        // culling.SetMatrix("MATRIX_VP", VP);
+        culling.SetBuffer(0, "_BlockIdsBufferBack",  buffers[0]);
+        culling.SetBuffer(0, "_BlockIdsBufferFront", buffers[1]);
+        culling.SetBuffer(0, "_BlockIdsBufferTop",   buffers[2]);
+        culling.SetBuffer(0, "_BlockIdsBufferBot",   buffers[3]);
+        culling.SetBuffer(0, "_BlockIdsBufferLeft",  buffers[4]);
+        culling.SetBuffer(0, "_BlockIdsBufferRight", buffers[5]);
+
         culling.SetBuffer(0, "_BlockIdsBuffer", blocksIdsBuffer);
         culling.SetBuffer(0, "_BlockIsTransparentBuffer", blocksIsTransparentBuffer);
         culling.SetBuffer(0, "_BlockSideDataBuffer", blocksSideDatas);
         culling.SetBuffer(0, "_VoteBuffer", voteBuffer);
-        // culling.SetVector("_CameraPosition", _world.GetPlayerPosition());
         culling.SetInts("_ChunkSize", new int[] { chunkSize.x, chunkSize.y, chunkSize.z });
         culling.Dispatch(0, numVoteThreadGroups, 1, 1);
 
@@ -183,20 +240,115 @@ public class ChunkRendererInstancing : IChunkRenderer
         culling.SetBuffer(3, "_BlockSideDataBuffer", blocksSideDatas);
         culling.SetBuffer(3, "_VoteBuffer", voteBuffer);
         culling.SetBuffer(3, "_ScanBuffer", scanBuffer);
-        culling.SetBuffer(3, "_ArgsBuffer", argsBuffer);
+        culling.SetBuffer(3, "_Size", sidesCountBuffer);
         culling.SetBuffer(3, "_CulledBlockSideDataOutputBuffer", culledPositionsBuffer);
         culling.SetBuffer(3, "_GroupSumArray", scannedGroupSumBuffer);
         culling.Dispatch(3, numThreadGroups, 1, 1);
     }
 
-    void RunCompute()
+    private void SortBlockSides()
     {
-        Vector3 pos = _world.GetPlayerPosition();
-        blocks.SetInts("_ChunkSize", new int[] { chunkSize.x, chunkSize.y, chunkSize.z });
-        blocks.SetFloats("_CameraPosition", new float[] { pos.x, pos.y, pos.z });
-        blocks.SetBuffer(0, "_BlockIds", blocksIdsBuffer);
-        blocks.SetBuffer(0, "_BlockSideDatas", blocksSideDatas);
-        blocks.Dispatch(0, chunkSize.x / 8, chunkSize.y / 8, chunkSize.z / 8);
+        // Sort
+        _sorting.SetBuffer(0, "_CulledBlockSideDataOutputBuffer", culledPositionsBuffer);
+        _sorting.Dispatch(0, 1, 1, 1);//numGroupScanThreadGroups
+    }
+    
+    void UpdateMaterials()
+    {
+        for (int i = 0; i < Materials.Count; i++)
+        {
+            UpdateMaterial(i);
+        }
+    }
+
+    void UpdateMaterial(int i)
+    {
+        culling.SetBuffer(4, "_ArgsBuffer", ArgsBuffers[i]);
+        culling.Dispatch(4, 1, 1, 1);
+
+        culling.SetInt("_lookedValue", i + 1);
+        culling.SetBuffer(6, "_CulledBlockSideDataOutputBuffer", culledPositionsBuffer);
+        culling.SetBuffer(6, "_SizeReadOnly", sidesCountBuffer);
+        culling.SetBuffer(6, "_ShiftValue", ShiftsBuffers[i]);
+        culling.SetBuffer(6, "_ArgsBuffer", ArgsBuffers[i]);
+        culling.Dispatch(6, numGroupScanThreadGroups, 1, 1);
+
+        // Materials[i].SetBuffer("_BlockSideDataBuffer", culledPositionsBuffer);
+        // Materials[i].SetBuffer("_ShiftData", ShiftsBuffers[i]);
+    }
+
+    void SetMaterialBuffers()
+    {
+        for (int i = 0; i < Materials.Count; i++)
+        {
+            Materials[i].SetBuffer("_BlockSideDataBuffer", culledPositionsBuffer);
+            Materials[i].SetBuffer("_ShiftData", ShiftsBuffers[i]);
+        }
+    }
+
+    public bool RequireProcessing()
+    {
+        if (!_isCreated) Init();
+
+        return true;
+    }
+
+    public void Render(ChunkNeighbours neighbours)
+    {
+        if (!_updated)
+        {
+            _updated = true;
+            UpdateShaderData(neighbours);
+            UpdateMaterials();
+        }
+        DrawInstanced();
+    }
+
+    void DrawInstanced()
+    {
+        SetMaterialBuffers();
+        GL.Flush();
+        for (int i = 0; i < Materials.Count; i++)
+        {
+            Graphics.DrawMeshInstancedIndirect(mesh, 0, Materials[i], bounds, ArgsBuffers[i]);
+        }
+    }
+
+    public void Update()
+    {
+        if (!_isCreated) return;
+        _updated = false;
+    }
+
+    public void Destroy()
+    {
+        if (!_isCreated) return;
+        Profiler.BeginSample("Destroying Instancing Buffers");
+        DisposeBuffer(ref blocksIdsBuffer);
+        DisposeBuffer(ref blocksSideDatas);
+        DisposeBuffer(ref voteBuffer);
+        DisposeBuffer(ref scanBuffer);
+        DisposeBuffer(ref groupSumArrayBuffer);
+        DisposeBuffer(ref scannedGroupSumBuffer);
+        DisposeBuffer(ref culledPositionsBuffer);
+
+        DisposeBuffer(ref sidesCountBuffer);
+        for (int i = 0; i < ShiftsBuffers.Count; i++)
+        {
+            ComputeBuffer s = ShiftsBuffers[i];
+            DisposeBuffer(ref s);
+            ComputeBuffer a = ArgsBuffers[i];
+            DisposeBuffer(ref a);
+        }
+        Profiler.EndSample();
+    }
+
+    private void DisposeBuffer(ref ComputeBuffer buffer)
+    {
+        if (buffer != null) {
+            buffer.Release();
+        }
+        buffer = null;
     }
 
     private Mesh CreateQuad(float width = 1f, float height = 1f) {
@@ -241,173 +393,4 @@ public class ChunkRendererInstancing : IChunkRenderer
         return mesh;
     }
 
-    void SetMaterialBuffers()
-    {
-        material.SetBuffer("_BlockSideDataBuffer", culledPositionsBuffer);
-
-        // material.SetBuffer("_BlockIdBuffer", blocksIdsBuffer);
-        // material.SetBuffer("_BlockIsTransparentBuffer", blocksIsTransparentBuffer);
-
-        // material.SetTexture("_MainTexArray2", Texture2DArray);
-
-        // material.SetFloat("AmbientOcclusionIntensity", AmbientOcclusionIntensity);
-        // material.SetColor("AmbientOcclusionColor", AmbientOcclusionColor);
-    }
-
-    private bool _isCreated = false;
-
-    private void Init()
-    {
-        Setup();
-        _isCreated = true;
-        // Update();
-        UpdateData();
-    }
-
-    public bool RequireProcessing()
-    {
-        if (!_isCreated) Init();
-        
-        // if (_updated)
-        // {
-        //     _updated = false;
-        //     // _fillDataJobHandle.Complete();
-        //     blocksIdsBuffer.EndWrite<int>(GetChunkVolume());
-        //     UpdateData();
-        // }
-
-        return true;
-    }
-
-    private void UpdateShaderData()
-    {
-        Profiler.BeginSample("Updating Instancing");
-        
-        Profiler.BeginSample("Setting Data");
-        // blocksIdsBuffer.BeginWrite<int>(0, GetChunkVolume());
-        blocksIdsBuffer.SetData(_chunk.GetBlocks());
-        // blocksIdsBuffer.EndWrite<int>(GetChunkVolume());
-        Profiler.EndSample();
-
-        Profiler.BeginSample("Setting Material");
-        SetMaterialBuffers();
-        Profiler.EndSample();
-
-        Profiler.BeginSample("Run Compute");
-        RunCompute();
-        Profiler.EndSample();
-
-        Profiler.BeginSample("Creating BlockBuffers");
-        CreateBlockBuffers();
-        Profiler.EndSample();
-
-        Profiler.BeginSample("Culling");
-        Culling();
-        Profiler.EndSample();
-
-        Profiler.EndSample();
-    }
-
-    public void Render(ChunkNeighbours neighbours)
-    {
-        if (_updated)
-        {
-            // if (_updatedData)
-            //     blocksIdsBuffer.EndWrite<int>(GetChunkVolume());
-            // _updatedData = false;
-            _updated = false;
-            UpdateShaderData();
-        }
-        Graphics.DrawMeshInstancedIndirect(mesh, 0, material, bounds, argsBuffer);
-    }
-
-    private bool _updatedData = false;
-    private bool _updated = false;
-
-    public void Update()
-    {
-        if (!_isCreated) return;
-        // blocksId = _chunk.GetBlocks().ToArray();
-        // UpdateShaderData();
-        _updated = true;
-        // CreateJob();
-    }
-
-    public void UpdateData()
-    {
-        if (!_isCreated) return;
-        // if (!_updatedData)
-        // {
-        //     _updatedData = true;
-        //     _updated = true;
-        //     blocksIdsBuffer.BeginWrite<int>(0, GetChunkVolume());
-        //     blocksIdsBuffer.SetData(_chunk.GetBlocks());
-        // }
-        // else
-        // {
-        //     _updated = true;
-        //     blocksIdsBuffer.SetData(_chunk.GetBlocks());
-        // }
-        Update();
-    }
-
-    public void CreateJob()
-    {
-        // InstancingFillBuffer job = new InstancingFillBuffer
-        // {
-        //     BlockIds = _chunk.GetBlocks(),
-        //     Buffer = blocksIdsBuffer
-        // };
-        // blocksIdsBuffer.BeginWrite<int>(0, GetChunkVolume());
-        // _fillDataJobHandle = job.Schedule();
-    }
-
-    private void Test()
-    {
-        blocksId = new int[GetChunkVolume()];
-        blocksId = _chunk.GetBlocks().ToArray();
-        // blocksId = _chunk.Temp();
-        // int[] b = new int[GetChunkVolume()];
-        // Array.Copy(_chunk.GetBlocks().ToArray(), blocksId, GetChunkVolume());
-        // for (int x = 0; x < chunkSize.x; x++)
-        // {
-        //     for (int y = 0; y < chunkSize.y; y++)
-        //     {
-        //         for (int z = 0; z < chunkSize.z; z++)
-        //         {
-        //             int index = VoxelData.GetIndex(new int3(x, y, z));
-        //             if (b[index] != 0)
-        //                 blocksId[index] = (b[index] + 1) % 10;
-        //         }
-        //     }
-        // }
-    }
-
-    public void Unload()
-    {
-        // throw new System.NotImplementedException();
-    }
-
-    public void Destroy()
-    {
-        Profiler.BeginSample("Destroying Instancing Buffers");
-        DisposeBuffer(ref blocksIdsBuffer);
-        // DisposeBuffer(ref blocksIsTransparentBuffer);
-        DisposeBuffer(ref blocksSideDatas);
-        DisposeBuffer(ref argsBuffer);
-        DisposeBuffer(ref voteBuffer);
-        DisposeBuffer(ref scanBuffer);
-        DisposeBuffer(ref groupSumArrayBuffer);
-        DisposeBuffer(ref scannedGroupSumBuffer);
-        DisposeBuffer(ref culledPositionsBuffer);
-        Profiler.EndSample();
-    }
-
-    private void DisposeBuffer(ref ComputeBuffer buffer)
-    {
-        if (buffer != null) {
-            buffer.Release();
-        }
-        buffer = null;
-    }
 }

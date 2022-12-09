@@ -72,24 +72,29 @@ public class ChunkRenderer : IChunkRenderer
         }
     }
 
-    public void Unload()
-    {
-        if (!isHidden)
-        {
-            _meshFilter.mesh = null;
-            isHidden = true;
-        }
-    }
+    // public void Unload()
+    // {
+    //     if (!isHidden)
+    //     {
+    //         _meshFilter.mesh = null;
+    //         isHidden = true;
+    //     }
+    // }
 
     public void Update()
     {
         _requireUpdate = true;
     }
 
-    public void UpdateData() => Update();
+    // public void UpdateData() => Update();
 
     public bool RequireProcessing()
     {
         return _requireUpdate || _processing;
+    }
+
+    public ComputeBuffer GetBlocksBuffer()
+    {
+        return ChunkRendererConst.voidChunkBlockIdBuffer;
     }
 }

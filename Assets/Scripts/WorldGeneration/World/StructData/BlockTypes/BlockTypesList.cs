@@ -26,6 +26,7 @@ public class BlockTypesList : ScriptableObject
     public Material Material;
     public ComputeShader Blocks;
     public ComputeShader Culling;
+    public ComputeShader Sorting;
 
     public ComputeBuffer BlocksIsTransparentBuffer;
     public Mesh Mesh;
@@ -79,6 +80,8 @@ public class BlockTypesList : ScriptableObject
         areInvisible.Dispose();
         areReplacable.Dispose();
         areLiquid.Dispose();
+
+        BlocksIsTransparentBuffer.Dispose();
     }
 
     ~BlockTypesList()

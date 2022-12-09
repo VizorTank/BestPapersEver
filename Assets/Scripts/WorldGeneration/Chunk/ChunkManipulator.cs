@@ -39,9 +39,6 @@ public class ChunkManipulator
         if (_chunkGenerator.GenerateBlocks(_chunk, _world, out NativeArray<int> generatedBlocks))
         {
             _blocksId = generatedBlocks;
-            // Debug.Log("Created");
-            _chunk.UpdateData();
-            // _chunk.Update();
             _chunk.UpdateNeighbours();
         }
     }
@@ -96,9 +93,7 @@ public class ChunkManipulator
         int x = p % VoxelData.ChunkSize.x;
         int y = p / VoxelData.ChunkSize.x % VoxelData.ChunkSize.y;
         int z = p / VoxelData.ChunkSize.x / VoxelData.ChunkSize.y;
-        // Debug.Log($"P {p}, {x}, {y}, {z}");
-        _chunk.UpdateData();
-        // _chunk.Update();
+        _chunk.Update();
     }
         
     #endregion
@@ -110,8 +105,7 @@ public class ChunkManipulator
         if (data.BlockIds != null)
         {
             _blocksId = new NativeArray<int>(data.BlockIds, Allocator.Persistent);
-            // _chunk.Update();
-            _chunk.UpdateData();
+            _chunk.Update();
         }
     }
 
@@ -126,8 +120,7 @@ public class ChunkManipulator
             {
                 PlaceStructure(structureToLoad.position, structureToLoad.id);
             }
-            // _chunk.Update();
-            _chunk.UpdateData();
+            _chunk.Update();
         }
     }
 

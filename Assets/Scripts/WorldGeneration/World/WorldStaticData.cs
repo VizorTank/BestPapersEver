@@ -2,13 +2,12 @@ using UnityEngine;
 using Unity.Mathematics;
 using System.Collections.Generic;
 
-[System.Serializable]
-public class WorldStaticData
+[CreateAssetMenu(fileName = "WorldStaticData", menuName = "CustomObjects/World Static Data")]
+public class WorldStaticData : ScriptableObject
 {
-    public int RenderDistance = 16;
-    public int3 WorldSizeInChunks = new int3(64, 8, 64);
+    public int RenderDistance = 4;
+    public int WorldHeightInChunks = 8;
     public BlockTypesList BlockTypesList;
     public List<Structure> Structures = new List<Structure>();
-    public List<BiomeAttributes> BiomeAttributes = new List<BiomeAttributes>();
-    public int WaterLevel = 64;
+    public WorldBiomesList WorldBiomes;
 }

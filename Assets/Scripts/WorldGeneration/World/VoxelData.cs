@@ -74,6 +74,17 @@ public static class VoxelData
         new int3(0, 1, 1)
     };
 
+    public static int GetVolume() => ChunkSize.x * ChunkSize.y * ChunkSize.z;
+    public static int3 GetPosition(int index)
+    {
+        int3 result = new int3();
+
+        result.x = index % ChunkSize.x;
+        result.y = index / ChunkSize.x % ChunkSize.y;
+        result.z = index / ChunkSize.x / ChunkSize.y;
+
+        return result;
+    }
     public static int GetIndex(int3 position) => position.x + (position.y + position.z * ChunkSize.y) * ChunkSize.x;
     public static int3 GetChunkCoordinates(float3 position)
     {

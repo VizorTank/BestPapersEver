@@ -1,0 +1,50 @@
+#pragma kernel BitonicSort
+
+struct BlockSideData {
+    float3 position;
+    int rotation;
+    int type;
+};
+
+// RWStructuredBuffer<int> Array;
+RWStructuredBuffer<BlockSideData> _CulledBlockSideDataOutputBuffer;
+// StructuredBuffer<uint> _SizeReadOnly;
+
+[numthreads(1024, 1, 1)]
+void BitonicSort(uint3 id : SV_DispatchThreadID)
+{
+    int ArrayLength = 32768;//_SizeReadOnly[0];
+    uint arraySizePowerOfTwo = 2 << (firstbithigh(ArrayLength));
+    // while (arraySizePowerOfTwo < ArrayLength)
+    //     arraySizePowerOfTwo <<= 1;
+    
+    AllMemoryBarrierWithGroupSync();
+    for (uint bucketSize = 2; bucketSize <= arraySizePowerOfTwo; bucketSize *= 2)
+    {
+        for (uint compareShift = bucketSize >> 1; compareShift > 0; compareShift /= 2)
+        {
+            for (int i = 0; i < ArrayLength / 1024; i++)
+            {
+                uint idx = i + id.x * ArrayLength / 1024;
+                uint bucketId = idx / bucketSize;
+                uint direction = bucketId % 2;
+                if (idx < ArrayLength && idx % (compareShift * 2) < compareShift)
+                {
+                    uint index         = direction == 0 ?                idx : idx + compareShift;
+                    uint swapElemIndex = direction == 0 ? idx + compareShift :                idx;
+                    
+                    if(swapElemIndex < ArrayLength && index < ArrayLength)
+                    {
+                        if(_CulledBlockSideDataOutputBuffer[index].type < _CulledBlockSideDataOutputBuffer[swapElemIndex].type)
+                        {
+                            BlockSideData temp = _CulledBlockSideDataOutputBuffer[index];
+                            _CulledBlockSideDataOutputBuffer[index] = _CulledBlockSideDataOutputBuffer[swapElemIndex];
+                            _CulledBlockSideDataOutputBuffer[swapElemIndex] = temp;
+                        }
+                    }
+                }
+            }
+            AllMemoryBarrierWithGroupSync();
+        }
+    }
+}

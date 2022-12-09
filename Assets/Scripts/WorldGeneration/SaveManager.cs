@@ -51,7 +51,6 @@ public class SaveManager : ISaveManager
     private Dictionary<int3, IChunk> _generatedChunks = new Dictionary<int3, IChunk>();
     private List<Task<ChunkData>> _chunksToLoad = new List<Task<ChunkData>>();
     private Dictionary<int3, IChunk> _chunksToSave = new Dictionary<int3, IChunk>();
-    private Dictionary<int3, IChunk> _chunksUnreadyToSave = new Dictionary<int3, IChunk>();
 
     public void Run()
     {
@@ -61,6 +60,7 @@ public class SaveManager : ISaveManager
 
     public void SaveWorld()
     {
+        SavingChunks();
         string path = _worldPath + "/world.world";
 
         BinaryFormatter formatter = new BinaryFormatter();
@@ -108,39 +108,33 @@ public class SaveManager : ISaveManager
 
     public void SavingChunks()
     {
-        Dictionary<int3, IChunk> chunksToSave = new Dictionary<int3, IChunk>();
-        // Dictionary<int3, IChunk> chunksUnreadyToSave = new Dictionary<int3, IChunk>();
-
-        // foreach (var item in _chunksUnreadyToSave)
-        // {
-        //     if (!SaveChunk(item.Value))
-        //         chunksToSave.Add(item.Key, item.Value);
-        //     else
-        //         chunksUnreadyToSave.Add(item.Key, item.Value);
-        // }
-        // _chunksUnreadyToSave = chunksUnreadyToSave;
+        // Dictionary<int3, IChunk> chunksToSave = new Dictionary<int3, IChunk>();
 
         foreach (var item in _chunksToSave)
         {
             if (item.Value == null) continue;
-            if (!SaveChunk(item.Value))
-                chunksToSave.Add(item.Key, item.Value);
-            else
-            {
+            if (SaveChunk(item.Value))
                 item.Value.Destroy();
-                // _chunksUnreadyToSave.Add(item.Key, item.Value);
-            }
+            // else
+            // {
+            //     chunksToSave.Add(item.Key, item.Value);
+                
+            // }
         }
-        _chunksToSave = chunksToSave;
+        // _chunksToSave = chunksToSave;
     }
 
-    public void WaitForChunksToSave()
-    {
-        while (_chunksToSave.Count > 0)
-        {
-            SavingChunks();
-        }
-    }
+    // public void WaitForChunksToSave()
+    // {
+    //     Debug.Log("Waiting for all chunks to save");
+    //     int i = 0;
+    //     while (_chunksToSave.Count > 0)
+    //     {
+    //         SavingChunks();
+    //         if (i++ > 1000) break;
+    //     }
+    //     Debug.Log("All Chunks saved");
+    // }
 
     public bool SaveChunk(IChunk chunk)
     {

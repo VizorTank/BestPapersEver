@@ -5,6 +5,7 @@ using UnityEngine.UI;
 
 public class EscapeMenu : MonoBehaviour
 {
+    public WorldClass World;
     public GameObject Main;
     public GameObject Settings;
 
@@ -29,12 +30,19 @@ public class EscapeMenu : MonoBehaviour
     private int tempFullscreen = 1;
 
 
-    [Header("Render")]
-    public Slider Render_slider;
-    public Text Render;
+    [Header("RenderType")]
+    public Toggle Render_type_toggle;
 
-    private int chosenRender = 8;
-    private int tempRender = 8;
+    private RenderType chosenRenderType = RenderType.GreedyMeshing;
+    private RenderType tempRenderType = RenderType.GreedyMeshing;
+
+
+    [Header("RenderDistance")]
+    public Slider Render_distance_slider;
+    public Text Render_distance;
+
+    private int chosenRenderDistance = 8;
+    private int tempRenderDistance = 8;
 
 
     [Header("Gamma")]
@@ -87,7 +95,12 @@ public class EscapeMenu : MonoBehaviour
             ChangeGUI((int)System.Math.Round(v));
         });
 
-        Render_slider.onValueChanged.AddListener((v) =>
+        Render_type_toggle.onValueChanged.AddListener((v) =>
+        {
+            ChangeRenderType(v);
+        });
+
+        Render_distance_slider.onValueChanged.AddListener((v) =>
         {
             ChangeRender((int)System.Math.Round(v));
         });
@@ -125,9 +138,16 @@ public class EscapeMenu : MonoBehaviour
 
     public void ChangeRender(int number)
     {
-        tempRender = number;
-        Render.text = tempRender.ToString();
+        tempRenderDistance = number;
+        Render_distance.text = tempRenderDistance.ToString();
     }
+
+    public void ChangeRenderType(bool type)
+    {
+        if (type) tempRenderType = RenderType.Instancing;
+        else tempRenderType = RenderType.GreedyMeshing;
+    }
+
     public void ChangeGamma(int number)
     {
         tempGamma = number;
@@ -145,7 +165,14 @@ public class EscapeMenu : MonoBehaviour
     }
     public void ApplyRender()
     {
-        chosenRender = tempRender;
+        chosenRenderDistance = tempRenderDistance;
+        World.SetRenderDistance(chosenRenderDistance);
+    }
+
+    public void ApplyRenderType()
+    {
+        chosenRenderType = tempRenderType;
+        World.SetRenderType(chosenRenderType);
     }
 
     public void ApplyChanges()
@@ -157,6 +184,7 @@ public class EscapeMenu : MonoBehaviour
         ApplyGamma();
         ApplyGUI();
         ApplyRender();
+        ApplyRenderType();
         ExitSettings();
     }
     public void SetFullscreen(FullScreenMode fullScreenMode)
@@ -177,7 +205,7 @@ public class EscapeMenu : MonoBehaviour
         Resolutin_slider.value = chosenResolution;
         Fullscreen_toggle.isOn = chosenFullscreen == 1 ? true : false;
         GUI_slider.value = chosenGUI;
-        Render_slider.value = chosenRender;
+        Render_distance_slider.value = chosenRenderDistance;
         Gamma_slider.value = chosenGamma;
     }
 

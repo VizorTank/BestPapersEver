@@ -28,12 +28,6 @@ public class Chunk : IChunk
         _chunkCoordinates = chunkCoordinates;
     }
 
-    // public Chunk(IWorld world, ChunkData data)
-    // {
-    //     _world = world;
-    //     _chunkCoordinates = chunkCoordinates;
-    // }
-
     public void Init()
     {
         switch (_world.GetRenderType())
@@ -51,7 +45,7 @@ public class Chunk : IChunk
         _state = ChunkState.Initialized;
         _isCreated = true;
 
-        UpdateNeighbourList();
+        UpdateListOfNeighbours();
         _neighbours.UpdateNeighboursNeighbourList();
     }
 
@@ -71,7 +65,7 @@ public class Chunk : IChunk
 
         _world.RemoveChunk(GetChunkCoordinates());
 
-        UpdateNeighbourList();
+        UpdateListOfNeighbours();
         _neighbours.UpdateNeighboursNeighbourList();
     }
 
@@ -106,9 +100,9 @@ public class Chunk : IChunk
     private bool TryGetNeigbours(ref ChunkNeighbours chunkNeighbours)
     {
         Profiler.BeginSample("Get Neighbours");
-        bool result = _world.TryGetNeighbours(GetChunkCoordinates(), ref chunkNeighbours);
+        chunkNeighbours = _world.GetNeighbours(GetChunkCoordinates());
         Profiler.EndSample();
-        return result;
+        return true;
     }
 
     public NativeArray<int> GetSharedData()
@@ -130,11 +124,6 @@ public class Chunk : IChunk
 
     private bool AreBlocksGenerated()
     {
-        if (_manipulator == null)
-        {
-            Debug.LogError("What? ... How?");
-            return false;
-        }
         _manipulator.GenerateBlocks();
         return _manipulator.CanAccess();
     }
@@ -167,7 +156,7 @@ public class Chunk : IChunk
             Profiler.BeginSample("Rendering");
 
             Profiler.BeginSample("Update neighbour list");
-            UpdateNeighbourList();
+            UpdateListOfNeighbours();
             Profiler.EndSample();
 
             Profiler.BeginSample("Renderer");
@@ -179,11 +168,8 @@ public class Chunk : IChunk
         
     }
 
-    public void UpdateNeighbourList()
+    public void UpdateListOfNeighbours()
     {
-        // if (!_neighbours.IsValid())
-        //     TryGetNeigbours(ref _neighbours);
-        
         _neighbours.FillMissingNeighbours(_world, this);
     }
 
@@ -200,35 +186,14 @@ public class Chunk : IChunk
         replacedBlockId = 0;
         if (!CanAccess()) return false;
         replacedBlockId = _manipulator.GetBlock(position);
-        // Debug.Log($"Placed: {position.x}, {position.y}, {position.z}");
         _manipulator.SetBlock(position, placedBlockId);
         UpdateNeighbourChunks(position);
-        Update();
         return true;
     }
 
-    public void UpdateNeighbourChunks(int3 blockPosition)
+    private void UpdateNeighbourChunks(int3 blockPosition)
     {
         if (!math.any(blockPosition == 0) && !math.any(blockPosition == VoxelData.ChunkSize - 1)) return;
-
-        // for (int i = 0; i < 3; i++)
-        // {
-        //     int3 tmp = blockPosition * VoxelData.axisArray[i];
-        //     for (int j = 0; j < 2; j++)
-        //     {
-        //         int3 border = (VoxelData.axisArray[i] + VoxelData.voxelNeighbours[i * 2 + j])  * VoxelData.ChunkSize / 2;
-        //         if (math.all(tmp == border)) 
-        //         {
-        //             IChunk chunk = _world.GetChunk(GetChunkCoordinates() + VoxelData.voxelNeighbours[i * 2 + j]);
-        //             if (chunk != null)
-        //             {
-        //                 chunk.Update();
-        //             }
-        //         }
-        //     }
-        // }
-
-        // if (blockPosition.x < 0) _world.GetChunk(GetChunkCoordinates() - new int3(1, 0, 0));
         UpdateNeighbours();
     }
 
@@ -242,26 +207,11 @@ public class Chunk : IChunk
         _renderer.Update();
     }
 
-    public void UpdateData()
-    {
-        _renderer.UpdateData();
-    }
-
     public void UpdateNeighbours()
     {
-        // ChunkNeighbours neighbours = new ChunkNeighbours();
-        // if (_world.TryGetNeighbours(GetChunkCoordinates(), ref neighbours))
-        // {
-        //     neighbours.UpdateNeighbours();
-        // }
-        UpdateNeighbourList();
+        UpdateListOfNeighbours();
         _neighbours.UpdateNeighbours();
-    }
-
-    public void Hide()
-    {
-        if (CanAccess())
-            _renderer.Unload();
+        Update();
     }
 
     public bool CanAccess()
@@ -274,26 +224,9 @@ public class Chunk : IChunk
         return _manipulator != null && _manipulator.CanAccess();
     }
 
-    // public bool CanCreateStructure(int3 structurePosition, Structure structure)
-    // {
-    //     int3 structureEndPosition = structure.Size3 + structurePosition;
-    //     for (int i = 0; i < 3; i++)
-    //     {
-    //         if (math.any(structureEndPosition * VoxelData.axisArray[i] > VoxelData.ChunkSize))
-    //         {
-    //             IChunk chunk = _world.GetChunk(GetChunkCoordinates() + VoxelData.axisArray[i]);
-    //             _world.CreateStructure(structurePosition - VoxelData.axisArray[i] * VoxelData.ChunkSize, structure);
-    //         }
-    //     }
-
-    //     return true;
-    // }
-
     public void CreateStructure(int3 structurePosition, int structureId)
     {
         PropagateStrucutre(structurePosition, structureId);
-        // _manipulator.CreateStructure(structurePosition, structureId);
-        // Debug.Log("Created structure");
         StructuresToLoad.Add(new StructureToLoad {
             position = structurePosition,
             id = structureId
@@ -303,32 +236,20 @@ public class Chunk : IChunk
     private void PropagateStrucutre(int3 structurePosition, int structureId)
     {
         Structure structure = _world.GetStructure(structureId);
-        // ChunkNeighbours neighbours = new ChunkNeighbours();
-        // if (!_world.TryGetNeighbours(GetChunkCoordinates(), ref neighbours)) 
-        // {
-        //     return false;
-        // }
-        // int3 structureEnd = structure.Size3 + structurePosition;
-
-        // for (int i = 0; i < 6; i++)
-        // {
-        //     if (i == 0 || i == 3 || i == 4) continue;
-        //     if (math.any(structureEnd * VoxelData.voxelNeighbours[i] > VoxelData.ChunkSize))
-        //     {
-        //         neighbours[i].CreateStructure(structurePosition - VoxelData.voxelNeighbours[i] * VoxelData.ChunkSize, structure);
-        //     }
-        // }
 
         int3 structureEndPosition = structure.Size3 + structurePosition;
         for (int i = 0; i < 3; i++)
         {
             if (math.any(structureEndPosition * VoxelData.axisArray[i] > VoxelData.ChunkSize))
             {
-                // IChunk chunk = _world.GetChunk(GetChunkCoordinates() + VoxelData.axisArray[i]);
-                // _world.CreateStructure(structurePosition - VoxelData.axisArray[i] * VoxelData.ChunkSize + GetChunkPosition(), structureId);
                 _world.CreateStructure(GetChunkCoordinates() + VoxelData.axisArray[i], structurePosition - VoxelData.axisArray[i] * VoxelData.ChunkSize, structureId);
             }
         }
+    }
+
+    public ComputeBuffer GetBlocksBuffer()
+    {
+        return _renderer.GetBlocksBuffer();
     }
 }
 

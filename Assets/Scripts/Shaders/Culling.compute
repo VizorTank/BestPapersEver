@@ -3,23 +3,18 @@
 #pragma kernel ScanGroupSums
 #pragma kernel Compact
 #pragma kernel ResetArgs
+#pragma kernel BitonicSort
+#pragma kernel FindStartValue
 
 #define NUM_THREAD_GROUPS_X 64
 
-struct GrassData {
-    float4 position;
-    float2 uv;
-    float displacement;
-};
-
-struct BlockType {
-    int isSolid;
-};
+// struct BlockType {
+//     int isSolid;
+// };
 
 struct BlockSideData {
     float3 position;
     int rotation;
-    // float4 color;
     int type;
 };
 
@@ -29,13 +24,28 @@ struct BlockSideData {
 RWStructuredBuffer<int> _BlockIdsBuffer;
 RWStructuredBuffer<int> _BlockIsTransparentBuffer;
 
+// int isValidFront;
+// int isValidBack;
+// int isValidBot;
+// int isValidTop;
+// int isValidRight;
+// int isValidLeft;
+
+StructuredBuffer<int> _BlockIdsBufferBack;
+StructuredBuffer<int> _BlockIdsBufferFront;
+StructuredBuffer<int> _BlockIdsBufferTop;
+StructuredBuffer<int> _BlockIdsBufferBot;
+StructuredBuffer<int> _BlockIdsBufferLeft;
+StructuredBuffer<int> _BlockIdsBufferRight;
+
+
 // RWStructuredBuffer<GrassData> _GrassDataBuffer;
 // RWStructuredBuffer<GrassData> _CulledGrassOutputBuffer;
 RWStructuredBuffer<BlockSideData> _BlockSideDataBuffer;
 RWStructuredBuffer<BlockSideData> _CulledBlockSideDataOutputBuffer;
 
 RWStructuredBuffer<uint> _ArgsBuffer;
-RWStructuredBuffer<uint> _ArgsBufferLOD;
+RWStructuredBuffer<uint> _Size;
 
 // block count * 3 sides (only 3 sides can be visible)
 RWStructuredBuffer<uint> _VoteBuffer;
@@ -66,70 +76,51 @@ int GetIndex(int3 pos) {
     return pos.x + (pos.y + pos.z * _ChunkSize.y) * _ChunkSize.x;
 }
 
+int GetIndexMod(int3 pos)
+{
+    pos.x = (pos.x + _ChunkSize.x) % _ChunkSize.x;
+    pos.y = (pos.y + _ChunkSize.y) % _ChunkSize.y;
+    pos.z = (pos.z + _ChunkSize.z) % _ChunkSize.z;
+    return GetIndex(pos);
+}
+
+int GetNeighbourData(int3 pos, int rotation)
+{
+    int index = GetIndexMod(pos);
+    switch (rotation)
+    {
+        case 0: return _BlockIdsBufferBack[index];
+        case 1: return _BlockIdsBufferFront[index];
+        case 2: return _BlockIdsBufferTop[index];
+        case 3: return _BlockIdsBufferBot[index];
+        case 4: return _BlockIdsBufferLeft[index];
+        case 5: return _BlockIdsBufferRight[index];
+    }
+    return 1;
+}
+
 // Per block side
 [numthreads(128, 1, 1)]
-void Vote(uint3 id : SV_DispatchThreadID) {
-    // float4 position = float4(_BlockDataBuffer[id.x].position.xyz, 1.0f);
-
-    // float4 viewspace = mul(MATRIX_VP, position);
-    // float3 clipspace = viewspace.xyz;
-    // clipspace /= -viewspace.w;
-
-    // clipspace.x = clipspace.x / 2.0f + 0.5f;
-    // clipspace.y = clipspace.y / 2.0f + 0.5f;
-    // clipspace.z = -viewspace.w;
-    // bool inView = clipspace.x < -0.2f || clipspace.x > 1.2f || clipspace.z <= -0.1f ? 0 : 1;
-    // bool withinDistance = distance(_CameraPosition, position.xyz) < _Distance;
-
-    // int i;
-    // for (i = 0; i < 6; i += 1)
-    // {
-    //     int3 nPos = (int)position.x
-    //     bool neighbour = 
-        
-
-
-    //     _VoteBuffer[id.x * 6 + i] = inView * withinDistance;
-    // }
-    // if (!_BlockIdsBuffer[GetIndex(_BlockSideDataBuffer[id.x].position.xyz)]) return;
+void Vote(uint3 id : SV_DispatchThreadID)
+{
     _VoteBuffer[id.x] = 0;
-    if (!_BlockSideDataBuffer[id.x].type) return;
-    // TODO: REMOVEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
-    if (_BlockSideDataBuffer[id.x].type != 4) return;
+    // If is air remove side
+    if (_BlockSideDataBuffer[id.x].type == 0) return;
 
     int3 position = _BlockSideDataBuffer[id.x].position.xyz + neighbours[_BlockSideDataBuffer[id.x].rotation];
     // _VoteBuffer[id.x] = _BlockTypesBuffer[GetIndex(position)].isSolid;
+    int neighbourType = 0;
     if (position.x >= _ChunkSize.x || position.x < 0 ||
         position.y >= _ChunkSize.y || position.y < 0 ||
         position.z >= _ChunkSize.z || position.z < 0)
-        _VoteBuffer[id.x] = 1;
+        neighbourType = GetNeighbourData(position, _BlockSideDataBuffer[id.x].rotation);
     else
-    {
-        int type = _BlockIdsBuffer[GetIndex(position)];
-        if (type == 0)
-            _VoteBuffer[id.x] = 1;
-        else if (type != _BlockSideDataBuffer[id.x].type)
-            _VoteBuffer[id.x] = !_BlockIsTransparentBuffer[type - 1];
-    }
-        // _VoteBuffer[id.x] = !_BlockIdsBuffer[GetIndex(position)];
+        neighbourType = _BlockIdsBuffer[GetIndex(position)];
     
-    // _VoteBuffer[id.x] = 1;
-    
-    // float4 position = float4(_GrassDataBuffer[id.x].position.xyz, 1.0f);
-    
-    // float4 viewspace = mul(MATRIX_VP, position);
-
-    // float3 clipspace = viewspace.xyz;
-    // clipspace /= -viewspace.w;
-
-    // clipspace.x = clipspace.x / 2.0f + 0.5f;
-    // clipspace.y = clipspace.y / 2.0f + 0.5f;
-    // clipspace.z = -viewspace.w;
-
-    // bool inView = clipspace.x < -0.2f || clipspace.x > 1.2f || clipspace.z <= -0.1f ? 0 : 1;
-    // bool withinDistance = distance(_CameraPosition, position.xyz) < _Distance;
-
-    // _VoteBuffer[id.x] = inView * withinDistance;
+    if (neighbourType == 0)
+        _VoteBuffer[id.x] = 1;
+    else if (neighbourType != _BlockSideDataBuffer[id.x].type)
+        _VoteBuffer[id.x] = _BlockIsTransparentBuffer[neighbourType];
 }
 
 // From GPU Gems Chapter 39 'Parallel Prefix Sum (Scan) with CUDA'
@@ -235,7 +226,7 @@ void Compact(uint3 id : SV_DISPATCHTHREADID, uint groupIndex : SV_GROUPINDEX, ui
     bool inCamera = _VoteBuffer[id.x];
     
     if (inCamera == 1) {
-        InterlockedAdd(_ArgsBuffer[1], 1);
+        InterlockedAdd(_Size[0], 1);
         _CulledBlockSideDataOutputBuffer[_ScanBuffer[tid] + groupSum] = _BlockSideDataBuffer[tid];
     }
 }
@@ -243,4 +234,54 @@ void Compact(uint3 id : SV_DISPATCHTHREADID, uint groupIndex : SV_GROUPINDEX, ui
 [numthreads(1, 1, 1)]
 void ResetArgs(uint3 id : SV_DISPATCHTHREADID) {
     _ArgsBuffer[1] = (uint)0;
+}
+
+StructuredBuffer<uint> _SizeReadOnly;
+
+[numthreads(1024, 1, 1)]
+void BitonicSort(uint3 id : SV_DispatchThreadID)
+{
+    uint ArrayLength = _SizeReadOnly[0];
+
+    uint arraySizePowerOfTwo = 2 << firstbithigh(ArrayLength);
+    AllMemoryBarrierWithGroupSync();
+    for (uint bucketSize = 2; bucketSize <= arraySizePowerOfTwo; bucketSize *= 2)
+    {
+        uint bucketId = id.x / bucketSize;
+        uint direction = bucketId % 2;
+        for (uint compareShift = bucketSize >> 1; compareShift > 0; compareShift /= 2)
+        {
+            if (id.x < ArrayLength && id.x % (compareShift * 2) < compareShift)
+            {
+                uint index         = direction == 0 ?                id.x : id.x + compareShift;
+                uint swapElemIndex = direction == 0 ? id.x + compareShift :                id.x;
+                
+                if(swapElemIndex < ArrayLength && index < ArrayLength)
+                {
+                    if(_CulledBlockSideDataOutputBuffer[index].type > _CulledBlockSideDataOutputBuffer[swapElemIndex].type)
+                    {
+                        BlockSideData temp = _CulledBlockSideDataOutputBuffer[index];
+                        _CulledBlockSideDataOutputBuffer[index] = _CulledBlockSideDataOutputBuffer[swapElemIndex];
+                        _CulledBlockSideDataOutputBuffer[swapElemIndex] = temp;
+                    }
+                }
+            }
+            AllMemoryBarrierWithGroupSync();
+        }
+    }
+}
+RWStructuredBuffer<int> _ShiftValue;
+int _lookedValue;
+
+[numthreads(1024, 1, 1)]
+void FindStartValue(uint3 id : SV_DispatchThreadID)
+{
+    uint idx = id.x;
+    if (idx >= _SizeReadOnly[0]) return;
+    if (_CulledBlockSideDataOutputBuffer[idx].type == _lookedValue)
+    {
+        InterlockedAdd(_ArgsBuffer[1], 1);
+        if (idx == 0) _ShiftValue[0] = 0;
+        else if (_CulledBlockSideDataOutputBuffer[idx - 1].type != _lookedValue) _ShiftValue[0] = idx;
+    }
 }

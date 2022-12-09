@@ -1,9 +1,4 @@
 // Upgrade NOTE: replaced 'UNITY_INSTANCE_ID' with 'UNITY_VERTEX_INPUT_INSTANCE_ID'
-
-// Upgrade NOTE: replaced 'UNITY_INSTANCE_ID' with 'UNITY_VERTEX_INPUT_INSTANCE_ID'
-
-// Upgrade NOTE: replaced 'UNITY_INSTANCE_ID' with 'UNITY_VERTEX_INPUT_INSTANCE_ID'
-
 Shader "Custom/InstancingSurfShader"
 {
     Properties
@@ -15,7 +10,7 @@ Shader "Custom/InstancingSurfShader"
     }
     SubShader
     {
-        Tags { "RenderType"="Opaque" }
+        Tags { "RenderType" = "Opaque" }
         LOD 200
 
         CGPROGRAM
@@ -36,6 +31,10 @@ Shader "Custom/InstancingSurfShader"
         {
             float2 uv_MainTex;
         };
+
+        half _Glossiness;
+        half _Metallic;
+        fixed4 _Color;
 
         struct BlockSideData {
             float3 position;
@@ -82,29 +81,10 @@ Shader "Custom/InstancingSurfShader"
             )
         };
 
-        half _Glossiness;
-        half _Metallic;
-        fixed4 _Color;
-
-        // Add instancing support for this shader. You need to check 'Enable Instancing' on materials that use the shader.
-        // See https://docs.unity3d.com/Manual/GPUInstancing.html for more information about instancing.
-        // #pragma instancing_options assumeuniformscaling
-        // UNITY_INSTANCING_BUFFER_START(Props)
-        //     // put more per-instance properties here
-        // UNITY_INSTANCING_BUFFER_END(Props)
-
-        // #ifdef SHADER_API_GLCORE
         #ifdef UNITY_PROCEDURAL_INSTANCING_ENABLED
             StructuredBuffer<BlockSideData> _BlockSideDataBuffer;
+            StructuredBuffer<int> _ShiftData;
         #endif
-
-        struct appdata{
-            float4 vertex : SV_POSITION;
-            float3 normal : NORMAL;
-            float4 texcoord : TEXCOORD0;
-
-            uint id : SV_InstanceID;
-        };
 
         void setup() {}
 
@@ -117,11 +97,11 @@ Shader "Custom/InstancingSurfShader"
         }
 
         void vert (inout appdata_full v) {
-            // #ifdef SHADER_API_GLCORE
             #ifdef UNITY_PROCEDURAL_INSTANCING_ENABLED
-            float4x4 mat = _blockSides[_BlockSideDataBuffer[unity_InstanceID].rotation];
-            mat = move(mat, _BlockSideDataBuffer[unity_InstanceID].position);
+            float4x4 mat = _blockSides[_BlockSideDataBuffer[unity_InstanceID + _ShiftData[0]].rotation];
+            mat = move(mat, _BlockSideDataBuffer[unity_InstanceID + _ShiftData[0]].position);
             v.vertex = mul(mat, v.vertex);
+            v.normal = mul(mat, v.normal);
             #endif
         }   
 

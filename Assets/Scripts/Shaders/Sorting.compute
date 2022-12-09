@@ -1,3 +1,5 @@
+
+RWStructuredBuffer<int> Data;
 uniform sampler2D PackedData;    
 // contents of the texcoord data  
 #define OwnPos gl_TexCoord[0].xy  

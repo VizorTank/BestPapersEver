@@ -1,5 +1,7 @@
 using Unity.Collections;
 using Unity.Mathematics;
+using UnityEngine;
+
 public interface IChunk
 {
     public void Init();
@@ -12,14 +14,15 @@ public interface IChunk
     public BiomeAttributesStruct GetBiome();
     public void Render();
     public void Update();
-    public void UpdateData();
+    // public void UpdateData();
     public void UpdateNeighbours();
-    public void UpdateNeighbourList();
-    public void Hide();
+    public void UpdateListOfNeighbours();
+    // public void Hide();
     public bool TryGetBlock(int3 position, out int blockId);
     public bool TrySetBlock(int3 position, int placedBlockId, out int replacedBlockId);
     public NativeArray<int> GetBlocks();
     public NativeArray<int> GetSharedData();
+    public ComputeBuffer GetBlocksBuffer();
     public void ReleaseSharedData();
     public bool CanAccess();
     public bool CanBeSaved();

@@ -97,7 +97,7 @@ public class ChunkRendererStateMachine
     {
         
         if (_state != ChunkRendererStates.CreatingClusters || !generatingClustersJobHandle.IsCompleted) return;
-        if (!neighbours.GetData(out ChunkNeighbourData data)) return;
+        ChunkNeighbourData data = neighbours.GetData();
         _state = ChunkRendererStates.CheckingVisibility;
 
         generatingClustersJobHandle.Complete();
@@ -221,7 +221,7 @@ public static class ChunkRendererConst
  
     public static NativeArray<int3> clusterSides;// = new NativeArray<int3>(VoxelData.clusterSidesArray, Allocator.Persistent);
     public static NativeArray<int> voidChunkBlockId;// = new NativeArray<int>(VoxelData.ChunkSize.x * VoxelData.ChunkSize.y * VoxelData.ChunkSize.z, Allocator.Persistent);
-
+    public static ComputeBuffer voidChunkBlockIdBuffer;
 
     public static void Init()
     {
@@ -234,7 +234,9 @@ public static class ChunkRendererConst
         triangleOrder = new NativeArray<int>(VoxelData.triangleOrder, Allocator.Persistent);
         layout = new NativeArray<VertexAttributeDescriptor>(VoxelData.layoutVertex, Allocator.Persistent);
         clusterSides = new NativeArray<int3>(VoxelData.clusterSidesArray, Allocator.Persistent);
-        voidChunkBlockId = new NativeArray<int>(VoxelData.ChunkSize.x * VoxelData.ChunkSize.y * VoxelData.ChunkSize.z, Allocator.Persistent);
+        voidChunkBlockId = new NativeArray<int>(VoxelData.GetVolume(), Allocator.Persistent);
+
+        voidChunkBlockIdBuffer = new ComputeBuffer(VoxelData.GetVolume(), sizeof(int));
     }
 
     public static void Destroy()
@@ -251,5 +253,6 @@ public static class ChunkRendererConst
         try { clusterSides.Dispose(); } catch { }
 
         try { voidChunkBlockId.Dispose(); } catch { }
+        try { voidChunkBlockIdBuffer.Dispose(); } catch { }
     }
 } 

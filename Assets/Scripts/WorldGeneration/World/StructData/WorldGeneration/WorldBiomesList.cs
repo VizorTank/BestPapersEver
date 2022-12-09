@@ -67,10 +67,12 @@ public class WorldBiomesList
         //     return 0;
         // else
         //     return 1;
-        Profiler.BeginSample("Find Biome");
+        
         // Spawn is plains
         if (ChunkCoord.x <= 1 && ChunkCoord.x >= -2 && 
             ChunkCoord.z <= 1 && ChunkCoord.z >= -2) return 1;
+        
+        Profiler.BeginSample("Find Biome");
         // float biomeHeight = CalcualteOceanHeight(ChunkCoord) * 0.7f + CalcualteBiomeHeight(ChunkCoord) * 0.3f;
         if (CalcualteOceanHeight(ChunkCoord) <= 0.5)
         {

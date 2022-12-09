@@ -9,46 +9,61 @@ using UnityEngine.Profiling;
 public class WorldClass : MonoBehaviour, IWorld
 {
     public string WorldName = "World1";
-    public bool Load = false;
-    public bool Save = false;
-    public RenderType RenderType = 0;
-    public WorldStaticData data;
-    public GameObject Player;
 
-    public int renderDistance = 16;
+    public bool GenerateNewWorld = true;
+    public RenderType RenderType = RenderType.GreedyMeshing;
+    public WorldStaticData WorldData;
+    public GameObject Player;
+    private Dictionary<int3, IChunk> activeChunksList = new Dictionary<int3, IChunk>();
+    private ISaveManager _saveManager;
+    private int3 playerLastChunkPos = new int3(0, 1, 0);
+    private bool _showWorld = true;
+    public Dictionary<int2, ChunkColumnData> ChunkColumnDatas = new Dictionary<int2, ChunkColumnData>();
+
+    public int RenderDistance = 16;
+    
+
     public static int WorldCubeSize = 64;
     public int3 WorldSizeInChunks = new int3(WorldCubeSize, 2, WorldCubeSize);
     private static int3 ChunkSize { get => VoxelData.ChunkSize; }
 
     public BlockTypesList blockTypesList;
-    public string GetWorldName()
-    {
-        return WorldName;
-    }
-    public BlockTypesList GetBlockTypesList()
-    {
-        return blockTypesList;
-    }
+
+    public List<Structure> Structures = new List<Structure>();
+
+    public WorldBiomesList WorldBiomes;
+
+
     public List<Material> Materials
     {
         get => blockTypesList.Materials;
     }
+
+
+    public string GetWorldName()
+    {
+        return WorldName;
+    }
+
+    public void SetWorldName(string name)
+    {
+        WorldName = name;
+    }
+
+    public BlockTypesList GetBlockTypesList()
+    {
+        return blockTypesList;
+    }
+
     public Transform GetTransform()
     {
         return transform;
     }
-    public List<Structure> Structures = new List<Structure>();
-
-    public WorldBiomesList WorldBiomes;
+    
     public WorldBiomesList GetWorldBiomesList()
     {
         return WorldBiomes;
     }
-    public Dictionary<int2, ChunkColumnData> ChunkColumnDatas = new Dictionary<int2, ChunkColumnData>();
-    // public List<BiomeAttributes> BiomeAttributes;
-    // private List<BiomeAttributesStruct> BiomeAttributesStruct = new List<BiomeAttributesStruct>();
-
-    // private IChunk[,,] chunks;
 
     public IChunk GetChunk(int3 chunkCoordinates)
     {
@@ -65,30 +80,19 @@ public class WorldClass : MonoBehaviour, IWorld
         if (!contains) return;
         activeChunksList.Remove(chunkCoordinates);
     }
-    
-    // private Dictionary<int3, IChunk> activeChunks = new Dictionary<int3, IChunk>();
-    private Dictionary<int3, IChunk> activeChunksList = new Dictionary<int3, IChunk>();
-    // private int prevRenderDistanceSize;
-    //private List<int3> activeChunks = new List<int3>();
-
-    [Range(0, 1)]
-    public float GlobalLightLevel = 1;
-
-    private ISaveManager _saveManager;
 
     // Start is called before the first frame update
     void Awake()
     {
-        // chunks = new IChunk[WorldSizeInChunks.x, WorldSizeInChunks.y, WorldSizeInChunks.z];
         ChunkRendererConst.Init();
         _saveManager = SaveManager.GetInstance(this);
-        if (Load)
+        if (!GenerateNewWorld)
             _saveManager.LoadWorld();
     }
 
     void Start()
     {
-        Cursor.lockState = CursorLockMode.Locked;
+        // Cursor.lockState = CursorLockMode.Locked;
         
         blockTypesList.ProcessData();
 
@@ -102,11 +106,6 @@ public class WorldClass : MonoBehaviour, IWorld
                 0.5f);
         }
     }
-
-    // public BiomeAttributesStruct GetBiome(int3 chunkCoordinates)
-    // {
-    //     return WorldBiomes.GetBiomeStruct(chunkCoordinates);
-    // }
 
     private ChunkColumnData GetChunkColumnData(int3 chunkCoordinates)
     {
@@ -128,11 +127,6 @@ public class WorldClass : MonoBehaviour, IWorld
         // return WorldBiomes.GetBiomeIndex(chunkCoordinates);
         return GetChunkColumnData(chunkCoordinates).BiomeIndex;
     }
-
-    // public NativeArray<LodeStruct> GetLodes(int3 chunkCoordinates)
-    // {
-    //     return WorldBiomes.GetBiomeLodes(chunkCoordinates);
-    // }
 
     public ChunkGeneraionBiomes GetChunkGeneraionBiomes(int3 chunkCoordinates)
     {
@@ -202,8 +196,6 @@ public class WorldClass : MonoBehaviour, IWorld
     // Update is called once per frame
     void Update()
     {
-        Shader.SetGlobalFloat("GlobalLightLevel", 1 - GlobalLightLevel);
-        
         Profiler.BeginSample("ShowWorld");
         ShowWorld();
         Profiler.EndSample();
@@ -219,24 +211,22 @@ public class WorldClass : MonoBehaviour, IWorld
         // Debug.Log(activeChunksList.Count);
     }
 
-    private int3 playerLastChunkPos = new int3(0, 1, 0);
-    private bool _showWorld = true;
-    // Trash
-    // Please remove future me
-    // No U
-    private void ShowWorld()
+    private void CalculatePlayerPos(int3 playerChunkPos)
     {
-        int3 playerChunkPos = GetChunkCoords(Player.transform.position);
         Profiler.BeginSample("Calculate player pos");
         playerChunkPos.y = 0;
         int3 pPosDiff = playerChunkPos - playerLastChunkPos;
         _showWorld = math.any(pPosDiff != 0);
         Profiler.EndSample();
-        // Debug.Log(draw);
+    }
+    
+    private void ShowWorld()
+    {
+        int3 playerChunkPos = GetChunkCoords(Player.transform.position);
         if (_showWorld)
         {
             var newActiveChunksList = new Dictionary<int3, IChunk>();
-            int renderDistanceSize = renderDistance * 2 + 1;
+            int renderDistanceSize = RenderDistance * 2 + 1;
             // int renderDistanceSize = renderDistance;
             for (int x = 0; x < renderDistanceSize; x++)
             {
@@ -244,7 +234,7 @@ public class WorldClass : MonoBehaviour, IWorld
                 {
                     for (int y = -1; y < WorldSizeInChunks.y; y++)
                     {
-                        int3 pos = new int3(x - renderDistance, y, z - renderDistance) + playerChunkPos;
+                        int3 pos = new int3(x - RenderDistance, y, z - RenderDistance) + playerChunkPos;
                         newActiveChunksList.Add(pos, GetOrCreateChunk(pos));
                         if (activeChunksList.ContainsKey(pos))
                             activeChunksList.Remove(pos);
@@ -256,7 +246,7 @@ public class WorldClass : MonoBehaviour, IWorld
             playerLastChunkPos = playerChunkPos;
         }
 
-        
+        CalculatePlayerPos(playerChunkPos);
     }
 
     public void DrawChunks()
@@ -299,9 +289,8 @@ public class WorldClass : MonoBehaviour, IWorld
 
     private void SaveWorld()
     {
-        if (!Save) return;
         _saveManager.UnloadChunks(this, activeChunksList);
-        _saveManager.WaitForChunksToSave();
+        // _saveManager.WaitForChunksToSave();
         _saveManager.SaveWorld();
     }
 
@@ -397,30 +386,16 @@ public class WorldClass : MonoBehaviour, IWorld
         GetChunk(chunkPos).TryGetBlock(GetLocalPos(position), out int result);
         return result;
     }
-    // private bool IsInWorld(float3 position) => IsInWorld(GetChunkCoords(position));
-    // private bool IsInWorld(int3 chunkCoordinates)
-    // {
-    //     if (chunkCoordinates.x >= 0 && chunkCoordinates.x < WorldSizeInChunks.x &&
-    //         chunkCoordinates.y >= 0 && chunkCoordinates.y < WorldSizeInChunks.y &&
-    //         chunkCoordinates.z >= 0 && chunkCoordinates.z < WorldSizeInChunks.z) return true;
-    //     return false;
-    // }
 
     private int3 GetChunkCoords(float3 position)
     {
-        int3 cPos = new int3(Mathf.FloorToInt(position.x / ChunkSize.x),
-            Mathf.FloorToInt(position.y / ChunkSize.y),
-            Mathf.FloorToInt(position.z / ChunkSize.z));
-        // if (math.any(position < 0))
-        //     Debug.Log($"Pos: {position.x}, {position.y}, {position.z} Chunk: {cPos.x}, {cPos.y}, {cPos.z}");
-
+        int3 cPos = (int3)math.floor(position / ChunkSize);
         return cPos;
     }
 
-    public bool TryGetNeighbours(int3 chunkCoordinates, ref ChunkNeighbours neighbours)
+    public ChunkNeighbours GetNeighbours(int3 chunkCoordinates)
     {
-        // ChunkNeighbours result = new ChunkNeighbours();
-
+        ChunkNeighbours neighbours = new ChunkNeighbours();
         for (int i = 0; i < 6; i++)
         {
             if (neighbours[i] != null && !neighbours[i].IsDestroyed()) continue;
@@ -429,17 +404,8 @@ public class WorldClass : MonoBehaviour, IWorld
             Profiler.BeginSample("Get Chunk");
             neighbours[i] = GetChunk(neighbourCoordinates);
             Profiler.EndSample();
-            if (neighbours[i] == null)
-            {
-                // if (math.all(chunkCoordinates == playerLastChunkPos))
-                //     Debug.Log("Missing chunk " + i);
-                
-                // return false;
-            }
         }
-
-        // neighbours = result;
-        return true;
+        return neighbours;
     }
 
     public bool TryGetBlocks(Vector3 position, NativeArray<int> blockIds)
@@ -470,6 +436,22 @@ public class WorldClass : MonoBehaviour, IWorld
     public RenderType GetRenderType()
     {
         return RenderType;
+    }
+
+    public void SetRenderDistance(int renderDistance)
+    {   
+        this.RenderDistance = renderDistance;
+        _showWorld = true;
+    }
+
+    public void SetRenderType(RenderType type)
+    {
+        if (type == RenderType) return;
+
+        _saveManager.UnloadChunks(this, activeChunksList);
+        activeChunksList = new Dictionary<int3, IChunk>();
+        RenderType = type;
+        _showWorld = true;
     }
 }
 

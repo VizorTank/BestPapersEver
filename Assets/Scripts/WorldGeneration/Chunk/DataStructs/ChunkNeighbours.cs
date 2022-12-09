@@ -42,41 +42,22 @@ public class ChunkNeighbours
         }
     }
 
-    public IChunk this[int3 pos]
+    // public IChunk this[int3 pos]
+    // {
+    //     get
+    //     {
+    //         for (int i = 0; i < 6; i++)
+    //         {
+    //             if (math.all(pos == VoxelData.voxelNeighbours[i])) return this[i];
+    //         }
+
+    //         throw new System.Exception("Index out of bounds");
+    //     }
+    // }
+
+    public ChunkNeighbourData GetData()
     {
-        get
-        {
-            for (int i = 0; i < 6; i++)
-            {
-                if (math.all(pos == VoxelData.voxelNeighbours[i])) return this[i];
-            }
-
-            throw new System.Exception("Index out of bounds");
-        }
-    }
-
-    public bool IsValid()
-    {
-        for (int i = 0; i < 6; i++)
-        {
-            if (this[i] == null || this[i].IsDestroyed()) return false;
-        }
-        return true;
-    }
-
-    public bool GetData(out ChunkNeighbourData neighbourData)
-    {
-        // neighbourData = new ChunkNeighbourData();
-        // if (!IsValid()) return false;
-        // for (int i = 0; i < 6; i++)
-        // {
-        //     if (!this[i].CanAccess()) return false;
-        //     neighbourData.ChunkNeighbourDataArray[i] = this[i].GetSharedData();
-        // }
-        // return true;
-
-        neighbourData = new ChunkNeighbourData();
-        // if (!IsValid()) return false;
+        ChunkNeighbourData neighbourData = new ChunkNeighbourData();
         for (int i = 0; i < 6; i++)
         {
             if (this[i] != null && !this[i].IsDestroyed() && this[i].CanAccess())
@@ -89,7 +70,22 @@ public class ChunkNeighbours
                 // Debug.Log("This was not suposed to be used!");
             }
         }
-        return true;
+        return neighbourData;
+    }
+
+    public ChunkNeighbourDataBuffers GetBufferData()
+    {
+        ChunkNeighbourDataBuffers buffers = new ChunkNeighbourDataBuffers();
+
+        for (int i = 0; i < 6; i++)
+        {
+            if (this[i] != null && !this[i].IsDestroyed() && this[i].CanAccess())
+                buffers[i] = this[i].GetBlocksBuffer();
+            else
+                buffers[i] = ChunkRendererConst.voidChunkBlockIdBuffer;
+        }
+
+        return buffers;
     }
 
     public void ReleaseData()
@@ -129,7 +125,7 @@ public class ChunkNeighbours
         {
             if (this[i] != null && !this[i].IsDestroyed() && this[i].CanAccess())
             {
-                this[i].UpdateNeighbourList();
+                this[i].UpdateListOfNeighbours();
                 this[i].Update();
             }
         }
