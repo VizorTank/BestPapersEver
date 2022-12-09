@@ -19,8 +19,6 @@ public class Chunk : IChunk
     private bool _isCreated = false;
     private List<StructureToLoad> StructuresToLoad = new List<StructureToLoad>();
 
-    private int _biomeIndex = -1;
-
 
     public Chunk(IWorld world, int3 chunkCoordinates)
     {
