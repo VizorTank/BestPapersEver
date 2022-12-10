@@ -7,7 +7,12 @@ public interface IWorld
 {
     public string GetWorldName();
     public void SetRenderDistance(int renderDistance);
+    public int GetRenderDistance();
     public void SetRenderType(RenderType type);
+
+    public int GetWorldHeightInChunks();
+
+    public float GetEnemiesDensity();
 
     public bool TryGetBlock(float3 position, ref int blockID);
     public bool TrySetBlock(Vector3 position, int blockID, ref int replacedBlockId);

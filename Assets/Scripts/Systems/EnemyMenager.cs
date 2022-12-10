@@ -39,6 +39,9 @@ public class EnemyMenager
         return enemies.Find(x => x.name == EnemyName);
     }
 
-
-
+    public static Object GetEnemy(int index)
+    {
+        if (index >= enemies.Count) return null;
+        return enemies[index];
+    }
 }

@@ -20,6 +20,7 @@ public class WorldClass : MonoBehaviour, IWorld
 
     // Private Values
     private ISaveManager _saveManager;
+    private EntityManager _entityManager;
     private int3 playerLastChunkPos = new int3(0, 1, 0);
     private bool _showWorld = true;
     private Dictionary<int3, IChunk> activeChunksList = new Dictionary<int3, IChunk>();
@@ -47,6 +48,8 @@ public class WorldClass : MonoBehaviour, IWorld
         _saveManager = SaveManager.GetInstance(this);
         if (!GenerateNewWorld)
             _saveManager.LoadWorld();
+        
+        _entityManager = new EntityManager(this);
     }
 
     void Start()
@@ -89,6 +92,10 @@ public class WorldClass : MonoBehaviour, IWorld
 
         Profiler.BeginSample("DrawChunks");
         DrawChunks();
+        Profiler.EndSample();
+
+        Profiler.BeginSample("Spawn/Despawn Entities");
+        _entityManager.Run();
         Profiler.EndSample();
     }
 
@@ -234,6 +241,7 @@ public class WorldClass : MonoBehaviour, IWorld
         this.RenderDistance = renderDistance;
         _showWorld = true;
     }
+    public int GetRenderDistance() => RenderDistance;
 
     public void SetRenderType(RenderType type)
     {
@@ -244,6 +252,15 @@ public class WorldClass : MonoBehaviour, IWorld
         _saveManager.UnloadChunks(this, activeChunksList);
         activeChunksList = new Dictionary<int3, IChunk>();
         _showWorld = true;
+    }
+    public float GetEnemiesDensity()
+    {
+        return 1;
+    }
+
+    public int GetWorldHeightInChunks()
+    {
+        return WorldData.WorldHeightInChunks;
     }
 }
 

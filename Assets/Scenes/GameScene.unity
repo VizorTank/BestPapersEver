@@ -8140,7 +8140,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5680718388364483949, guid: 8d45c8a09698c934cb1d6cc6d3496e5a, type: 3}
       propertyPath: GenerateNewWorld
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5680718388364483949, guid: 8d45c8a09698c934cb1d6cc6d3496e5a, type: 3}
       propertyPath: WorldBiomes.Seed
