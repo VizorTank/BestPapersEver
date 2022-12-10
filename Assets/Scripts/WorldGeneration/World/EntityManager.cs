@@ -37,6 +37,9 @@ public class EntityManager
         int renderDistance = _world.GetRenderDistance() * VoxelData.ChunkSize.x;
         int worldHeight = _world.GetWorldHeightInChunks() * VoxelData.ChunkSize.y;
 
+        float3 playerPos = _world.GetPlayerPosition();
+        playerPos.y = 0;
+
         for (int i = 0; i < _entities.Count; i++)
         {
             if (_entities[i] == null)
@@ -45,7 +48,7 @@ public class EntityManager
                 continue;
             }
 
-            float3 pos = _entities[i].transform.position;
+            float3 pos = (float3)_entities[i].transform.position - playerPos;
             if (pos.x < -renderDistance || pos.x > renderDistance ||
                 pos.y <               0 || pos.y > worldHeight ||
                 pos.z < -renderDistance || pos.z > renderDistance)
